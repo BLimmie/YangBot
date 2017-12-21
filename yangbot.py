@@ -47,8 +47,8 @@ gauchito_only = ["alcohol", "party"]
 client = discord.Client()
 
 
-def trigger(message):
-	for option, words in trigger_words:
+async def trigger(message):
+	for option, words in trigger_words.items():
 		if option not in gauchito_only:
 			if contains(message.content, words):
 				await client.send_message(message.channel, choiced_responses[option])
@@ -57,7 +57,7 @@ def trigger(message):
 				await client.send_message(message.channel, choiced_responses[option])
 
 
-def yang_send(message):
+async def yang_send(message):
 	if message.author.server_permissions.manage_server:
 		if len(message.channel_mentions) != 0:
 			await client.send_message(message.channel_mentions[0], prune(message.content))
@@ -82,9 +82,9 @@ async def on_message(message):
 	try:
 		if message.server.id == server_id and message.author != client.user:
 			if message.content[0:5] == '$send':
-				yang_send(message)
+				await yang_send(message)
 			else:
-				trigger(message)
+				await trigger(message)
 	except:
 		print('There was an error somewhere in on_message')
 
