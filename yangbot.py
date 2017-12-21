@@ -1,5 +1,6 @@
 import discord
 import asyncio
+import secretvalues
 
 def prune(send_message):
 	pos = send_message.find('>')
@@ -15,8 +16,8 @@ def contains(text, choices):
 	return False
 
 
-server_id = 'INSERT UCSB SERVER ID'
-gauchito_id = 'INSERT FRESHMAN ROLE ID'
+server_id, gauchito_id, login_token = secretvalues.get_values()
+
 on_join_message = "Hello, %s, and welcome to the UCSB Discord Server!\n \nWe ask that you introduce yourself so that the other members can get to know you better. Please post an introduction to our dedicated introductions channel with the following format:\n\n1) Discord handle (username#XXXX)\n2) School/Year/Major or the equivalent (UCSB/3rd/Underwater Basketweaving)\n3) Reason for joining the server (Make new friends)\n4) How you found us. If you found us through another person, please list their name or their discord handle because we like to keep track of who invites other people.\n \nAlso, please read the rules. We don't want to have to ban you because you failed to read a short list of rules.\n \n \n(Disclaimer: This bot is NOT Chancellor Yang, and does not represent his opinions. Attributing anything said by this bot to Chancellor Yang will result in a swift banning)" 
 
 choiced_responses = {
@@ -61,7 +62,7 @@ async def on_message(message):
 				elif contains (message.content, ['blaze']):
 					await client.send_message(message.channel, choiced_responses['blaze'])
 				elif contains (message.content, ['alcohol', 'vodka', 'wine', 'beer', 'drunk', 'whiskey', 'beers']):
-					if gauchito_id in [str(role) for role in message.author.roles]:
+					if gauchito_id in [role.id for role in message.author.roles]:
 						await client.send_message(message.channel, choiced_responses['alcohol'])
 				elif contains (message.content, ['mj', '420', 'weed', 'kush', 'marijuana']):
 					await client.send_message(message.channel, choiced_responses['mj'])
@@ -85,4 +86,4 @@ async def on_member_join(member):
 		print('There was an error somewhere')
 
 
-client.run('INSERT LOGIN TOKEN')
+client.run(login_token)
