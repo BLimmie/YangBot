@@ -48,6 +48,8 @@ async def on_message(message):
 			if message.author.server_permissions.manage_server:
 				if len(message.channel_mentions) != 0:
 					await client.send_message(message.channel_mentions[0], prune(message.content))
+					if message.content[5] == 'h':
+						client.delete_message(message)
 				else:
 					await client.send_message(message.channel, 'Syntax is "$send [channel mention] text"')
 			else:
