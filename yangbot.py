@@ -31,7 +31,42 @@ choiced_responses = {
 	"party": "Go back to studying"
 }
 
+trigger_words = {
+	"dank": ['dank'],
+	"blaze": ['blaze'],
+	"alcohol": ['alcohol', 'vodka', 'wine', 'beer', 'drunk', 'whiskey', 'beers'], #should only be triggered by gauchito
+	"mj": ['mj', '420', 'weed', 'kush', 'marijuana'],
+	"adderall": ['adderall', 'adderal', 'addy'],
+	"fire": ['drug', 'acid', 'lsd', 'shrooms', 'xanax', 'coke', 'cocaine'],
+	"drug": ['fire'],
+	"party": ['party']
+}
+
+gauchito_only = ["alcohol", "party"]
+
 client = discord.Client()
+
+
+def trigger(message):
+	for option, words in trigger_words:
+		if option not in gauchito_only:
+			if contains(message.content, words):
+				await client.send_message(message.channel, choiced_responses[option])
+		elif gauchito_id in [role.id for role in message.author.roles]:
+			if contains(message.content, words):
+				await client.send_message(message.channel, choiced_responses[option])
+
+
+def yang_send(message):
+	if message.author.server_permissions.manage_server:
+		if len(message.channel_mentions) != 0:
+			await client.send_message(message.channel_mentions[0], prune(message.content))
+			if message.content[5] == 'h':
+				await client.delete_message(message)
+		else:
+			await client.send_message(message.channel, 'Syntax is "$send [channel mention] text"')
+	else:
+		await client.send_message(message.channel, 'Invalid Permissions')
 
 
 @client.event
@@ -45,37 +80,13 @@ async def on_ready():
 async def on_message(message):
 	#TODO stuff
 	try:
-		if message.content[0:5] == '$send':
-			if message.author.server_permissions.manage_server:
-				if len(message.channel_mentions) != 0:
-					await client.send_message(message.channel_mentions[0], prune(message.content))
-					if message.content[5] == 'h':
-						client.delete_message(message)
-				else:
-					await client.send_message(message.channel, 'Syntax is "$send [channel mention] text"')
+		if message.server.id == server_id and message.author != client.user:
+			if message.content[0:5] == '$send':
+				yang_send(message)
 			else:
-				await client.send_message(message.channel, 'Invalid Permissions')
-		elif message.server.id == server_id:
-			if message.author != client.user:
-				if contains(message.content, ['dank']):
-					await client.send_message(message.channel, choiced_responses['dank'])
-				elif contains (message.content, ['blaze']):
-					await client.send_message(message.channel, choiced_responses['blaze'])
-				elif contains (message.content, ['alcohol', 'vodka', 'wine', 'beer', 'drunk', 'whiskey', 'beers']):
-					if gauchito_id in [role.id for role in message.author.roles]:
-						await client.send_message(message.channel, choiced_responses['alcohol'])
-				elif contains (message.content, ['mj', '420', 'weed', 'kush', 'marijuana']):
-					await client.send_message(message.channel, choiced_responses['mj'])
-				elif contains (message.content, ['adderall', 'adderal', 'addy']):
-					await client.send_message(message.channel, choiced_responses['adderall'])
-				elif contains (message.content, ['drug', 'acid', 'lsd', 'shrooms', 'xanax', 'coke', 'cocaine']):
-					await client.send_message(message.channel, choiced_responses['drug'])
-				elif contains (message.content, ['fire']):
-					await client.send_message(message.channel, choiced_responses['fire'])
-				elif contains (message.content, ['party']):
-					await client.send_message(message.channel, choiced_responses['party'])
+				trigger(message)
 	except:
-		print('There was an error somewhere')
+		print('There was an error somewhere in on_message')
 
 
 @client.event
@@ -83,7 +94,7 @@ async def on_member_join(member):
 	try:
 		await client.send_message(member, content=(on_join_message % (member.mention)))
 	except:
-		print('There was an error somewhere')
+		print('There was an error somewhere in on_member_join')
 
 
 client.run(login_token)
