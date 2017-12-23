@@ -1,7 +1,8 @@
 import discord
 import asyncio
 import secretvalues
-
+from datetime import datetime
+from datetime import timedelta
 def prune(send_message):
 	pos = send_message.find('>')
 	return send_message[pos+1:]
@@ -89,8 +90,9 @@ async def on_message(message):
 		if message.server.id == server_id and message.author != client.user:
 			if message.content[0:5] == '$send':
 				await yang_send(message)
-			else:
+			elif message.timestamp - last_trigger > timedelta(minutes=2):
 				await trigger(message)
+				last_trigger = datetime.now()
 	except:
 		print('There was an error somewhere in on_message')
 
@@ -102,5 +104,5 @@ async def on_member_join(member):
 	except:
 		print('There was an error somewhere in on_member_join')
 
-
+last_trigger = datetime.now()
 client.run(login_token)
