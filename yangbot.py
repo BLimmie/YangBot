@@ -37,8 +37,8 @@ trigger_words = {
 	"alcohol": ['alcohol', 'vodka', 'wine', 'beer', 'drunk', 'whiskey', 'beers'], #should only be triggered by gauchito
 	"mj": ['mj', '420', 'weed', 'kush', 'marijuana'],
 	"adderall": ['adderall', 'adderal', 'addy'],
-	"fire": ['drug', 'acid', 'lsd', 'shrooms', 'xanax', 'coke', 'cocaine'],
-	"drug": ['fire'],
+	"drug": ['drug', 'acid', 'lsd', 'shrooms', 'xanax', 'coke', 'cocaine'],
+	"fire": ['fire'],
 	"party": ['party']
 }
 
