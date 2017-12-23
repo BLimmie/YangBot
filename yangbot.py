@@ -20,6 +20,8 @@ server_id, gauchito_id, login_token = secretvalues.get_values()
 
 on_join_message = "Hello, %s, and welcome to the UCSB Discord Server!\n \nWe ask that you introduce yourself so that the other members can get to know you better. Please post an introduction to our dedicated introductions channel with the following format:\n\n1) Discord handle (username#XXXX)\n2) School/Year/Major or the equivalent (UCSB/3rd/Underwater Basketweaving)\n3) Reason for joining the server (Make new friends)\n4) How you found us. If you found us through another person, please list their name or their discord handle because we like to keep track of who invites other people.\n \nAlso, please read the rules. We don't want to have to ban you because you failed to read a short list of rules.\n \n \n(Disclaimer: This bot is NOT Chancellor Yang, and does not represent his opinions. Attributing anything said by this bot to Chancellor Yang will result in a swift banning)" 
 
+
+#YangBot's responses
 choiced_responses = {
 	"dank": "I sure hope you're talking about dank memes and not that dank green!",
 	"blaze": "I sure hope you're talking about the pizza!",
@@ -31,6 +33,8 @@ choiced_responses = {
 	"party": "Go back to studying"
 }
 
+
+#Words that trigger YangBot. These are directly connected to the responses above with the words on the left
 trigger_words = {
 	"dank": ['dank'],
 	"blaze": ['blaze'],
@@ -42,6 +46,8 @@ trigger_words = {
 	"party": ['party']
 }
 
+
+#Words that only are triggered by gauchitos
 gauchito_only = ["alcohol", "party"]
 
 client = discord.Client()
