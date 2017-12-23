@@ -55,14 +55,18 @@ client = discord.Client()
 
 
 async def trigger(message):
+	global last_trigger
 	for option, words in trigger_words.items():
 		if option not in gauchito_only:
 			if contains(message.content, words):
+				last_trigger = datetime.now()
 				await client.send_message(message.channel, choiced_responses[option])
+				break
 		elif gauchito_id in [role.id for role in message.author.roles]:
 			if contains(message.content, words):
+				last_trigger = datetime.now()
 				await client.send_message(message.channel, choiced_responses[option])
-
+				break
 
 async def yang_send(message):
 	if message.author.server_permissions.manage_server:
@@ -86,13 +90,13 @@ async def on_ready():
 @client.event
 async def on_message(message):
 	#TODO stuff
+	global last_trigger
 	try:
 		if message.server.id == server_id and message.author != client.user:
 			if message.content[0:5] == '$send':
 				await yang_send(message)
 			elif message.timestamp - last_trigger > timedelta(minutes=2):
 				await trigger(message)
-				last_trigger = datetime.now()
 	except:
 		print('There was an error somewhere in on_message')
 
@@ -104,5 +108,5 @@ async def on_member_join(member):
 	except:
 		print('There was an error somewhere in on_member_join')
 
-last_trigger = datetime.now()
+last_trigger = datetime.now() - timedelta(minutes=2)
 client.run(login_token)
