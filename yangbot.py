@@ -3,6 +3,8 @@ import asyncio
 import secretvalues
 from datetime import datetime
 from datetime import timedelta
+import recordconvo
+
 def prune(send_message):
 	pos = send_message.find('>')
 	return send_message[pos+1:]
@@ -90,16 +92,44 @@ async def on_ready():
 @client.event
 async def on_message(message):
 	#TODO stuff
-	global last_trigger
+	global recording
 	try:
 		if message.server.id == server_id and message.author != client.user:
 			if message.content[0:5] == '$send':
 				await yang_send(message)
+			elif message.content[0:7] == '$record':
+				if recording is None:
+					recordconvo.record_init()
+					recording = message.channel
+				else:
+					await client.send_message(message.channel, "Already recording in %s" % (recording.mention))
+			elif message.content[0:11] == '$stoprecord':
+				recording = None
 			elif message.timestamp - last_trigger > timedelta(minutes=2):
 				await trigger(message)
+			if recording is not None and recording == message.channel:
+				recordconvo.record_message(message)
 	except:
 		print('There was an error somewhere in on_message')
 
+
+@client.event
+async def on_message_edit(before, after):
+	try:
+		if after.server.id == server_id and after.author != client.user:
+			if recording is not None and recording == after.channel:
+				recordconvo.record_message_edit(after)
+	except:
+		print('There was an error somewhere in on_message_edit')
+
+@client.event
+async def on_message_delete(message):
+	try:
+		if message.server.id == server_id and message.author != client.user:
+			if recording is not None and recording == message.channel:
+				recordconvo.record_message_delete(message)
+	except:
+		print('There was an error somewhere in on_message_delete')
 
 @client.event
 async def on_member_join(member):
@@ -108,5 +138,7 @@ async def on_member_join(member):
 	except:
 		print('There was an error somewhere in on_member_join')
 
+
+recording = None
 last_trigger = datetime.now() - timedelta(minutes=2)
 client.run(login_token)
