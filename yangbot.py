@@ -104,8 +104,8 @@ async def on_ready():
 	print(client.user.id)
 	print('--------')
 	for server in client.servers:
-		for channel in server:
-			if client.user.permissions_in(channel).send_messages:
+		for channel in server.channels:
+			if server.me.permissions_in(channel).send_messages:
 				recent_channel_messages[channel.id] = []
 	print('Channels loaded')
 
