@@ -50,3 +50,12 @@ def record_message_delete(message):
 		message.author.name,
 		"DELETED"
 	))
+
+def record_end():
+	recorder.writerow(format_record(
+		datetime.now(), 
+		None, 
+		None, 
+		None, 
+		"Recording ended"
+	))
