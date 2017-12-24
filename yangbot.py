@@ -95,20 +95,20 @@ async def on_message(message):
 	global recording
 	try:
 		if message.server.id == server_id and message.author != client.user:
+			if recording is not None and recording == message.channel:
+				recordconvo.record_message(message)
 			if message.content[0:5] == '$send':
 				await yang_send(message)
-			elif message.content[0:7] == '$record':
+			elif message.content[0:7] == '$record' and message.author.server_permissions.manage_server:
 				if recording is None:
 					recordconvo.record_init()
 					recording = message.channel
 				else:
 					await client.send_message(message.channel, "Already recording in %s" % (recording.mention))
-			elif message.content[0:11] == '$stoprecord':
+			elif message.content[0:11] == '$stoprecord' and message.author.server_permissions.manage_server:
 				recording = None
 			elif message.timestamp - last_trigger > timedelta(minutes=2):
 				await trigger(message)
-			if recording is not None and recording == message.channel:
-				recordconvo.record_message(message)
 	except:
 		print('There was an error somewhere in on_message')
 
