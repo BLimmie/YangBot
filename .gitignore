@@ -1,3 +1,4 @@
 *prod.py
 secret*
 __pycache__/*
+*.csv

@@ -106,6 +106,7 @@ async def on_message(message):
 				else:
 					await client.send_message(message.channel, "Already recording in %s" % (recording.mention))
 			elif message.content[0:11] == '$stoprecord' and message.author.server_permissions.manage_server:
+				recordconvo.record_end()
 				recording = None
 			elif message.timestamp - last_trigger > timedelta(minutes=2):
 				await trigger(message)
