@@ -9,7 +9,7 @@ recorder = csv.writer(record)
 print('opened recorded_messages.csv to append')
 
 edit_record = open('edited_recorded_messages.csv', 'a')
-edit_recorder = csv.writer(record)
+edit_recorder = csv.writer(edit_record)
 print('opened edited_recorded_messages.csv to append')
 
 def format_record(time_str, message_id, user_id, user_name, message_content):
