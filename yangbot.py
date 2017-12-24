@@ -53,6 +53,21 @@ trigger_words = {
 #Words that only are triggered by gauchitos
 gauchito_only = ["alcohol", "party"]
 
+
+#Recent channel messages
+recent_channel_messages = {}
+
+def same_message_response(channel_id):
+	global recent_channel_messages
+	while len(recent_channel_messages[channel_id]) > 3:
+		recent_channel_messages[channel_id].pop(0)
+	if len(recent_channel_messages[channel_id]) < 3:
+		return False
+	s = recent_channel_messages[channel_id][0].lower()
+	if s == recent_channel_messages[channel_id][1].lower() and s == recent_channel_messages[channel_id][2].lower():
+		return True
+	else:
+		return False
 client = discord.Client()
 
 
@@ -88,6 +103,11 @@ async def on_ready():
 	print(client.user.name)
 	print(client.user.id)
 	print('--------')
+	for server in client.servers:
+		for channel in server:
+			if client.user.permissions_in(channel).send_messages:
+				recent_channel_messages[channel.id] = []
+	print('Channels loaded')
 
 @client.event
 async def on_message(message):
@@ -95,6 +115,10 @@ async def on_message(message):
 	global recording
 	try:
 		if message.server.id == server_id and message.author != client.user:
+			if message.channel.id in recent_channel_messages.keys():
+				recent_channel_messages[message.channel.id].append(message.content)
+				if same_message_response(mesage.channel.id):
+					client.send_message(message.channel, message.content)
 			if recording is not None and recording == message.channel:
 				recordconvo.record_message(message)
 			if message.content[0:5] == '$send':
