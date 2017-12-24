@@ -57,17 +57,6 @@ gauchito_only = ["alcohol", "party"]
 #Recent channel messages
 recent_channel_messages = {}
 
-def same_message_response(channel_id):
-	global recent_channel_messages
-	while len(recent_channel_messages[channel_id]) > 3:
-		recent_channel_messages[channel_id].pop(0)
-	if len(recent_channel_messages[channel_id]) < 3:
-		return False
-	s = recent_channel_messages[channel_id][0].lower()
-	if s == recent_channel_messages[channel_id][1].lower() and s == recent_channel_messages[channel_id][2].lower():
-		return True
-	else:
-		return False
 client = discord.Client()
 
 
@@ -108,17 +97,19 @@ async def on_ready():
 			if server.me.permissions_in(channel).send_messages:
 				recent_channel_messages[channel.id] = []
 	print('Channels loaded')
+	print(recent_channel_messages)
 
 @client.event
 async def on_message(message):
 	#TODO stuff
-	global recording
+	global recording, recent_channel_messages
 	try:
 		if message.server.id == server_id and message.author != client.user:
 			if message.channel.id in recent_channel_messages.keys():
 				recent_channel_messages[message.channel.id].append(message.content)
-				if same_message_response(mesage.channel.id):
-					client.send_message(message.channel, message.content)
+				is_same = same_message_response(message.channel.id)
+				if is_same:
+					await client.send_message(message.channel, message.content)
 			if recording is not None and recording == message.channel:
 				recordconvo.record_message(message)
 			if message.content[0:5] == '$send':
@@ -134,8 +125,8 @@ async def on_message(message):
 				recording = None
 			elif message.timestamp - last_trigger > timedelta(minutes=2):
 				await trigger(message)
-	except:
-		print('There was an error somewhere in on_message')
+	except Exception as e:
+		print('There was an error somewhere in on_message: ' +str(e))
 
 
 @client.event
@@ -163,6 +154,16 @@ async def on_member_join(member):
 	except:
 		print('There was an error somewhere in on_member_join')
 
+def same_message_response(channel_id):
+	if len(recent_channel_messages[channel_id]) > 3:
+		recent_channel_messages[channel_id].pop(0)
+	if len(recent_channel_messages[channel_id]) < 3:
+		return False
+	s = recent_channel_messages[channel_id][0].lower()
+	if s == recent_channel_messages[channel_id][1].lower() and s == recent_channel_messages[channel_id][2].lower():
+		return True
+	else:
+		return False
 
 recording = None
 last_trigger = datetime.now() - timedelta(minutes=2)
