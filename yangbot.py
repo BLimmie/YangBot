@@ -110,6 +110,7 @@ async def on_message(message):
 				is_same = same_message_response(message.channel.id)
 				if is_same:
 					await client.send_message(message.channel, message.content)
+					recent_channel_messages[message.channel.id].clear()
 			if recording is not None and recording == message.channel:
 				recordconvo.record_message(message)
 			if message.content[0:5] == '$send':
