@@ -18,43 +18,12 @@ def contains(text, choices):
 			return True
 	return False
 
-
-server_id, gauchito_id, login_token = secretvalues.get_values()
+from secretvalues import *
 
 on_join_message = "Hello, %s, and welcome to the UCSB Discord Server!\n \nWe ask that you introduce yourself so that the other members can get to know you better. Please post an introduction to our dedicated introductions channel with the following format:\n\n1) Discord handle (username#XXXX)\n2) School/Year/Major or the equivalent (UCSB/3rd/Underwater Basketweaving)\n3) Reason for joining the server (Make new friends)\n4) How you found us. If you found us through another person, please list their name or their discord handle because we like to keep track of who invites other people.\n \nAlso, please read the rules. We don't want to have to ban you because you failed to read a short list of rules.\n \n \n(Disclaimer: This bot is NOT Chancellor Yang, and does not represent his opinions. Attributing anything said by this bot to Chancellor Yang will result in a swift banning)" 
 
+from trigger import *
 
-#YangBot's responses
-choiced_responses = {
-	"dank": "I sure hope you're talking about dank memes and not that dank green!",
-	"blaze": "I sure hope you're talking about the pizza!",
-	"alcohol": "Reminder that underage drinking is prohibited at UCSB.", #should only be triggered by gauchito
-	"mj": "Despite the passing of Prop 64, marijuana usage is prohibited at UCSB except for university-approved research.",
-	"adderall": "If you need to study, go to the UCSB Library. Most people focus the best on the 8th floor.",
-	"fire": "Put on a mask and get back to studying",
-	"drug": "Substance abuse is prohibited at UCSB",
-	"party": "Go back to studying"
-}
-
-
-#Words that trigger YangBot. These are directly connected to the responses above with the words on the left
-trigger_words = {
-	"dank": ['dank'],
-	"blaze": ['blaze'],
-	"alcohol": ['alcohol', 'vodka', 'wine', 'beer', 'drunk', 'whiskey', 'beers'], #should only be triggered by gauchito
-	"mj": ['mj', '420', 'weed', 'kush', 'marijuana'],
-	"adderall": ['adderall', 'adderal', 'addy'],
-	"drug": ['drug', 'acid', 'lsd', 'shrooms', 'xanax', 'coke', 'cocaine'],
-	"fire": ['fire'],
-	"party": ['party']
-}
-
-
-#Words that only are triggered by gauchitos
-gauchito_only = ["alcohol", "party"]
-
-
-#Recent channel messages
 recent_channel_messages = {}
 
 client = discord.Client()
