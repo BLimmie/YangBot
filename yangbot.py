@@ -1,6 +1,7 @@
 import discord
 import asyncio
 import secretvalues
+import traceback
 from datetime import datetime
 from datetime import timedelta
 import recordconvo
@@ -97,6 +98,7 @@ async def on_message(message):
 				await trigger(message)
 	except Exception as e:
 		print('There was an error somewhere in on_message: ' +str(e))
+		traceback.print_exc()
 
 
 @client.event
@@ -107,6 +109,7 @@ async def on_message_edit(before, after):
 				recordconvo.record_message_edit(after)
 	except:
 		print('There was an error somewhere in on_message_edit')
+		traceback.print_exc()
 
 @client.event
 async def on_message_delete(message):
@@ -116,6 +119,7 @@ async def on_message_delete(message):
 				recordconvo.record_message_delete(message)
 	except:
 		print('There was an error somewhere in on_message_delete')
+		traceback.print_exc()
 
 
 @client.event
@@ -125,6 +129,7 @@ async def on_reaction_add(reaction, user):
 			await client.add_reaction(reaction.message, reaction.emoji)
 	except:
 		print('There was an error somewhere in on_reaction_add')
+		traceback.print_exc()
 
 
 @client.event
@@ -134,6 +139,7 @@ async def on_reaction_remove(reaction, user):
 			await client.remove_reaction(reaction.message, reaction.emoji, reaction.message.server.me)
 	except Exception as e:
 		print('There was an error somewhere in on_reaction_remove: ' + str(e))
+		traceback.print_exc()
 
 @client.event
 async def on_member_join(member):
@@ -141,6 +147,7 @@ async def on_member_join(member):
 		await client.send_message(member, content=(on_join_message % (member.mention)))
 	except:
 		print('There was an error somewhere in on_member_join')
+		traceback.print_exc()
 
 def same_message_response(channel_id):
 	if len(recent_channel_messages[channel_id]) > 3:
