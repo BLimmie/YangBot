@@ -148,6 +148,24 @@ async def on_message_delete(message):
 	except:
 		print('There was an error somewhere in on_message_delete')
 
+
+@client.event
+async def on_reaction_add(reaction, user):
+	try:
+		if not reaction.me:
+			await client.add_reaction(reaction.message, reaction.emoji)
+	except:
+		print('There was an error somewhere in on_reaction_add')
+
+
+@client.event
+async def on_reaction_remove(reaction, user):
+	try:
+		if reaction.count == 1 and reaction.me:
+			await client.remove_reaction(reaction.message, reaction.emoji, reaction.message.server.me)
+	except Exception as e:
+		print('There was an error somewhere in on_reaction_remove: ' + str(e))
+
 @client.event
 async def on_member_join(member):
 	try:
