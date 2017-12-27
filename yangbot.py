@@ -7,7 +7,7 @@ from datetime import timedelta
 import recordconvo
 from secretvalues import *
 from trigger import *
-from discordsim import simulate, message_cache, SIMULATION_INTERVAL
+from discordsim import simulate, message_cache, email_sim, SIMULATION_INTERVAL
 
 
 def prune(send_message):
@@ -98,16 +98,17 @@ async def on_message(message):
 				recording = None
 			elif message.timestamp - last_trigger > timedelta(minutes=2):
 				await trigger(message)
-			if len(message.content.split()) > 2 and not message.author.bot and message.channel.id != mod_channel_id:
+			if len(message.content.split()) > 2 and not message.author.bot and message.channel.id not in no_simulate:
 				with open(message_cache, 'a') as file:
 					file.write(message.content + '\n')
 			if message.timestamp - last_discord_simulation >= SIMULATION_INTERVAL:
-				simulated_message = simulate()
+				simulated_message = simulate(message_cache)
 				if simulated_message is not None:
 					await client.send_message(message.server.get_channel(sim_channel_id), simulated_message)
 					open(message_cache, 'w').close()
 				else:
-					await client.send_message(message.server.get_channel(sim_channel_id), 'Not enough data to simulate')
+					await client.send_message(message.server.get_channel(sim_channel_id), '[Not enough data to simulate. Taking data from emails.]')
+					simulated_message = simulate(email_sim, test=False)
 				last_discord_simulation = message.timestamp
 	except Exception as e:
 		print('There was an error somewhere in on_message: ' +str(e))
@@ -178,6 +179,6 @@ def same_message_response(channel_id):
 
 recording = None
 last_trigger = datetime.now() - timedelta(minutes=2)
-last_discord_simulation = datetime.now()
+last_discord_simulation = datetime.now() - timedelta(hours=1)
 
 client.run(login_token)

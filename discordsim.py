@@ -2,12 +2,16 @@ import markovify
 from datetime import timedelta
 
 message_cache = 'cached_messages.txt'
+email_sim = 'emails.txt'
 SIMULATION_INTERVAL = timedelta(minutes=30)
-def simulate():
-	with open(message_cache) as file:
+def simulate(filename, test=True, nl=False):
+	with open(filename) as file:
 		text = file.read()
-		markov_model = markovify.NewlineText(text)
-		simulation = markov_model.make_sentence()
+		if nl:
+			markov_model = markovify.NewlineText(text)
+		else:
+			markov_model = markovify.Text(text)
+		simulation = markov_model.make_sentence(test_output=test)
 		if simulation is not None:
 			return clean_text(simulation)
 		else:
