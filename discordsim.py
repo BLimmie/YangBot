@@ -4,7 +4,7 @@ from datetime import timedelta
 message_cache = 'cached_messages.txt'
 email_sim = 'emails.txt'
 SIMULATION_INTERVAL = timedelta(minutes=30)
-def simulate(filename, test=True, nl=False):
+def simulate(filename, test=True, nl=True):
 	with open(filename) as file:
 		text = file.read()
 		if nl:
