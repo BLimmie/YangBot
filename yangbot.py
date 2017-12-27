@@ -23,10 +23,7 @@ def contains(text, choices):
 			return True
 	return False
 
-recording = None
 
-last_trigger = datetime.now() - timedelta(minutes=2)
-last_discord_simulation = datetime.now()
 
 on_join_message = "Hello, %s, and welcome to the UCSB Discord Server!\n \nWe ask that you introduce yourself so that the other members can get to know you better. Please post an introduction to our dedicated introductions channel with the following format:\n\n1) Discord handle (username#XXXX)\n2) School/Year/Major or the equivalent (UCSB/3rd/Underwater Basketweaving)\n3) Reason for joining the server (Make new friends)\n4) How you found us. If you found us through another person, please list their name or their discord handle because we like to keep track of who invites other people.\n \nAlso, please read the rules. We don't want to have to ban you because you failed to read a short list of rules.\n \n \n(Disclaimer: This bot is NOT Chancellor Yang, and does not represent his opinions. Attributing anything said by this bot to Chancellor Yang will result in a swift banning)" 
 
@@ -73,6 +70,10 @@ async def on_ready():
 				recent_channel_messages[channel.id] = []
 	print('Channels loaded')
 	print(recent_channel_messages)
+	recording = None
+	last_trigger = datetime.now() - timedelta(minutes=2)
+	last_discord_simulation = datetime.now()
+	print(last_discord_simulation)
 
 @client.event
 async def on_message(message):
