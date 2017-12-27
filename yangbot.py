@@ -70,13 +70,6 @@ async def on_ready():
 				recent_channel_messages[channel.id] = []
 	print('Channels loaded')
 	print(recent_channel_messages)
-	global recording
-	recording = None
-	global last_trigger
-	last_trigger = datetime.now() - timedelta(minutes=2)
-	global last_discord_simulation
-	last_discord_simulation = datetime.now()
-	print(last_discord_simulation)
 
 @client.event
 async def on_message(message):
@@ -182,6 +175,9 @@ def same_message_response(channel_id):
 		return True
 	else:
 		return False
-
+		
+recording = None
+last_trigger = datetime.now() - timedelta(minutes=2)
+last_discord_simulation = datetime.now()
 
 client.run(login_token)
