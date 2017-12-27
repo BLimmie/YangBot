@@ -81,7 +81,7 @@ async def on_ready():
 @client.event
 async def on_message(message):
 	#TODO stuff
-	global recording, recent_channel_messages
+	global recording, recent_channel_messages, last_discord_simulation
 	try:
 		if message.server.id == server_id and message.author != client.user:
 			if message.channel.id in recent_channel_messages.keys():
