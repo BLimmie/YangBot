@@ -104,6 +104,8 @@ async def on_message(message):
 				if simulated_message is not None:
 					await client.send_message(message.server.get_channel(sim_channel_id), simulated_message)
 					open(message_cache, 'w').close()
+				else:
+					await client.send_message(message.server.get_channel(sim_channel_id), 'Not enough data to simulate')
 	except Exception as e:
 		print('There was an error somewhere in on_message: ' +str(e))
 		traceback.print_exc()
