@@ -99,7 +99,7 @@ async def on_message(message):
 			if len(message.content.split()) > 2:
 				with open(message_cache, 'a') as file:
 					file.write(message.content + '\n')
-			if message.timestamp - last_discord_simulation >= SIMULATION_INTERVAL
+			if message.timestamp - last_discord_simulation >= SIMULATION_INTERVAL:
 				simulated_message = simulate()
 				if simulated_message is not None:
 					await client.send_message(message.server.get_channel(sim_channel_id), simulated_message)
