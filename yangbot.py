@@ -5,6 +5,10 @@ import traceback
 from datetime import datetime
 from datetime import timedelta
 import recordconvo
+from secretvalues import *
+from trigger import *
+from discordsim import simulate, message_cache, SIMULATION_INTERVAL
+
 
 def prune(send_message):
 	pos = send_message.find('>')
@@ -19,11 +23,7 @@ def contains(text, choices):
 			return True
 	return False
 
-from secretvalues import *
-
 on_join_message = "Hello, %s, and welcome to the UCSB Discord Server!\n \nWe ask that you introduce yourself so that the other members can get to know you better. Please post an introduction to our dedicated introductions channel with the following format:\n\n1) Discord handle (username#XXXX)\n2) School/Year/Major or the equivalent (UCSB/3rd/Underwater Basketweaving)\n3) Reason for joining the server (Make new friends)\n4) How you found us. If you found us through another person, please list their name or their discord handle because we like to keep track of who invites other people.\n \nAlso, please read the rules. We don't want to have to ban you because you failed to read a short list of rules.\n \n \n(Disclaimer: This bot is NOT Chancellor Yang, and does not represent his opinions. Attributing anything said by this bot to Chancellor Yang will result in a swift banning)" 
-
-from trigger import *
 
 recent_channel_messages = {}
 
@@ -96,9 +96,20 @@ async def on_message(message):
 				recording = None
 			elif message.timestamp - last_trigger > timedelta(minutes=2):
 				await trigger(message)
+			if len(message.content.split()) > 2:
+				with open(message_cache, 'a') as file:
+					file.write(message.content + '\n')
+			if message.timestamp - last_discord_simulation >= SIMULATION_INTERVAL
+				simulated_message = simulate()
+				if simulated_message is not None:
+					await client.send_message(message.server.get_channel(sim_channel_id), simulated_message)
+					open(message_cache, 'w').close()
 	except Exception as e:
 		print('There was an error somewhere in on_message: ' +str(e))
 		traceback.print_exc()
+		print('Message Channel: ' + message.channel.name)
+		print('Message Content: ' + message.content)
+		print('Message Author: ' + message.author.name)
 
 
 @client.event
@@ -162,4 +173,5 @@ def same_message_response(channel_id):
 
 recording = None
 last_trigger = datetime.now() - timedelta(minutes=2)
+last_discord_simulation = datetime.now()
 client.run(login_token)
