@@ -7,7 +7,7 @@ from datetime import timedelta
 import recordconvo
 from secretvalues import *
 from trigger import *
-from discordsim import simulate, message_cache, email_sim, SIMULATION_INTERVAL
+from discordsim import simulate, message_cache, SIMULATION_INTERVAL
 
 
 def prune(send_message):
