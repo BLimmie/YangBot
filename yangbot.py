@@ -106,6 +106,7 @@ async def on_message(message):
 					open(message_cache, 'w').close()
 				else:
 					await client.send_message(message.server.get_channel(sim_channel_id), 'Not enough data to simulate')
+				last_discord_simulation = message.timestamp
 	except Exception as e:
 		print('There was an error somewhere in on_message: ' +str(e))
 		traceback.print_exc()
