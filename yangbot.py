@@ -98,7 +98,7 @@ async def on_message(message):
 				recording = None
 			elif message.timestamp - last_trigger > timedelta(minutes=2):
 				await trigger(message)
-			if len(message.content.split()) > 2 and not message.author.bot:
+			if len(message.content.split()) > 2 and not message.author.bot and message.channel.id != mod_channel_id:
 				with open(message_cache, 'a') as file:
 					file.write(message.content + '\n')
 			if message.timestamp - last_discord_simulation >= SIMULATION_INTERVAL:
@@ -175,7 +175,7 @@ def same_message_response(channel_id):
 		return True
 	else:
 		return False
-		
+
 recording = None
 last_trigger = datetime.now() - timedelta(minutes=2)
 last_discord_simulation = datetime.now()
