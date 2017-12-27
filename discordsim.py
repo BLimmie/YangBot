@@ -8,7 +8,7 @@ def simulate(filename):
 	with open(filename) as file:
 		text = file.read()
 		markov_model = markovify.NewlineText(text)
-		simulation = markov_model.make_sentence(tries=20, test_output=test)
+		simulation = markov_model.make_sentence(tries=20)
 		if simulation is not None:
 			return clean_text(simulation)
 		else:
