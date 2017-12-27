@@ -11,9 +11,10 @@ def simulate(filename, test=True, nl=True):
 		if nl:
 			text = file.read()
 			markov_model = markovify.NewlineText(text)
+			simulation = markov_model.make_sentence(test_output=test)
 		else:
 			markov_model = email_model
-		simulation = markov_model.make_sentence(test_output=test)
+			simulation = markov_model.make_short_sentence(60)
 		if simulation is not None:
 			return clean_text(simulation)
 		else:
