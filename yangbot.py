@@ -96,7 +96,7 @@ async def on_message(message):
 				recording = None
 			elif message.timestamp - last_trigger > timedelta(minutes=2):
 				await trigger(message)
-			if len(message.content.split()) > 2:
+			if len(message.content.split()) > 2 and not message.author.bot:
 				with open(message_cache, 'a') as file:
 					file.write(message.content + '\n')
 			if message.timestamp - last_discord_simulation >= SIMULATION_INTERVAL:

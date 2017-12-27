@@ -7,7 +7,11 @@ def simulate():
 	with open(message_cache) as file:
 		text = file.read()
 		markov_model = markovify.NewlineText(text)
-		return clean_text(markov_model.make_sentence())
+		simulation = markov_model.make_sentence()
+		if simulation is not None:
+			return clean_text(simulation)
+		else:
+			return None
 
 
 def clean_text(text):
