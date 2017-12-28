@@ -16,5 +16,7 @@ def simulate(filename):
 
 
 def clean_text(text):
-	return text.replace('@', '')
+	return text
+	#This code currently doesn't work the way I thought it would. Will be fixed in a later update
+	#return text.replace('@', '')
 	#This is its own method in case more needs to be cleaned
