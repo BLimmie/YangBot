@@ -112,7 +112,7 @@ async def on_message(message):
 				recordconvo.record_end()
 				recording = None
 			elif message.content[0:8] == '$catfact' or message.content.lower()[0:11] == 'unsubscribe':
-				await client.send_message(message.channel, 'Thank you for subscribing to CatFacts™! Did you know: %s\n\nType "UNSUBSCRIBE" to stop getting cat facts' % get_random_catfact())
+				await client.send_message(message.channel, 'Thank you for subscribing to CatFacts™! Did you know:\n `%s`\n\nType "UNSUBSCRIBE" to stop getting cat facts' % get_random_catfact())
 			elif message.timestamp - last_trigger > timedelta(minutes=2):
 				await trigger(message)
 
