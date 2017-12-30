@@ -2,13 +2,15 @@ import discord
 import asyncio
 import secretvalues
 import traceback
+import random
 from datetime import datetime
 from datetime import timedelta
 import recordconvo
 from secretvalues import *
 from trigger import *
 from discordsim import simulate, message_cache, SIMULATION_INTERVAL
-
+from trivia import trivia_question
+from catfacts import cat_facts
 
 def prune(send_message):
 	pos = send_message.find('>')
@@ -57,6 +59,15 @@ async def yang_send(message):
 	else:
 		await client.send_message(message.channel, 'Invalid Permissions')
 
+prev_cat_fact = "-1"
+def get_random_catfact():
+	global prev_cat_fact
+	while(True):
+		fact = random.choice(cat_facts)
+		if id != prev_cat_fact:
+			prev_cat_fact = fact
+			return fact
+
 
 @client.event
 async def on_ready():
@@ -76,7 +87,7 @@ async def on_message(message):
 	#TODO stuff
 	global recording, recent_channel_messages, last_discord_simulation
 	try:
-		if message.server.id == server_id and message.author != client.user:
+		if message.server.id == server_id and not message.author.bot:
 			if message.channel.id in recent_channel_messages.keys():
 				recent_channel_messages[message.channel.id].append(message.content)
 				is_same = same_message_response(message.channel.id)
@@ -85,6 +96,7 @@ async def on_message(message):
 					recent_channel_messages[message.channel.id].clear()
 			if recording is not None and recording == message.channel:
 				recordconvo.record_message(message)
+
 			if message.content[0:5] == '$send':
 				await yang_send(message)
 			elif message.content[0:7] == '$record' and message.author.server_permissions.manage_server:
@@ -93,28 +105,32 @@ async def on_message(message):
 					recording = message.channel
 				else:
 					await client.send_message(message.channel, "Already recording in %s" % (recording.mention))
+			elif message.content == '$trivia':
+				await client.send_message(message.channel, "We do not have enough trivia questions. This feature will be available in the future")
+				#await trivia_question(client, message.channel)
 			elif message.content[0:11] == '$stoprecord' and message.author.server_permissions.manage_server:
 				recordconvo.record_end()
 				recording = None
+			elif message.content[0:8] == '$catfact' or message.content.lower()[0:11] == 'unsubscribe':
+				await client.send_message(message.channel, 'Thank you for subscribing to CatFacts™! Did you know: %s\n\nType "UNSUBSCRIBE" to stop getting cat facts' % get_random_catfact())
 			elif message.timestamp - last_trigger > timedelta(minutes=2):
 				await trigger(message)
-			if len(message.content.split()) > 2 and not message.author.bot and message.channel.id not in no_simulate:
+
+			if len(message.content.split()) > 2 and message.channel.id not in no_simulate:
 				with open(message_cache, 'a') as file:
-					file.write(message.content + '\n')
+					file.write(message.clean_content + '\n')
 			if message.timestamp - last_discord_simulation >= SIMULATION_INTERVAL:
 				simulated_message = simulate(message_cache)
 				if simulated_message is not None:
 					await client.send_message(message.server.get_channel(sim_channel_id), simulated_message)
 					open(message_cache, 'w').close()
 					last_discord_simulation = message.timestamp
-				else:
-					print('Not enough data to simulate')
 	except Exception as e:
 		print('There was an error somewhere in on_message: ' +str(e))
 		traceback.print_exc()
 		print('Message Channel: ' + message.channel.name)
 		print('Message Content: ' + message.content)
-		print('Message Author: ' + message.author.name)
+		print('Message Author: ' + message.author.name + '\n')
 
 
 @client.event
