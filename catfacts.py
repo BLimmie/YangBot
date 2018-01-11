@@ -58,7 +58,7 @@ cat_facts = [
 	"Perhaps the oldest cat breed on record is the Egyptian Mau, which is also the Egyptian language's word for cat",
 	"In one litter of kittens, there could be multiple father cats",
 	"Teeth of cats are sharper when they're kittens. After six months, they lose their needle-sharp milk teeth",
-	"Collectively, kittens yawn about 200 million time per hour",
+	"Collectively, kittens yawn about 200 million times per hour",
 	"According to the International Species Information Service, there are only three Marbled Cats still in existence worldwide.  One lives in the United States.",
 	"Cats show affection and mark their territory by rubbing on people. Glands on their face, tail and paws release a scent to make its mark",
 	"Maine Coons are the most massive breed of house cats. They can weigh up to around 24 pounds",

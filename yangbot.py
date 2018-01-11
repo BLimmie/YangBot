@@ -87,7 +87,7 @@ async def on_message(message):
 	#TODO stuff
 	global recording, recent_channel_messages, last_discord_simulation
 	try:
-		if message.server.id == server_id and not message.author.bot:
+		if message.server.id == server_id and not message.author.bot and message.content != "":
 			if message.channel.id in recent_channel_messages.keys():
 				recent_channel_messages[message.channel.id].append(message.content)
 				is_same = same_message_response(message.channel.id)

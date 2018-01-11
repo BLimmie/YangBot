@@ -8,7 +8,7 @@ def simulate(filename):
 	with open(filename) as file:
 		text = file.read()
 		markov_model = markovify.NewlineText(text)
-		simulation = markov_model.make_sentence(tries=20)
+		simulation = markov_model.make_sentence(max_overlap_ratio = 0.4, max_overlap_total = 10)
 		if simulation is not None:
 			return clean_text(simulation)
 		else:
