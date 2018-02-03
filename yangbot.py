@@ -8,7 +8,7 @@ from datetime import timedelta
 import recordconvo
 from secretvalues import *
 from trigger import *
-from discordsim import simulate, message_cache, SIMULATION_INTERVAL
+from discordsim import simulate, message_cache_ucsb, SIMULATION_INTERVAL
 from trivia import trivia_question
 from catfacts import cat_facts
 
@@ -117,13 +117,13 @@ async def on_message(message):
 				await trigger(message)
 
 			if len(message.content.split()) > 2 and message.channel.id not in no_simulate:
-				with open(message_cache, 'a') as file:
+				with open(message_cache_ucsb, 'a') as file:
 					file.write(message.clean_content + '\n')
 			if message.timestamp - last_discord_simulation >= SIMULATION_INTERVAL:
-				simulated_message = simulate(message_cache)
+				simulated_message = simulate(message_cache_ucsb)
 				if simulated_message is not None:
 					await client.send_message(message.server.get_channel(sim_channel_id), simulated_message)
-					open(message_cache, 'w').close()
+					open(message_cache_ucsb, 'w').close()
 					last_discord_simulation = message.timestamp
 	except Exception as e:
 		print('There was an error somewhere in on_message: ' +str(e))
