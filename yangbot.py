@@ -30,7 +30,7 @@ def contains(text, choices):
 
 on_join_message = "Hello, %s, and welcome to the UCSB Discord Server!\n \nWe ask that you introduce yourself so that the other members can get to know you better. Please post an introduction to our dedicated introductions channel with the following format:\n\n1) Discord handle (username#XXXX)\n2) School/Year/Major or the equivalent (UCSB/3rd/Underwater Basketweaving)\n3) Reason for joining the server (Make new friends)\n4) How you found us. If you found us through another person, please list their name or their discord handle because we like to keep track of who invites other people.\n \nAlso, please read the rules. We don't want to have to ban you because you failed to read a short list of rules.\n \n \n(Disclaimer: This bot is NOT Chancellor Yang, and does not represent his opinions. Attributing anything said by this bot to Chancellor Yang will result in a swift banning)" 
 
-on_toxic_message = "Message has been marked for toxicity:\nUser: {}\nChannel: {}\nMessage: {}\nTime: {}"
+on_toxic_message = "Message has been marked for toxicity:\nUser: {}\nChannel: {}\nTime: {}\nMessage: {}\nCertainty: {}"
 
 recent_channel_messages = {}
 
@@ -91,8 +91,9 @@ async def on_message(message):
 	global recording, recent_channel_messages, last_discord_simulation
 	try:
 		if message.content is not None and message.server.id == server_id and not message.author.bot:
-			if perspective.is_toxic(message.clean_content):
-				await client.send_message(message.server.get_channel(admin_alerts), on_toxic_message.format(message.author.display_name, message.channel.mention, message.clean_content, (message.timestamp-timedelta(hours=7))))
+			toxic, toxic_score = perspective.is_toxic(message.clean_content)
+			if toxic:
+				await client.send_message(message.server.get_channel(admin_alerts), on_toxic_message.format(message.author.display_name, message.channel.mention, (message.timestamp-timedelta(hours=7)), message.clean_content, toxic_score*100))
 			if message.channel.id in recent_channel_messages.keys():
 				recent_channel_messages[message.channel.id].append(message.content)
 				is_same = same_message_response(message.channel.id)

@@ -13,7 +13,7 @@ def is_toxic(message):
 	toxic_json = requests.post(url, headers=header, data=format_json(message))
 	toxic_json = toxic_json.json()
 	score = toxic_json['attributeScores']['TOXICITY']['summaryScore']['value']
-	return score > TOXIC_THRESHOLD
+	return (score > TOXIC_THRESHOLD), score
 
 if __name__ == '__main__':
 	print(is_toxic('what "kind" of idiot name is foo?'))
