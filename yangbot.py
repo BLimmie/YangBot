@@ -11,6 +11,7 @@ from trigger import *
 from discordsim import simulate, message_cache_ucsb, SIMULATION_INTERVAL
 from trivia import trivia_question
 from catfacts import cat_facts
+import perspective
 
 def prune(send_message):
 	pos = send_message.find('>')
@@ -28,6 +29,8 @@ def contains(text, choices):
 
 
 on_join_message = "Hello, %s, and welcome to the UCSB Discord Server!\n \nWe ask that you introduce yourself so that the other members can get to know you better. Please post an introduction to our dedicated introductions channel with the following format:\n\n1) Discord handle (username#XXXX)\n2) School/Year/Major or the equivalent (UCSB/3rd/Underwater Basketweaving)\n3) Reason for joining the server (Make new friends)\n4) How you found us. If you found us through another person, please list their name or their discord handle because we like to keep track of who invites other people.\n \nAlso, please read the rules. We don't want to have to ban you because you failed to read a short list of rules.\n \n \n(Disclaimer: This bot is NOT Chancellor Yang, and does not represent his opinions. Attributing anything said by this bot to Chancellor Yang will result in a swift banning)" 
+
+on_toxic_message = "Message has been marked for toxicity:\nUser: {}\nChannel: {}\nMessage: {}\nTime: {}"
 
 recent_channel_messages = {}
 
@@ -87,7 +90,9 @@ async def on_message(message):
 	#TODO stuff
 	global recording, recent_channel_messages, last_discord_simulation
 	try:
-		if message.server.id == server_id and not message.author.bot and message.content != "":
+		if message.content is not None and message.server.id == server_id and not message.author.bot:
+			if perspective.is_toxic(message.clean_content):
+				await client.send_message(message.server.get_channel(admin_alerts), on_toxic_message.format(message.author.display_name, message.channel.mention, message.clean_content, (message.timestamp-timedelta(hours=7))))
 			if message.channel.id in recent_channel_messages.keys():
 				recent_channel_messages[message.channel.id].append(message.content)
 				is_same = same_message_response(message.channel.id)
@@ -113,7 +118,7 @@ async def on_message(message):
 				recording = None
 			elif message.content[0:8] == '$catfact' or message.content.lower()[0:11] == 'unsubscribe':
 				await client.send_message(message.channel, 'Thank you for subscribing to CatFacts™! Did you know:\n `%s`\n\nType "UNSUBSCRIBE" to stop getting cat facts' % get_random_catfact())
-			elif message.timestamp - last_trigger > timedelta(minutes=2):
+			elif message.timestamp - last_trigger > timedelta(minutes=10):
 				await trigger(message)
 
 			if len(message.content.split()) > 2 and message.channel.id not in no_simulate:
