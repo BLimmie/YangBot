@@ -90,47 +90,48 @@ async def on_message(message):
 	#TODO stuff
 	global recording, recent_channel_messages, last_discord_simulation
 	try:
-		if message.content is not None and message.server.id == server_id and not message.author.bot:
-			toxic, toxic_score = perspective.is_toxic(message.clean_content)
-			if toxic:
-				await client.send_message(message.server.get_channel(admin_alerts), on_toxic_message.format(message.author.display_name, message.channel.mention, (message.timestamp-timedelta(hours=7)), message.clean_content, toxic_score*100))
-			if message.channel.id in recent_channel_messages.keys():
-				recent_channel_messages[message.channel.id].append(message.content)
-				is_same = same_message_response(message.channel.id)
-				if is_same:
-					await client.send_message(message.channel, message.content)
-					recent_channel_messages[message.channel.id].clear()
-			if recording is not None and recording == message.channel:
-				recordconvo.record_message(message)
+		if message.content is not None:
+			if message.server.id == server_id and not message.author.bot:
+				toxic, toxic_score = perspective.is_toxic(message.clean_content)
+				if toxic:
+					await client.send_message(message.server.get_channel(admin_alerts), on_toxic_message.format(message.author.display_name, message.channel.mention, (message.timestamp-timedelta(hours=7)), message.clean_content, toxic_score*100))
+				if message.channel.id in recent_channel_messages.keys():
+					recent_channel_messages[message.channel.id].append(message.content)
+					is_same = same_message_response(message.channel.id)
+					if is_same:
+						await client.send_message(message.channel, message.content)
+						recent_channel_messages[message.channel.id].clear()
+				if recording is not None and recording == message.channel:
+					recordconvo.record_message(message)
 
-			if message.content[0:5] == '$send':
-				await yang_send(message)
-			elif message.content[0:7] == '$record' and message.author.server_permissions.manage_server:
-				if recording is None:
-					recordconvo.record_init()
-					recording = message.channel
-				else:
-					await client.send_message(message.channel, "Already recording in %s" % (recording.mention))
-			elif message.content == '$trivia':
-				await client.send_message(message.channel, "We do not have enough trivia questions. This feature will be available in the future")
-				#await trivia_question(client, message.channel)
-			elif message.content[0:11] == '$stoprecord' and message.author.server_permissions.manage_server:
-				recordconvo.record_end()
-				recording = None
-			elif message.content[0:8] == '$catfact' or message.content.lower()[0:11] == 'unsubscribe':
-				await client.send_message(message.channel, 'Thank you for subscribing to CatFacts™! Did you know:\n `%s`\n\nType "UNSUBSCRIBE" to stop getting cat facts' % get_random_catfact())
-			elif message.timestamp - last_trigger > timedelta(minutes=10):
-				await trigger(message)
+				if message.content[0:5] == '$send':
+					await yang_send(message)
+				elif message.content[0:7] == '$record' and message.author.server_permissions.manage_server:
+					if recording is None:
+						recordconvo.record_init()
+						recording = message.channel
+					else:
+						await client.send_message(message.channel, "Already recording in %s" % (recording.mention))
+				elif message.content == '$trivia':
+					await client.send_message(message.channel, "We do not have enough trivia questions. This feature will be available in the future")
+					#await trivia_question(client, message.channel)
+				elif message.content[0:11] == '$stoprecord' and message.author.server_permissions.manage_server:
+					recordconvo.record_end()
+					recording = None
+				elif message.content[0:8] == '$catfact' or message.content.lower()[0:11] == 'unsubscribe':
+					await client.send_message(message.channel, 'Thank you for subscribing to CatFacts™! Did you know:\n `%s`\n\nType "UNSUBSCRIBE" to stop getting cat facts' % get_random_catfact())
+				elif message.timestamp - last_trigger > timedelta(minutes=10):
+					await trigger(message)
 
-			if len(message.content.split()) > 2 and message.channel.id not in no_simulate:
-				with open(message_cache_ucsb, 'a') as file:
-					file.write(message.clean_content + '\n')
-			if message.timestamp - last_discord_simulation >= SIMULATION_INTERVAL:
-				simulated_message = simulate(message_cache_ucsb)
-				if simulated_message is not None:
-					await client.send_message(message.server.get_channel(sim_channel_id), simulated_message)
-					open(message_cache_ucsb, 'w').close()
-					last_discord_simulation = message.timestamp
+				if len(message.content.split()) > 2 and message.channel.id not in no_simulate:
+					with open(message_cache_ucsb, 'a') as file:
+						file.write(message.clean_content + '\n')
+				if message.timestamp - last_discord_simulation >= SIMULATION_INTERVAL:
+					simulated_message = simulate(message_cache_ucsb)
+					if simulated_message is not None:
+						await client.send_message(message.server.get_channel(sim_channel_id), simulated_message)
+						open(message_cache_ucsb, 'w').close()
+						last_discord_simulation = message.timestamp
 	except Exception as e:
 		print('There was an error somewhere in on_message: ' +str(e))
 		traceback.print_exc()
