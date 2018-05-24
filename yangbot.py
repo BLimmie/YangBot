@@ -80,32 +80,34 @@ async def on_ready():
 	print(client.user.name)
 	print(client.user.id)
 	print('--------')
-	for server in client.servers:
-		for channel in server.channels:
-			if server.me.permissions_in(channel).send_messages:
-				recent_channel_messages[channel.id] = []
-	print('Channels loaded')
-	print(recent_channel_messages)
 
 @client.event
 async def on_message(message):
 	#TODO stuff
 	global recording, recent_channel_messages, last_discord_simulation
-	try:
-		if message.channel.is_private:
+	
+	if message.channel.is_private:
+		try:
 			await client.send_message(message.author, content=(do_not_reply))
+			print('{}\n{}'.format(message.author, message.content))
 			return
-		if message.content is not None and message.content != '':
+		except:
+			print('This fucking error')
+	elif message.content is not None and message.content != '':
+		try:
 			if message.server.id == server_id and not message.author.bot:
 				toxic, toxic_score = perspective.is_toxic(message.clean_content)
 				if toxic:
 					await client.send_message(message.server.get_channel(admin_alerts), on_toxic_message.format(message.author.display_name, message.channel.mention, (message.timestamp-timedelta(hours=7)), message.clean_content, toxic_score*100))
 				if message.channel.id == server_id:
 					if message.content[0] not in '012345':
-						await client.send_message(message.author, content=(on_invalid_intro))
+						try:
+							await client.send_message(message.author, content=(on_invalid_intro))
+						except:
+							print('This fucking error')
 						await client.delete_message(message)
 				if message.channel.id in recent_channel_messages.keys():
-					recent_channel_messages[message.channel.id].append(message.content)
+					recent_channel_messages[message.channel.id].append(message)
 					is_same = same_message_response(message.channel.id)
 					if is_same:
 						await client.send_message(message.channel, message.content)
@@ -141,12 +143,12 @@ async def on_message(message):
 						await client.send_message(message.server.get_channel(sim_channel_id), simulated_message)
 						open(message_cache_ucsb, 'w').close()
 						last_discord_simulation = message.timestamp
-	except Exception as e:
-		print('There was an error somewhere in on_message: ' +str(e))
-		traceback.print_exc()
-		print('Message Channel: ' + message.channel.name)
-		print('Message Content: ' + message.content)
-		print('Message Author: ' + message.author.name + '\n')
+		except Exception as e:
+			print('There was an error somewhere in on_message: ' +str(e))
+			traceback.print_exc()
+			print('Message Channel: ' + message.channel.name)
+			print('Message Content: ' + message.content)
+			print('Message Author: ' + message.author.name + '\n')
 
 
 @client.event
@@ -202,14 +204,14 @@ def same_message_response(channel_id):
 		recent_channel_messages[channel_id].pop(0)
 	if len(recent_channel_messages[channel_id]) < 3:
 		return False
-	s = recent_channel_messages[channel_id][0].lower()
-	if s == recent_channel_messages[channel_id][1].lower() and s == recent_channel_messages[channel_id][2].lower():
-		return True
-	else:
-		return False
+	s = recent_channel_messages[channel_id][0].content.lower()
+	if s == recent_channel_messages[channel_id][1].content.lower() and s == recent_channel_messages[channel_id][2].content.lower():
+		if s.author.id != recent_channel_messages[channel_id][1].author.id and s.author.id != recent_channel_messages[channel_id][2].author.id:
+			return True
+	return False
 
 recording = None
-last_trigger = datetime.now() - timedelta(minutes=2)
+last_trigger = datetime.now() - timedelta(minutes=10)
 last_discord_simulation = datetime.now() - timedelta(hours=1)
 
 client.run(login_token)
