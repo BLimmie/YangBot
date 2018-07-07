@@ -5,7 +5,7 @@ choiced_responses = {
 	"alcohol": "Reminder that underage drinking is prohibited at UCSB.", #should only be triggered by gauchito
 	"mj": "Despite the passing of Prop 64, marijuana usage is prohibited at UCSB except for university-approved research.",
 	"adderall": "If you need to study, go to the UCSB Library. Most people focus the best on the 8th floor.",
-	"fire": "Put on a mask and get back to studying",
+	"fire": "There is no threat to the campus",
 	"drug": "Substance abuse is prohibited at UCSB",
 	"party": "Go back to studying"
 }
