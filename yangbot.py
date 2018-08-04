@@ -10,7 +10,7 @@ from secretvalues import *
 from trigger import *
 from discordsim import simulate, message_cache_ucsb, SIMULATION_INTERVAL
 from trivia import trivia_question
-from catfacts import cat_facts
+from catfacts import get_random_catfact
 import perspective
 
 def prune(send_message):
@@ -63,15 +63,6 @@ async def yang_send(message):
 			await client.send_message(message.channel, 'Syntax is "$send [channel mention] text"')
 	else:
 		await client.send_message(message.channel, 'Invalid Permissions')
-
-prev_cat_fact = "-1"
-def get_random_catfact():
-	global prev_cat_fact
-	while(True):
-		fact = random.choice(cat_facts)
-		if id != prev_cat_fact:
-			prev_cat_fact = fact
-			return fact
 
 
 @client.event
