@@ -10,7 +10,7 @@ from secretvalues import *
 from trigger import *
 from discordsim import simulate, message_cache_ucsb, SIMULATION_INTERVAL
 from trivia import trivia_question
-import catfacts
+from catfacts import get_random_catfact
 import perspective
 
 def prune(send_message):
