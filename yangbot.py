@@ -71,6 +71,10 @@ async def on_ready():
 	print(client.user.name)
 	print(client.user.id)
 	print('--------')
+	for server in client.servers:
+		for channel in server:
+			if client.user.permissions_in(channel).send_messages:
+				recent_channel_messages[channel.id] = []
 
 @client.event
 async def on_message(message):
