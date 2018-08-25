@@ -19,6 +19,8 @@ on_invalid_intro = "Your self._message has been deleted for not following the in
 
 on_toxic_message = "self._message has been marked for toxicity:\nUser: {}\nChannel: {}\nTime: {}\nMessage: {}\nCertainty: {}"
 
+do_not_reply = "I do not reply to private messages. If you have any questions, please message one of the mods, preferably Oppen_heimer."
+
 def prune(send_message):
 	pos = send_message.find('>')
 	return send_message[pos+1:]
@@ -102,6 +104,15 @@ class client_state:
 		elif self._message.content[0:8] == '$catfact':
 			await self._client.send_message(self._message.channel, 'Thank you for subscribing to CatFacts™! Did you know:\n `%s`\n\nType "UNSUBSCRIBE" to stop getting cat facts' % get_random_catfact())	
 
+	async def private_message(self):
+		if self._message.channel.is_private:
+			try:
+				await self._client.send_message(self._message.author, content=(do_not_reply))
+				print('{}\n{}'.format(self._message.author, self._message.content))
+				return True
+			except:
+				print('Error with private message')
+
 	async def invalid_intro(self):
 		if self._message.channel.id == server_id:
 			if self._message.content[0] not in '012345':
@@ -149,10 +160,12 @@ class client_state:
 				self._last_discord_simulation = self._message.timestamp
 
 	async def run(self):
-		await self.get_toxicity()
-		await self.commands()
-		await self.invalid_intro()
-		await self.recent_messages()
-		await self.unsubscribe()
-		await self.trigger()
-		await self.discord_simulation()
+		private = await self.private_message()
+		if not private:
+			await self.get_toxicity()
+			await self.commands()
+			await self.invalid_intro()
+			await self.recent_messages()
+			await self.unsubscribe()
+			await self.trigger()
+			await self.discord_simulation()
