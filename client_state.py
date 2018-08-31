@@ -148,6 +148,18 @@ class client_state:
 						await self._client.send_message(self._message.channel, choiced_responses[option])
 						break
 
+	async def imdadjoke(self):
+		if self._message.content[0:3].lower() == 'im' or self._message.content[0:4].lower() == 'i\'m':
+			jokecontent = self._message.content.split()
+			for i in range(0,len(jokecontent)):
+				if jokecontent[i] == '@everyone':
+					jokecontent.pop(i)
+			if len(jokecontent) < 7 and len(jokecontent) > 1:
+				jokecontent[0] = 'Hello'
+				jokecontent.append('I\'m Chancellor Yang!')
+				jokecontent = ' '.join(jokecontent)
+				await self._client.send_message(self._message.channel, jokecontent)
+
 	async def discord_simulation(self):
 		if len(self._message.content.split()) > 2 and self._message.channel.id not in no_simulate:
 			with open(message_cache_ucsb, 'a') as file:
@@ -168,4 +180,5 @@ class client_state:
 			await self.recent_messages()
 			await self.unsubscribe()
 			await self.trigger()
+			await self.imdadjoke()
 			await self.discord_simulation()
