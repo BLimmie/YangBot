@@ -149,10 +149,10 @@ class client_state:
 						break
 
 	async def imdadjoke(self):
-		if self._message.content[0:3].lower() == 'im' or self._message.content[0:4].lower() == 'i\'m':
+		if self._message.content[0:4].lower() == 'im ' or self._message.content[0:5].lower() == 'i\'m ': ##extra space to avoid false positive on words such as imagine
 			jokecontent = self._message.content.split()
 			for i in range(0,len(jokecontent)):
-				if jokecontent[i] == '@everyone':
+				if jokecontent[i] == '@everyone': ##prevents someone from pinging @everyone with "I'm @everyone"
 					jokecontent.pop(i)
 			if len(jokecontent) < 7 and len(jokecontent) > 1:
 				jokecontent[0] = 'Hello'
