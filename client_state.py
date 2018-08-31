@@ -154,9 +154,9 @@ class client_state:
 			if self._message.content[0:4].lower() == 'im ' or self._message.content[0:5].lower() == 'i\'m ': ##extra space to avoid false positive on words such as imagine
 				jokecontent = self._message.content.split()
 				if len(jokecontent) < 7 and len(jokecontent) > 1:
-					jokecontent[0] = 'Hello'
-					jokecontent.append('I\'m Chancellor Yang!')
+					jokecontent[0] = 'Hi'
 					jokecontent = ' '.join(jokecontent)
+					jokecontent += ', I\'m Chancellor Yang!'
 					self._last_dadjoke = self._message.timestamp
 					await self._client.send_message(self._message.channel, jokecontent)
 
