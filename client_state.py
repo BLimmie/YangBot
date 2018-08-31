@@ -54,6 +54,7 @@ class client_state:
 		self._message = None
 		self._recent_channel_messages = {}
 		self._last_trigger = datetime.now() - timedelta(minutes=10)
+		self._last_dadjoke = datetime.now() - timedelta(minutes=10)
 		self._last_discord_simulation = datetime.now() - timedelta(hours=1)
 		for server in self._client.servers:
 			for channel in server.channels:
@@ -148,6 +149,17 @@ class client_state:
 						await self._client.send_message(self._message.channel, choiced_responses[option])
 						break
 
+	async def imdadjoke(self):
+		if self._message.timestamp - self._last_dadjoke > timedelta(minutes=10):
+			if self._message.content[0:4].lower() == 'im ' or self._message.content[0:5].lower() == 'i\'m ': ##extra space to avoid false positive on words such as imagine
+				jokecontent = self._message.content.split()
+				if len(jokecontent) < 7 and len(jokecontent) > 1:
+					jokecontent[0] = 'Hi'
+					jokecontent = ' '.join(jokecontent)
+					jokecontent += ', I\'m Chancellor Yang!'
+					self._last_dadjoke = self._message.timestamp
+					await self._client.send_message(self._message.channel, jokecontent)
+
 	async def discord_simulation(self):
 		if len(self._message.content.split()) > 2 and self._message.channel.id not in no_simulate:
 			with open(message_cache_ucsb, 'a') as file:
@@ -168,4 +180,5 @@ class client_state:
 			await self.recent_messages()
 			await self.unsubscribe()
 			await self.trigger()
+			await self.imdadjoke()
 			await self.discord_simulation()
