@@ -17,7 +17,7 @@ do_not_reply = "I do not reply to private messages. If you have any questions, p
 
 on_invalid_intro = "Your self._message has been deleted for not following the introduction format that we have listed out. Please follow the format given.\n\n1) Discord handle (username#XXXX)\n2) School/Year/Major or the equivalent (UCSB/3rd/Underwater Basketweaving)\n3) Reason for joining the server (Make new friends)\n4) How you found us.\n5) [Optional] Anything you'd like to say"
 
-on_toxic_message = "self._message has been marked for toxicity:\nUser: {}\nChannel: {}\nTime: {}\nMessage: {}\nCertainty: {}"
+on_toxic_message = "Message has been marked for toxicity:\nUser: {}\nChannel: {}\nTime: {}\nMessage: {}\nCertainty: {}"
 
 do_not_reply = "I do not reply to private messages. If you have any questions, please message one of the mods, preferably Oppen_heimer."
 
@@ -93,9 +93,9 @@ class client_state:
 		elif self._message.content[0:7] == '$record' and self._message.author.server_permissions.manage_server:
 			if self._recording is None:
 				recordconvo.record_init()
-				recording = self._message.channel
+				self._recording = self._message.channel
 			else:
-				await self._client.send_message(self._message.channel, "Already recording in %s" % (recording.mention))
+				await self._client.send_message(self._message.channel, "Already recording in %s" % (self._recording.mention))
 		elif self._message.content == '$trivia':
 			await self._client.send_message(self._message.channel, "We do not have enough trivia questions. This feature will be available in the future")
 			#await trivia_question(self._client, self._message.channel)
@@ -151,9 +151,9 @@ class client_state:
 
 	async def imdadjoke(self):
 		if self._message.timestamp - self._last_dadjoke > timedelta(minutes=10):
-			if self._message.content[0:4].lower() == 'im ' or self._message.content[0:5].lower() == 'i\'m ': ##extra space to avoid false positive on words such as imagine
+			if self._message.content[0:3].lower() == 'im ' or self._message.content[0:4].lower() == 'i\'m ': ##extra space to avoid false positive on words such as imagine
 				jokecontent = self._message.content.split()
-				if len(jokecontent) < 7 and len(jokecontent) > 1:
+				if len(jokecontent) < 4 and len(jokecontent) > 1:
 					jokecontent[0] = 'Hi'
 					jokecontent = ' '.join(jokecontent)
 					jokecontent += ', I\'m Chancellor Yang!'

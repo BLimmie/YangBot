@@ -48,7 +48,7 @@ async def on_message(message):
 async def on_message_edit(before, after):
 	try:
 		if after.server.id == server_id and after.author != client.user:
-			if recording is not None and recording == after.channel:
+			if actions._recording is not None and actions._recording == after.channel:
 				recordconvo.record_message_edit(after)
 	except:
 		print('There was an error somewhere in on_message_edit')
@@ -58,7 +58,7 @@ async def on_message_edit(before, after):
 async def on_message_delete(message):
 	try:
 		if message.server.id == server_id and message.author != client.user:
-			if recording is not None and recording == message.channel:
+			if actions._recording is not None and actions._recording == message.channel:
 				recordconvo.record_message_delete(message)
 	except:
 		print('There was an error somewhere in on_message_delete')
