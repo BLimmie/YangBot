@@ -151,14 +151,15 @@ class client_state:
 
 	async def imdadjoke(self):
 		if self._message.timestamp - self._last_dadjoke > timedelta(minutes=10):
-			if self._message.content[0:3].lower() == 'im ' or self._message.content[0:4].lower() == 'i\'m ': ##extra space to avoid false positive on words such as imagine
-				jokecontent = self._message.content.split()
-				if len(jokecontent) < 4 and len(jokecontent) > 1:
-					jokecontent[0] = 'Hi'
-					jokecontent = ' '.join(jokecontent)
-					jokecontent += ', I\'m Chancellor Yang!'
-					self._last_dadjoke = self._message.timestamp
-					await self._client.send_message(self._message.channel, jokecontent)
+			joke_content = self._message.content.split()
+			for i, word in enumerate(joke_content):
+				if word.lower() == 'im' or word.lower() == 'i\'m':
+					if len(joke_content[i:]) < 6 and len(joke_content[i:]) > 1:
+						joke_content[i] = 'Hi'
+						message_to_send = ' '.join(joke_content[i:]) + ", I'm Chancellor Yang"
+						self._last_dadjoke = self._message.timestamp
+						await self._client.send_message(self._message.channel, message_to_send)
+						return
 
 	async def discord_simulation(self):
 		if len(self._message.content.split()) > 2 and self._message.channel.id not in no_simulate:
