@@ -41,8 +41,9 @@ def same_message_response(recent_channel_messages, channel_id):
 	if len(recent_channel_messages[channel_id]) < 3:
 		return False
 	s = recent_channel_messages[channel_id][0].content.lower()
+	author_check = recent_channel_messages[channel_id][0].author.id
 	if s == recent_channel_messages[channel_id][1].content.lower() and s == recent_channel_messages[channel_id][2].content.lower():
-		if s.author.id != recent_channel_messages[channel_id][1].author.id and s.author.id != recent_channel_messages[channel_id][2].author.id:
+		if author_check != recent_channel_messages[channel_id][1].author.id and author_check != recent_channel_messages[channel_id][2].author.id and recent_channel_messages[channel_id][2] != recent_channel_messages[channel_id][1]:
 			return True
 	return False
 
@@ -60,6 +61,7 @@ class client_state:
 			for channel in server.channels:
 				if server.me.permissions_in(channel).send_messages:
 					self._recent_channel_messages[channel.id] = []
+		print(self._recent_channel_messages)
 
 	def update_state(self, message):
 		self._message = message
