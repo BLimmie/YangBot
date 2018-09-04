@@ -55,7 +55,7 @@ class client_state:
 		self._message = None
 		self._recent_channel_messages = {}
 		self._last_trigger = datetime.now() - timedelta(minutes=10)
-		self._last_dadjoke = datetime.now() - timedelta(minutes=10)
+		self._last_dadjoke = datetime.now() - timedelta(hours=1)
 		self._last_discord_simulation = datetime.now() - timedelta(hours=1)
 		for server in self._client.servers:
 			for channel in server.channels:
@@ -152,11 +152,11 @@ class client_state:
 						break
 
 	async def imdadjoke(self):
-		if self._message.timestamp - self._last_dadjoke > timedelta(minutes=10):
+		if self._message.timestamp - self._last_dadjoke > timedelta(hours=1):
 			joke_content = self._message.content.split()
 			for i, word in enumerate(joke_content):
 				if word.lower() == 'im' or word.lower() == 'i\'m':
-					if len(joke_content[i:]) < 6 and len(joke_content[i:]) > 1:
+					if len(joke_content[i:]) < 3 and len(joke_content[i:]) > 1:
 						joke_content[i] = 'Hi'
 						message_to_send = ' '.join(joke_content[i:]) + ", I'm Chancellor Yang"
 						self._last_dadjoke = self._message.timestamp
@@ -172,6 +172,7 @@ class client_state:
 			if simulated_message is not None:
 				await self._client.send_message(self._message.server.get_channel(sim_channel_id), simulated_message)
 				open(message_cache_ucsb, 'w').close()
+
 				self._last_discord_simulation = self._message.timestamp
 
 	async def run(self):
