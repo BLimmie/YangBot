@@ -133,14 +133,14 @@ class client_state:
 			self._recent_channel_messages[self._message.channel.id].append(self._message)
 			is_same = same_message_response(self._recent_channel_messages, self._message.channel.id)
 			if is_same:
-				if self._recent_message_repeat_clock <= datetime.now() and self._recent_message_cooldown_clock <= datetime.now():
+				if self._recent_message_repeat_clock <= self._message.timestamp and self._recent_message_cooldown_clock <= self._message.timestamp:
 					self._recent_message_repeat_counter = 0
-					self._recent_message_repeat_clock = datetime.now()
-				if self._recent_message_repeat_counter != X: #placeholder value
+					self._recent_message_repeat_clock = self._message.timestamp
+				if self._recent_message_repeat_counter >= 3: #placeholder value
 					await self._client.send_message(self._message.channel, self._message.content)
 					self._recent_message_repeat_counter += 1
-					if self._recent_message_repeat_counter == X: #placeholder value
-						self._recent_message_cooldown_clock = datetime.now() + timedelta(hours=1)
+					if self._recent_message_repeat_counter >= 3: #placeholder value
+						self._recent_message_cooldown_clock = self._message.timestamp + timedelta(hours=1)
 						await self._client.send_message(self._message.channel, 'Also, please stop abusing me')
 					self._recent_channel_messages[self._message.channel.id].clear()
 
