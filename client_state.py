@@ -54,6 +54,9 @@ class client_state:
 		self._recording = False
 		self._message = None
 		self._recent_channel_messages = {}
+		self._recent_message_repeat_counter = 0
+		self._recent_message_repeat_clock = datetime.now() - timedelta(hours=1)
+		self._recent_message_cooldown_clock = datetime.now() - timedelta(hours=1)
 		self._last_trigger = datetime.now() - timedelta(minutes=10)
 		self._last_dadjoke = datetime.now() - timedelta(hours=1)
 		self._last_discord_simulation = datetime.now() - timedelta(hours=1)
@@ -130,8 +133,18 @@ class client_state:
 			self._recent_channel_messages[self._message.channel.id].append(self._message)
 			is_same = same_message_response(self._recent_channel_messages, self._message.channel.id)
 			if is_same:
-				await self._client.send_message(self._message.channel, self._message.content)
-				self._recent_channel_messages[self._message.channel.id].clear()
+				if self._recent_message_repeat_clock <= self._message.timestamp and self._recent_message_cooldown_clock <= self._message.timestamp:
+					self._recent_message_repeat_counter = 0
+					self._recent_message_repeat_clock = self._message.timestamp
+				if self._recent_message_repeat_counter >= 3: #placeholder value
+					if self._recent_message_repeat_counter >= 3: #placeholder value
+						self._recent_message_cooldown_clock = self._message.timestamp + timedelta(hours=1)
+						await self._client.send_message(self._message.channel, 'Please stop trying to abuse me')
+					else:
+						await self._client.send_message(self._message.channel, self._message.content)
+						self._recent_message_repeat_counter += 1
+					self._recent_channel_messages[self._message.channel.id].clear()
+
 
 	async def unsubscribe(self):
 		if self._message.content[:11].lower() == "unsubscribe":
