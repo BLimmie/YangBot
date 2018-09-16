@@ -137,11 +137,12 @@ class client_state:
 					self._recent_message_repeat_counter = 0
 					self._recent_message_repeat_clock = self._message.timestamp
 				if self._recent_message_repeat_counter >= 3: #placeholder value
-					await self._client.send_message(self._message.channel, self._message.content)
-					self._recent_message_repeat_counter += 1
 					if self._recent_message_repeat_counter >= 3: #placeholder value
 						self._recent_message_cooldown_clock = self._message.timestamp + timedelta(hours=1)
-						await self._client.send_message(self._message.channel, 'Also, please stop abusing me')
+						await self._client.send_message(self._message.channel, 'Please stop trying to abuse me')
+					else:
+						await self._client.send_message(self._message.channel, self._message.content)
+						self._recent_message_repeat_counter += 1
 					self._recent_channel_messages[self._message.channel.id].clear()
 
 
