@@ -136,7 +136,7 @@ class client_state:
 				if self._recent_message_repeat_clock <= datetime.now() and self._recent_message_cooldown_clock <= datetime.now():
 					self._recent_message_repeat_counter = 0
 					self._recent_message_repeat_clock = datetime.now()
-				if self._recent_message_repeat_counter = X: #placeholder value
+				if self._recent_message_repeat_counter != X: #placeholder value
 					await self._client.send_message(self._message.channel, self._message.content)
 					self._recent_message_repeat_counter += 1
 					if self._recent_message_repeat_counter == X: #placeholder value
