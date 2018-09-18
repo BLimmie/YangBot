@@ -95,8 +95,8 @@ async def on_member_join(member):
 @client.event
 async def on_member_update(before,after):
 	try:
-		if after.id == '285607618913894402'
-			role_whitelist = ['322140419448242176','338236189738008576','338230169875775499']
+		if after.id == '285607618913894402' #user id here
+			role_whitelist = ['322140419448242176','338236189738008576','338230169875775499'] #admin, regular, friendo
 			undesired_roles = []
 			for role in after.roles:
 				if role.id not in whitelist:
