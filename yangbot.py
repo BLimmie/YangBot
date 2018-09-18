@@ -15,8 +15,6 @@ from catfacts import get_random_catfact
 import perspective
 import client_state
 
-do_not_reply = "I do not reply to private messages. If you have any questions, please message one of the mods, preferably Oppen_heimer."
-
 on_join_message = "Hello, %s, and welcome to the UCSB Discord Server!\n \nWe ask that you introduce yourself so that the other members can get to know you better. Please post an introduction to our dedicated introductions channel with the following format:\n\n1) Discord handle (username#XXXX)\n2) School/Year/Major or the equivalent (UCSB/3rd/Underwater Basketweaving)\n3) Reason for joining the server (Make new friends)\n4) How you found us.\n5) [Optional] Anything you'd like to say\nIf you found us through another person, please list their name or their discord handle because we like to keep track of who invites other people.\n \nAlso, please read the rules. We don't want to have to ban you because you failed to read a short list of rules.\n \n \n(Disclaimer: This bot is NOT Chancellor Yang, and does not represent his opinions.)" 
 
 client = discord.Client()
@@ -34,14 +32,7 @@ async def on_ready():
 @client.event
 async def on_message(message):
 	#TODO stuff
-	if message.channel.is_private:
-		try:
-			await client.send_message(message.author, content=(do_not_reply))
-			print('{}\n{}'.format(message.author, message.content))
-			return
-		except:
-			print('This fucking error')
-	elif message.content is not None and message.content != '' and not message.author.bot:
+	if message.content is not None and message.content != '' and not message.author.bot:
 		try:
 			actions.update_state(message)
 			await actions.run()
@@ -57,7 +48,7 @@ async def on_message(message):
 async def on_message_edit(before, after):
 	try:
 		if after.server.id == server_id and after.author != client.user:
-			if recording is not None and recording == after.channel:
+			if actions._recording is not None and actions._recording == after.channel:
 				recordconvo.record_message_edit(after)
 	except:
 		print('There was an error somewhere in on_message_edit')
@@ -67,7 +58,7 @@ async def on_message_edit(before, after):
 async def on_message_delete(message):
 	try:
 		if message.server.id == server_id and message.author != client.user:
-			if recording is not None and recording == message.channel:
+			if actions._recording is not None and actions._recording == message.channel:
 				recordconvo.record_message_delete(message)
 	except:
 		print('There was an error somewhere in on_message_delete')
