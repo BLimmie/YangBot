@@ -13,28 +13,29 @@ def contains_phrase(message, phrase):
 #There needs to be more helper functions as deemed necessary
 
 class condition_wrapper():
-	def __init__(self, condition):
+	def __init__(self, condition, output):
 		"""
 		Sets the condition of the condition_wrapper
 		"""
-		self.check = condition
-
+		self.condition = condition
+		self.output = output
 	def check(self, message):
 		"""
-		Checks the message against the condition and returns true or false
+		Checks the message against the condition and returns None if false, output if true
 		"""
-		return self.condition(message)
+		if self.condition(message):
+			return self.output
+		return None
 
 def list_check(message, conditions):
 	"""
 	Takes a list of condition wrappers
-	and evaluates them all to finally return 
-	if it passes all conditions
+	returns the output of the first wrapper that is true
 	"""
-	result = True
+	result = None
 	for condition in conditions:
 		result = condition.check(message)
-		if not result:
+		if result is not None:
 			return result
 	return result
 
@@ -47,8 +48,11 @@ if __name__ == "__main__":
 
 	def returns_false(message):
 		return False	
-	test1 = condition_wrapper(returns_true)
-	test2 = condition_wrapper(returns_false)
-	assert (list_check("test",[test1]) == True)
-	assert (list_check("test",[test1,test2]) == False)
-
+	test1 = condition_wrapper(returns_true, "This should output")
+	test2 = condition_wrapper(returns_false, "This should not output")
+	print(list_check("test",[test1]))
+	assert (list_check("test",[test1]) == "This should output")
+	print(list_check("test",[test1,test2]))
+	assert (list_check("test",[test1,test2]) == "This should output")
+	print(list_check("test",[test2]))
+	assert (list_check("test",[test2]) is None)
