@@ -16,5 +16,11 @@ def simulate(filename):
 
 
 def clean_text(text):
-	return text.replace('@', '')
+	split = text.split(" ")
+    	for i in range(len(split)):
+        	if split[0] != split[i]:
+            		return text
+    	else:
+        	return None
+	# return text.replace('@', '')
 	#This is its own method in case more needs to be cleaned
