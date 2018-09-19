@@ -100,8 +100,8 @@ async def on_member_update(before,after):
 			undesired_roles = []
 			for role in after.roles:
 				if role.id not in role_whitelist:
-					undesired_roles.append(role.id)
-			await client.remove_roles(after, undesired_roles)
+					undesired_roles.append(role)
+			await client.remove_roles(after, *undesired_roles)
 	except:
 		print('There was an error somewhere in on_member_update')
 		traceback.print_exc()
