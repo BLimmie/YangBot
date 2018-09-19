@@ -99,7 +99,7 @@ async def on_member_update(before,after):
 			role_whitelist = ['322140419448242176','338236189738008576','338230169875775499'] #admin, regular, friendo
 			undesired_roles = []
 			for role in after.roles:
-				if role.id not in whitelist:
+				if role.id not in role_whitelist:
 					undesired_roles.append()
 			await client.remove_roles(after, undesired_roles)
 	except:
