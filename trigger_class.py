@@ -2,13 +2,20 @@ def contains(message, list_of_phrases):
 	"""
 	Checks if a message (string) contains all 
 	"""
-	pass
+	for phrase in list_of_phrases:
+		if not contains_phrase(phrase):
+			return False
+
+	return True
+	
 
 def contains_phrase(message, phrase):
 	"""
 	Helper for checking if a phrase is in a message
 	"""
-	pass
+	if phrase in message:
+		return True
+	return False
 
 #There needs to be more helper functions as deemed necessary
 
