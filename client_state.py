@@ -82,6 +82,12 @@ class client_state:
 					toxic_score*100
 				)
 			)
+			if toxic_score > 91:
+				await self._client.send_message(
+					self._message.channel,
+					"We didn't accept you into this school to be toxic."
+					)
+				await self._client.delete_message(self._message)
 	
 	async def commands(self):
 		# To be refactored even further
