@@ -88,6 +88,8 @@ class client_state:
 					"We didn't accept you into this school to be toxic."
 					)
 				await self._client.delete_message(self._message)
+				return True
+		return False
 	
 	async def commands(self):
 		# To be refactored even further
@@ -196,7 +198,8 @@ class client_state:
 	async def run(self):
 		private = await self.private_message()
 		if not private:
-			await self.get_toxicity()
+			if (await self.get_toxicity()):
+				return
 			await self.commands()
 			await self.invalid_intro()
 			await self.recent_messages()
