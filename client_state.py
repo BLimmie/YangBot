@@ -82,7 +82,7 @@ class client_state:
 					toxic_score*100
 				)
 			)
-			if toxic_score > 91:
+			if toxic_score > .91:
 				await self._client.send_message(
 					self._message.channel,
 					"We didn't accept you into this school to be toxic."
