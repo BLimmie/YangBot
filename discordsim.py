@@ -21,6 +21,6 @@ def clean_text(text):
     	for i in range(len(split)):
         	if split[0] == split[i]:
             		return None
-        return text
+	return text
 	# return text.replace('@', '')
 	#This is its own method in case more needs to be cleaned
