@@ -120,7 +120,7 @@ class ClientState:
                 self._recording = self._message.channel
             else:
                 await self._client.send_message(self._message.channel,
-                                                "Already recording in %s" % (self._recording.mention))
+                                                "Already recording in %s" % self._recording.mention)
         elif self._message.content == '$trivia':
             await self._client.send_message(self._message.channel, trivia_notice)
         # await trivia_question(self._client, self._message.channel)
@@ -133,7 +133,7 @@ class ClientState:
     async def private_message(self):
         if self._message.channel.is_private:
             try:
-                await self._client.send_message(self._message.author, content=(do_not_reply))
+                await self._client.send_message(self._message.author, content=do_not_reply)
                 print('{}\n{}'.format(self._message.author, self._message.content))
                 return True
             except:
@@ -143,7 +143,7 @@ class ClientState:
         if self._message.channel.id == server_id:
             if self._message.content[0] not in '012345':
                 try:
-                    await self._client.send_message(self._message.author, content=(on_invalid_intro))
+                    await self._client.send_message(self._message.author, content=on_invalid_intro)
                 except:
                     print('Error with invalid_intro')
                 await self._client.delete_message(self._message)
@@ -210,7 +210,7 @@ class ClientState:
     async def run(self):
         private = await self.private_message()
         if not private:
-            if (await self.get_toxicity()):
+            if await self.get_toxicity():
                 return
             await self.commands()
             await self.invalid_intro()

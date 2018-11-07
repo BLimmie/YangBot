@@ -95,7 +95,7 @@ async def on_reaction_remove(reaction, user):
 @client.event
 async def on_member_join(member):
     try:
-        await client.send_message(member, content=(on_join_message % (member.mention)))
+        await client.send_message(member, content=(on_join_message % member.mention))
     except:
         print('There was an error somewhere in on_member_join')
         traceback.print_exc()

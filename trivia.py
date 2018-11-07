@@ -35,7 +35,7 @@ async def trivia_question(client, channel, prev=None):
 
 
 def get_random_trivia_question_id(prev):
-    while (True):
+    while True:
         id = random.choice(list(trivia_list.keys()))
         if prev is None or id != prev:
             return id
