@@ -1,6 +1,7 @@
-import jellyfish
-import discord
 import random
+
+import jellyfish
+
 from trivia_questions import trivia_list
 
 TIMEOUT = 5*60

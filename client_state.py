@@ -1,17 +1,12 @@
-import discord
-import asyncio
-import secretvalues
-import traceback
-import random
 from datetime import datetime
 from datetime import timedelta
+
+import perspective
 import recordconvo
+from catfacts import get_random_catfact
+from discordsim import simulate, message_cache_ucsb, SIMULATION_INTERVAL
 from secretvalues import *
 from trigger import *
-from discordsim import simulate, message_cache_ucsb, SIMULATION_INTERVAL
-from trivia import trivia_question
-from catfacts import get_random_catfact
-import perspective
 
 do_not_reply = "I do not reply to private messages. If you have any questions, please self._message one of the mods, preferably Oppen_heimer."
 
