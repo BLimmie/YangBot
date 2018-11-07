@@ -3,7 +3,7 @@ def contains(message, list_of_phrases):
 	Checks if a message (string) contains all 
 	"""
 	for phrase in list_of_phrases:
-		if not contains_phrase(phrase):
+		if not contains_phrase(message, phrase):
 			return False
 
 	return True
