@@ -30,7 +30,7 @@ trivia_notice = "We do not have enough trivia questions. This feature will be av
 
 def prune(send_message):
     pos = send_message.find('>')
-    return send_message[pos + 1:]
+    return send_message[pos+1:]
 
 
 def contains(text, choices):

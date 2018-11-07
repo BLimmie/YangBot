@@ -4,7 +4,7 @@ import jellyfish
 
 from trivia_questions import trivia_list
 
-TIMEOUT = 5 * 60
+TIMEOUT = 5*60
 
 correct_answer_format = "Correct! The answer is %s"
 incorrect_answer_format = "Wrong. The answer is %s"
