@@ -43,7 +43,7 @@ def same_message_response(recent_channel_messages, channel_id):
 	return False
 
 
-class client_state:
+class ClientState:
 	def __init__(self, client):
 		self._client = client
 		self._recording = False

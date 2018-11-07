@@ -17,7 +17,7 @@ async def on_ready():
 	print(client.user.name)
 	print(client.user.id)
 	print('--------')
-	actions = client_state.client_state(client)
+	actions = client_state.ClientState(client)
 	print('Client State setup complete')
 
 @client.event
