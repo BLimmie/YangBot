@@ -188,7 +188,7 @@ class ClientState:
             joke_content = self._message.content.split()
             for i, word in enumerate(joke_content):
                 if word.lower() == 'im' or word.lower() == "i'm":
-                    if len(joke_content[i:]) < 3 and len(joke_content[i:]) > 1:
+                    if 3 > len(joke_content[i:]) > 1:
                         joke_content[i] = 'Hi'
                         message_to_send = ' '.join(joke_content[i:]) + ", I'm Chancellor Yang"
                         self._last_dadjoke = self._message.timestamp
