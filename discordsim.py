@@ -7,7 +7,7 @@ message_cache_full = 'cached_messages_uc.txt'
 SIMULATION_INTERVAL = timedelta(hours=1)
 
 
-def simulate(filename):
+def simulate(filename=message_cache_ucsb):
     with open(filename) as file:
         text = file.read()
         markov_model = markovify.NewlineText(text)
