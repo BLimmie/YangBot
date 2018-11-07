@@ -8,13 +8,24 @@ from discordsim import simulate, message_cache_ucsb, SIMULATION_INTERVAL
 from secretvalues import *
 from trigger import *
 
-do_not_reply = "I do not reply to private messages. If you have any questions, please self._message one of the mods, preferably Oppen_heimer."
-
-on_invalid_intro = "Your self._message has been deleted for not following the introduction format that we have listed out. Please follow the format given.\n\n1) Discord handle (username#XXXX)\n2) School/Year/Major or the equivalent (UCSB/3rd/Underwater Basketweaving)\n3) Reason for joining the server (Make new friends)\n4) How you found us.\n5) [Optional] Anything you'd like to say"
+on_invalid_intro = ("Your message has been deleted for not following the introduction format that we have listed out."
+                    " Please follow the format given.\n\n"
+                    "1) Discord handle (username#XXXX)\n"
+                    "2) School/Year/Major or the equivalent (UCSB/3rd/Underwater Basketweaving)\n"
+                    "3) Reason for joining the server (Make new friends)\n"
+                    "4) How you found us.\n"
+                    "5) [Optional] Anything you'd like to say")
 
 on_toxic_message = "Message has been marked for toxicity:\nUser: {}\nChannel: {}\nTime: {}\nMessage: {}\nCertainty: {}"
 
-do_not_reply = "I do not reply to private messages. If you have any questions, please message one of the mods, preferably Oppen_heimer."
+do_not_reply = ("I do not reply to private messages. If you have any questions, please message one of the mods,"
+                " preferably Oppen_heimer.")
+
+cat_facts = ('Thank you for subscribing to CatFacts™! Did you know:\n'
+             '`{}`\n\n'
+             'Type "UNSUBSCRIBE" to stop getting cat facts')
+
+trivia_notice = "We do not have enough trivia questions. This feature will be available in the future"
 
 
 def prune(send_message):
@@ -39,11 +50,11 @@ def same_message_response(recent_channel_messages, channel_id):
         return False
     s = recent_channel_messages[channel_id][0].content.lower()
     author_check = recent_channel_messages[channel_id][0].author.id
-    if s == recent_channel_messages[channel_id][1].content.lower() and s == recent_channel_messages[channel_id][
-        2].content.lower():
-        if author_check != recent_channel_messages[channel_id][1].author.id and author_check != \
-                recent_channel_messages[channel_id][2].author.id and recent_channel_messages[channel_id][2] != \
-                recent_channel_messages[channel_id][1]:
+    if (s == recent_channel_messages[channel_id][1].content.lower()
+            and s == recent_channel_messages[channel_id][2].content.lower()):
+        if (author_check != recent_channel_messages[channel_id][1].author.id
+                and author_check != recent_channel_messages[channel_id][2].author.id
+                and recent_channel_messages[channel_id][2] != recent_channel_messages[channel_id][1]):
             return True
     return False
 
@@ -111,15 +122,13 @@ class ClientState:
                 await self._client.send_message(self._message.channel,
                                                 "Already recording in %s" % (self._recording.mention))
         elif self._message.content == '$trivia':
-            await self._client.send_message(self._message.channel,
-                                            "We do not have enough trivia questions. This feature will be available in the future")
+            await self._client.send_message(self._message.channel, trivia_notice)
         # await trivia_question(self._client, self._message.channel)
         elif self._message.content[0:11] == '$stoprecord' and self._message.author.server_permissions.manage_server:
             recordconvo.record_end()
             self._recording = None
         elif self._message.content[0:8] == '$catfact':
-            await self._client.send_message(self._message.channel,
-                                            'Thank you for subscribing to CatFacts™! Did you know:\n `%s`\n\nType "UNSUBSCRIBE" to stop getting cat facts' % get_random_catfact())
+            await self._client.send_message(self._message.channel, cat_facts.format(get_random_catfact()))
 
     async def private_message(self):
         if self._message.channel.is_private:
@@ -144,7 +153,8 @@ class ClientState:
             self._recent_channel_messages[self._message.channel.id].append(self._message)
             is_same = same_message_response(self._recent_channel_messages, self._message.channel.id)
             if is_same:
-                if self._recent_message_repeat_clock <= self._message.timestamp and self._recent_message_cooldown_clock <= self._message.timestamp:
+                if (self._recent_message_repeat_clock <= self._message.timestamp
+                        and self._recent_message_cooldown_clock <= self._message.timestamp):
                     self._recent_message_repeat_counter = 0
                     self._recent_message_repeat_clock = self._message.timestamp + timedelta(hours=1)
                 if self._recent_message_repeat_counter >= 3:  # placeholder value
@@ -157,8 +167,7 @@ class ClientState:
 
     async def unsubscribe(self):
         if self._message.content[:11].lower() == "unsubscribe":
-            await self._client.send_message(self._message.channel,
-                                            'Thank you for subscribing to CatFacts™! Did you know:\n `%s`\n\nType "UNSUBSCRIBE" to stop getting cat facts' % get_random_catfact())
+            await self._client.send_message(self._message.channel, cat_facts.format(get_random_catfact()))
 
     async def trigger(self):
         if self._message.timestamp - self._last_trigger > timedelta(minutes=10):

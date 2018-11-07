@@ -6,7 +6,19 @@ import client_state
 import recordconvo
 from secretvalues import *
 
-on_join_message = "Hello, %s, and welcome to the UCSB Discord Server!\n \nWe ask that you introduce yourself so that the other members can get to know you better. Please post an introduction to our dedicated introductions channel with the following format:\n\n1) Discord handle (username#XXXX)\n2) School/Year/Major or the equivalent (UCSB/3rd/Underwater Basketweaving)\n3) Reason for joining the server (Make new friends)\n4) How you found us.\n5) [Optional] Anything you'd like to say\nIf you found us through another person, please list their name or their discord handle because we like to keep track of who invites other people.\n \nAlso, please read the rules. We don't want to have to ban you because you failed to read a short list of rules.\n \n \n(Disclaimer: This bot is NOT Chancellor Yang, and does not represent his opinions.)"
+on_join_message = ("Hello, %s, and welcome to the UCSB Discord Server!\n\n"
+                   "We ask that you introduce yourself so that the other members can get to know you better."
+                   " Please post an introduction to our dedicated introductions channel with the following format:\n\n"
+                   "1) Discord handle (username#XXXX)\n"
+                   "2) School/Year/Major or the equivalent (UCSB/3rd/Underwater Basketweaving)\n"
+                   "3) Reason for joining the server (Make new friends)\n"
+                   "4) How you found us.\n"
+                   "5) [Optional] Anything you'd like to say\n"
+                   "If you found us through another person, please list their name or their discord handle because we"
+                   " like to keep track of who invites other people.\n\n"
+                   "Also, please read the rules. We don't want to have to ban you because you failed to read a short"
+                   " list of rules.\n\n\n"
+                   "(Disclaimer: This bot is NOT Chancellor Yang, and does not represent his opinions.)")
 
 client = discord.Client()
 actions = None
