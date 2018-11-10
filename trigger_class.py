@@ -1,74 +1,37 @@
-def contains(message, list_of_phrases):
+from typing import List, Pattern
+import re
+
+
+class Trigger:
+    def __init__(self, pattern: Pattern, response: str, gauchito_only=False):
+        self.pattern = pattern
+        self.response = response
+        self.gauchito_only = gauchito_only
+
+    def check(self, message: str):
+        return self.pattern.search(message) is not None
+
+
+def find_response(triggers: List[Trigger], message: str, is_gauchito: bool):
     """
-    Checks if a message (string) contains all 
+    Returns the first matching trigger in a list of triggers given the message contents and whether or not the author
+    is a gauchito.
+
+    Returns None if the message matches none of the triggers
     """
-    for phrase in list_of_phrases:
-        if not contains_phrase(message, phrase):
-            return False
+    for trigger in triggers:
+        if trigger.gauchito_only and not is_gauchito:
+            continue
+        if trigger.check(message):
+            return trigger.response
+    return None
 
-    return True
 
-
-def contains_phrase(message, phrase):
+def compile_phrases(phrases: List[str]):
     """
-    Helper for checking if a phrase is in a message
+    Compiles multiple phrases into a single regex that matches any of the input phrases surrounded by word boundaries.
     """
-    if phrase in message:
-        return True
-    return False
+    # escape regex metacharacters and ignore repeated whitespace in multi-word phrases
+    phrases = [re.escape(phrase).replace(r"\ ", r"\s+") for phrase in phrases]
 
-
-# There needs to be more helper functions as deemed necessary
-
-class ConditionWrapper:
-    def __init__(self, condition, output):
-        """
-        Sets the condition of the condition_wrapper
-        """
-        self.condition = condition
-        self.output = output
-
-    def check(self, message):
-        """
-        Checks the message against the condition and returns None if false, output if true
-        """
-        if self.condition(message):
-            return self.output
-        return None
-
-
-def list_check(message, conditions):
-    """
-    Takes a list of condition wrappers
-    returns the output of the first wrapper that is true
-    """
-    result = None
-    for condition in conditions:
-        result = condition.check(message)
-        if result is not None:
-            return result
-    return result
-
-
-if __name__ == "__main__":
-    """
-    Test code
-    """
-
-
-    def returns_true(message):
-        return True
-
-
-    def returns_false(message):
-        return False
-
-
-    test1 = ConditionWrapper(returns_true, "This should output")
-    test2 = ConditionWrapper(returns_false, "This should not output")
-    print(list_check("test", [test1]))
-    assert (list_check("test", [test1]) == "This should output")
-    print(list_check("test", [test1, test2]))
-    assert (list_check("test", [test1, test2]) == "This should output")
-    print(list_check("test", [test2]))
-    assert (list_check("test", [test2]) is None)
+    return re.compile(r"\b(?:{})\b".format("|".join(phrases)))
