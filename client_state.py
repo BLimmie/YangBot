@@ -6,7 +6,8 @@ import recordconvo
 from catfacts import get_random_catfact
 from discordsim import simulate, message_cache_ucsb, SIMULATION_INTERVAL
 from secretvalues import *
-from trigger import *
+from trigger import triggers
+from trigger_class import find_response
 
 on_invalid_intro = ("Your message has been deleted for not following the introduction format that we have listed out."
                     " Please follow the format given.\n\n"
@@ -171,17 +172,15 @@ class ClientState:
 
     async def trigger(self):
         if self._message.timestamp - self._last_trigger > timedelta(minutes=10):
-            for option, words in trigger_words.items():
-                if option not in gauchito_only:
-                    if contains(self._message.content, words):
-                        self._last_trigger = self._message.timestamp
-                        await self._client.send_message(self._message.channel, choiced_responses[option])
-                        break
-                elif gauchito_id in [role.id for role in self._message.author.roles]:
-                    if contains(self._message.content, words):
-                        self._last_trigger = self._message.timestamp
-                        await self._client.send_message(self._message.channel, choiced_responses[option])
-                        break
+            response = find_response(
+                triggers=triggers,
+                message=self._message.content,
+                is_gauchito=gauchito_id in [role.id for role in self._message.author.roles]
+            )
+
+            if response is not None:
+                self._last_trigger = self._message.timestamp
+                await self._client.send_message(self._message.channel, response)
 
     async def imdadjoke(self):
         if self._message.timestamp - self._last_dadjoke > timedelta(hours=1):
