@@ -30,7 +30,7 @@ triggers = [
     ),
     Trigger(
         predicate=match_phrases(["fire"]),
-        response="If you need to study, go to the UCSB Library. Most people focus the best on the 8th floor."
+        response="There is no threat to the campus."
     ),
     Trigger(
         predicate=match_phrases(["party"]),
