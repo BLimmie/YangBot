@@ -2,14 +2,14 @@ from trigger_class import Trigger, match_phrases
 
 # Phrases that trigger YangBot.
 triggers = [
-    Trigger(
-        predicate=match_phrases(["dank"]),
-        response="I sure hope you're talking about dank memes and not that dank green!"
-    ),
-    Trigger(
-        predicate=match_phrases(["blaze"]),
-        response="I sure hope you're talking about the pizza!"
-    ),
+#    Trigger(
+#       predicate=match_phrases(["dank"]),
+#        response="I sure hope you're talking about dank memes and not that dank green!"
+#    ),
+#    Trigger(
+#        predicate=match_phrases(["blaze"]),
+#        response="I sure hope you're talking about the pizza!"
+#    ),
     Trigger(
         predicate=match_phrases(["alcohol", "vodka", "wine", "beer", "drunk", "whiskey", "beers"]),
         response="Reminder that underage drinking is prohibited at UCSB.",
