@@ -12,11 +12,11 @@ class funcblocker:
         """
         self.func = func
         self.timer = timer
-        self.last_time = datetime.now() - timer
+        self.last_time = datetime.now() - timer if timer is not None else datetime.now()
         self.roles = roles
         self.positive_roles = positive_roles
     
-    def proc(time, member, *args, **kwargs):
+    def proc(self, time, member, *args, **kwargs):
         role = False
         too_soon = True
 
@@ -32,14 +32,14 @@ class funcblocker:
             return
 
         # Check role condition
-        if roles is None:
+        if self.roles is None:
             role = True
-        elif positive_roles:
+        elif self.positive_roles:
             if any(elem in self.roles for elem in member.roles):
                 role = True
-        else: # positive_roles = False
+        else: # self.positive_roles = False
             if not any(elem in self.roles for elem in member.roles):
                 role = True
 
-        if role = True: # and too_soon = False
+        if role: # and too_soon = False
             return self.func(*args, **kwargs)

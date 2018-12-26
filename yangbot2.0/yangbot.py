@@ -11,8 +11,8 @@ class YangBot():
         Initialization of all data and functions of the bot
         """
         # Functions
-        self.auto_on_message = {}
-        self.command_on_message = {}
+        self.auto_on_message_list = {}
+        self.command_on_message_list = {}
         self.react_option = {}
         self.on_user_change = {}
 
@@ -20,21 +20,21 @@ class YangBot():
         self.cur = dbcur
         self.client = client
 
-    async def send_message(message_info):
+    async def send_message(self, message_info):
         """
         Sends message to channel in message_info
         """
         if message_info is None:
             return
-        if message_info.content is None:
+        if message_info.message is None:
             return
         if isinstance(message_info.channel, int):
             channel = self.client.get_channel(message_info.channel)
         else:
             channel = message_info.channel
-        channel.send(message_info.content)
+        await channel.send(message_info.message)
 
-    def auto_on_message(timer = None, roles = None, positive_roles = True):
+    def auto_on_message(self, timer = None, roles = None, positive_roles = True):
         """
         Decorator for automatic on_message function
         
@@ -47,18 +47,18 @@ class YangBot():
         """
         def wrap(func):
             def wrapper(message):
-                message_info = func(message)
+                return func(message)
             
-            self.auto_on_message[func.__name__] = funcblocker(wrapper, timer, roles, positive_roles)
+            self.auto_on_message_list[func.__name__] = funcblocker(wrapper, timer, roles, positive_roles)
             return wrapper
         return wrap
 
-    async def run_auto_on_message(message):
-        for key, func in self.auto_on_message:
+    async def run_auto_on_message(self,message):
+        for (key, func) in self.auto_on_message_list.items():
             message_info = func.proc(message.created_at, message.author, message)
-            await send_message(message_info)
+            await self.send_message(message_info)
 
-    def command_on_message(timer = None, roles = None, positive_roles = True):
+    def command_on_message(self, timer = None, roles = None, positive_roles = True):
         """
         Decorator for command on_message function
         name of the function is the command YangBot looks for
@@ -79,17 +79,17 @@ class YangBot():
         """
         def wrap(func):
             def wrapper(message):
-                message_info = func(message)
+                return func(message)
 
-            self.auto_on_message[func.__name__] = funcblocker(wrapper, timer, roles, positive_roles)
+            self.command_on_message_list[func.__name__] = funcblocker(wrapper, timer, roles, positive_roles)
             return wrapper
         return wrap
     
-    async def run_command_on_message(message):
+    async def run_command_on_message(self, message):
         """
         Precondition: message content starts with '$'
         """
         command = message.content.split()[0][1:]
-        if command in self.command_on_message:
+        if command in self.command_on_message_list:
             message_info = self.command_on_message[command].proc(message.created_at, message.author, message)
             await send_message(message_info)
