@@ -1,8 +1,8 @@
 import discord
 import asyncio
 
-from tools.funcblocker import funcblocker
-from tools.message_return import message_data
+from src.tools.funcblocker import funcblocker
+from src.tools.message_return import message_data
 
 
 class YangBot():
@@ -34,7 +34,7 @@ class YangBot():
             channel = message_info.channel
         await channel.send(message_info.message)
 
-    def auto_on_message(self, timer = None, roles = None, positive_roles = True):
+    def auto_on_message(self, timer = None, roles = None, positive_roles = True, coro = None):
         """
         Decorator for automatic on_message function
         
@@ -49,16 +49,18 @@ class YangBot():
             def wrapper(message):
                 return func(message)
             
-            self.auto_on_message_list[func.__name__] = funcblocker(wrapper, timer, roles, positive_roles)
+            self.auto_on_message_list[func.__name__] = funcblocker(wrapper, timer, roles, positive_roles, coro)
             return wrapper
         return wrap
 
-    async def run_auto_on_message(self,message):
+    async def run_auto_on_message(self, message, *args):
         for (key, func) in self.auto_on_message_list.items():
             message_info = func.proc(message.created_at, message.author, message)
             await self.send_message(message_info)
+            if func.coro is not None:
+                await func.coro(*args)
 
-    def command_on_message(self, timer = None, roles = None, positive_roles = True):
+    def command_on_message(self, timer = None, roles = None, positive_roles = True, coro = None):
         """
         Decorator for command on_message function
         name of the function is the command YangBot looks for
@@ -81,15 +83,17 @@ class YangBot():
             def wrapper(message):
                 return func(message)
 
-            self.command_on_message_list[func.__name__] = funcblocker(wrapper, timer, roles, positive_roles)
+            self.command_on_message_list[func.__name__] = funcblocker(wrapper, timer, roles, positive_roles, coro)
             return wrapper
         return wrap
     
-    async def run_command_on_message(self, message):
+    async def run_command_on_message(self, message, *args):
         """
         Precondition: message content starts with '$'
         """
         command = message.content.split()[0][1:]
         if command in self.command_on_message_list:
-            message_info = self.command_on_message[command].proc(message.created_at, message.author, message)
-            await send_message(message_info)
+            message_info = self.command_on_message_list[command].proc(message.created_at, message.author, message)
+            await self.send_message(message_info)
+            if self.command_on_message_list[command].coro is not None:
+                await self.command_on_message_list.coro(*args)

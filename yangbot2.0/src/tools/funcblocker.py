@@ -2,19 +2,21 @@ from datetime import datetime, timedelta
 
 
 class funcblocker:
-    def __init__(self, func, timer, roles, positive_roles=True):
+    def __init__(self, func, timer, roles, positive_roles=True, coro=None):
         """
         args:
         func (function) = method to run
         timer (timedelta) = time between method procs, None if no timer
         roles (list of string) = list of role names, None if no restriction
         positive_roles (boolean) = True if only proc if user has roles, False if only proc if user has none of the roles
+        coro (couroutine) = couroutine to run after sending message
         """
         self.func = func
         self.timer = timer
         self.last_time = datetime.now() - timer if timer is not None else datetime.now()
         self.roles = roles
         self.positive_roles = positive_roles
+        self.coro = coro
     
     def proc(self, time, member, *args, **kwargs):
         role = False
