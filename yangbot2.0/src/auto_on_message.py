@@ -3,7 +3,7 @@ import psycopg2
 from src.yangbot import YangBot
 from src.tools.message_return import message_data
 
-def init(bot, config, conn):
+def init(bot, config):
     pass
     # @bot.auto_on_message(None, None, True)
     # def unsubscribe(message):

@@ -18,6 +18,9 @@ class funcblocker:
         self.positive_roles = positive_roles
         self.coro = coro
     
+    def simple_proc(self, *args, **kwargs):
+        return self.func(*args, **kwargs)
+
     def proc(self, time, member, *args, **kwargs):
         role = False
         too_soon = True

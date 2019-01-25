@@ -1,12 +1,13 @@
 import discord
 import asyncio
+import inspect
 
 from src.tools.funcblocker import funcblocker
 from src.tools.message_return import message_data
 
 
 class YangBot():
-    def __init__(self, dbcur, client):
+    def __init__(self, dbconn, client):
         """
         Initialization of all data and functions of the bot
         """
@@ -15,9 +16,10 @@ class YangBot():
         self.command_on_message_list = {}
         self.react_option = {}
         self.on_user_change = {}
+        self.on_member_join_list = {}
 
         # All necessary data
-        self.cur = dbcur
+        self.conn = dbconn
         self.client = client
 
     async def send_message(self, message_info):
@@ -54,7 +56,7 @@ class YangBot():
         return wrap
 
     async def run_auto_on_message(self, message, *args):
-        for (key, func) in self.auto_on_message_list.items():
+        for func in self.auto_on_message_list.values():
             message_info = func.proc(message.created_at, message.author, message)
             await self.send_message(message_info)
             if func.coro is not None:
@@ -96,4 +98,22 @@ class YangBot():
             message_info = self.command_on_message_list[command].proc(message.created_at, message.author, message)
             await self.send_message(message_info)
             if self.command_on_message_list[command].coro is not None:
-                await self.command_on_message_list.coro(*args)
+                await self.command_on_message_list.coro(*message_info.args)
+
+    def on_member_join(self, timer = None, roles = None, positive_roles = True, coro = None):
+        def wrap(func):
+            def wrapper(user):
+                return func(user)
+            self.on_member_join_list[func.__name__] = funcblocker(wrapper, timer, roles, positive_roles, coro)
+            return wrapper
+        return wrap
+    
+    async def run_on_member_join(self, user, *args):
+        for func in self.on_member_join_list.values():
+            if inspect.iscoroutinefunction(func.func):
+                message_info = await func.simple_proc(user)
+            else:
+                message_info = func.simple_proc(user)
+            await self.send_message(message_info)
+            if func.coro is not None:
+                await func.coro(*message_info.args)

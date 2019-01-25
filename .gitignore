@@ -3,3 +3,5 @@ secret*
 *__pycache__/
 *.csv
 *.txt
+test.py
+.vscode
