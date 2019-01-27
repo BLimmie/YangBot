@@ -1,10 +1,9 @@
 import psycopg2
 
-from src.yangbot import YangBot
 from src.tools.message_return import message_data
 from src.modules.db_helper import member_exists
 
-def init(bot, config):
+def init(bot):
     @bot.command_on_message()
     def catfact(message):
         pass
@@ -21,7 +20,7 @@ def init(bot, config):
                     INSERT INTO Members (id, default_nickname)
                     VALUES (%s, %s) ;
                 """,
-                (user.id, user.nick if user.nick is not None else user.name))
+                (user.id, user.display_name))
                 conn.commit()
             except:
                 conn.rollback()

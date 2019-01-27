@@ -7,7 +7,7 @@ from src.tools.message_return import message_data
 
 
 class YangBot():
-    def __init__(self, dbconn, client):
+    def __init__(self, dbconn, client, config):
         """
         Initialization of all data and functions of the bot
         """
@@ -17,10 +17,12 @@ class YangBot():
         self.react_option = {}
         self.on_user_change = {}
         self.on_member_join_list = {}
+        self.on_member_update_list = {}
 
         # All necessary data
         self.conn = dbconn
         self.client = client
+        self.config = config
 
     async def send_message(self, message_info):
         """
@@ -50,17 +52,16 @@ class YangBot():
         def wrap(func):
             def wrapper(message):
                 return func(message)
-            
             self.auto_on_message_list[func.__name__] = funcblocker(wrapper, timer, roles, positive_roles, coro)
             return wrapper
         return wrap
 
-    async def run_auto_on_message(self, message, *args):
+    async def run_auto_on_message(self, message):
         for func in self.auto_on_message_list.values():
             message_info = func.proc(message.created_at, message.author, message)
             await self.send_message(message_info)
             if func.coro is not None:
-                await func.coro(*args)
+                await func.coro(*message_info.args, **message_info.kwargs)
 
     def command_on_message(self, timer = None, roles = None, positive_roles = True, coro = None):
         """
@@ -70,7 +71,7 @@ class YangBot():
         e.g. 
         
         def test(message):
-            return message_data(0000000000, message.content)
+            return message_data(0000000000, message.content, args, kwargs)
         
         procs on $test
 
@@ -84,12 +85,11 @@ class YangBot():
         def wrap(func):
             def wrapper(message):
                 return func(message)
-
             self.command_on_message_list[func.__name__] = funcblocker(wrapper, timer, roles, positive_roles, coro)
             return wrapper
         return wrap
     
-    async def run_command_on_message(self, message, *args):
+    async def run_command_on_message(self, message):
         """
         Precondition: message content starts with '$'
         """
@@ -98,22 +98,34 @@ class YangBot():
             message_info = self.command_on_message_list[command].proc(message.created_at, message.author, message)
             await self.send_message(message_info)
             if self.command_on_message_list[command].coro is not None:
-                await self.command_on_message_list.coro(*message_info.args)
+                await self.command_on_message_list[command].coro(*message_info.args, **message_info.kwargs)
 
-    def on_member_join(self, timer = None, roles = None, positive_roles = True, coro = None):
+    def on_member_join(self, coro = None):
         def wrap(func):
             def wrapper(user):
                 return func(user)
-            self.on_member_join_list[func.__name__] = funcblocker(wrapper, timer, roles, positive_roles, coro)
+            self.on_member_join_list[func.__name__] = funcblocker(wrapper, coro=coro)
             return wrapper
         return wrap
     
-    async def run_on_member_join(self, user, *args):
+    async def run_on_member_join(self, user):
         for func in self.on_member_join_list.values():
-            if inspect.iscoroutinefunction(func.func):
-                message_info = await func.simple_proc(user)
-            else:
-                message_info = func.simple_proc(user)
+            message_info = func.simple_proc(user)
             await self.send_message(message_info)
             if func.coro is not None:
-                await func.coro(*message_info.args)
+                await func.coro(*message_info.args, **message_info.kwargs)
+    
+    def on_member_update(self, coro = None):
+        def wrap(func):
+            def wrapper(before, after):
+                return func(before, after)
+            self.on_member_update_list[func.__name__] = funcblocker(wrapper, None, None, False, coro)
+            return wrapper
+        return wrap
+    
+    async def run_on_member_update(self, before, after):
+        for func in self.on_member_update_list.values():
+            message_info = func.simple_proc(before, after)
+            await self.send_message(message_info)
+            if func.coro is not None and message_info is not None:
+                await func.coro(*message_info.args, **message_info.kwargs)

@@ -2,7 +2,7 @@ from datetime import datetime, timedelta
 
 
 class funcblocker:
-    def __init__(self, func, timer, roles, positive_roles=True, coro=None):
+    def __init__(self, func, timer=None, roles=None, positive_roles=True, coro=None):
         """
         args:
         func (function) = method to run
