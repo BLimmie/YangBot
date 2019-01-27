@@ -19,9 +19,16 @@ class funcblocker:
         self.coro = coro
     
     def simple_proc(self, *args, **kwargs):
+        """
+        Run the function with the given args
+        """
         return self.func(*args, **kwargs)
 
     def proc(self, time, member, *args, **kwargs):
+        """
+        Run the function with the given time, member, and args.
+        Use this when a function has restrictions (i.e. not for on_member_update/join)
+        """
         role = False
         too_soon = True
 

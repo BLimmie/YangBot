@@ -42,10 +42,19 @@ class YangBot():
         """
         Decorator for automatic on_message function
         
+        e.g.
+
+        @bot.auto_on_message(timer, roles, positive_roles, coro)
+        def test(message):
+            return message_data(0000000000, message.content, args, kwargs)
+
+        procs on every message
+
         args:
         timer (timedelta) = time between procs
         roles (list of string) = role names to check
         positive_roles (boolean) = True if only proc if user has roles, False if only proc if user has none of the roles
+        coro (coroutine) = coroutine to run after function finishes running
         secondary_args:
         func (function) = function to run, returns a message_data
         """
@@ -60,16 +69,17 @@ class YangBot():
         for func in self.auto_on_message_list.values():
             message_info = func.proc(message.created_at, message.author, message)
             await self.send_message(message_info)
-            if func.coro is not None:
+            if func.coro is not None and message_info is not None:
                 await func.coro(*message_info.args, **message_info.kwargs)
 
     def command_on_message(self, timer = None, roles = None, positive_roles = True, coro = None):
         """
-        Decorator for command on_message function
+        Decorator for command_on_message function
         name of the function is the command YangBot looks for
         
         e.g. 
-        
+
+        @bot.command_on_message(timer, roles, positive_roles, coro)
         def test(message):
             return message_data(0000000000, message.content, args, kwargs)
         
@@ -79,6 +89,7 @@ class YangBot():
         timer (timedelta) = time between procs
         roles (list of string) = role names to check
         positive_roles (boolean) = True if only proc if user has roles, False if only proc if user has none of the roles
+        coro (coroutine) = coroutine to run after function finishes running
         secondary_args:
         func (function) = function to run, returns a message_data
         """
@@ -97,10 +108,26 @@ class YangBot():
         if command in self.command_on_message_list:
             message_info = self.command_on_message_list[command].proc(message.created_at, message.author, message)
             await self.send_message(message_info)
-            if self.command_on_message_list[command].coro is not None:
+            if self.command_on_message_list[command].coro is not None and message_info is not None:
                 await self.command_on_message_list[command].coro(*message_info.args, **message_info.kwargs)
 
     def on_member_join(self, coro = None):
+        """
+        Decorator for on_member_join function
+        
+        e.g. 
+
+        @bot.on_member_join(coro)
+        def test(user):
+            return message_data(None, None, args, kwargs)
+        
+        procs on all member joins
+
+        args:
+        coro (coroutine) = coroutine to run after function finishes running
+        secondary_args:
+        func (function) = function to run, returns a message_data
+        """
         def wrap(func):
             def wrapper(user):
                 return func(user)
@@ -112,10 +139,26 @@ class YangBot():
         for func in self.on_member_join_list.values():
             message_info = func.simple_proc(user)
             await self.send_message(message_info)
-            if func.coro is not None:
+            if func.coro is not None and message_info is not None:
                 await func.coro(*message_info.args, **message_info.kwargs)
     
     def on_member_update(self, coro = None):
+        """
+        Decorator for on_member_udpate function
+        
+        e.g. 
+
+        @bot.on_member_update(coro)
+        def test(user):
+            return message_data(None, None, args, kwargs)
+        
+        procs on all member updates (see discord.py documentation for what this means)
+
+        args:
+        coro (coroutine) = coroutine to run after function finishes running
+        secondary_args:
+        func (function) = function to run, returns a message_data
+        """
         def wrap(func):
             def wrapper(before, after):
                 return func(before, after)
