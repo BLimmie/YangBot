@@ -36,12 +36,13 @@ class YangBot():
             channel = self.client.get_channel(message_info.channel)
         else:
             channel = message_info.channel
-        await channel.send(message_info.message)
+        message = await channel.send(message_info.message)
+        return message
 
-    def auto_on_message(self, timer = None, roles = None, positive_roles = True, coro = None):
+    def auto_on_message(self, timer=None, roles=None, positive_roles=True, coro=None):
         """
         Decorator for automatic on_message function
-        
+
         e.g.
 
         @bot.auto_on_message(timer, roles, positive_roles, coro)
@@ -61,28 +62,30 @@ class YangBot():
         def wrap(func):
             def wrapper(message):
                 return func(message)
-            self.auto_on_message_list[func.__name__] = funcblocker(wrapper, timer, roles, positive_roles, coro)
+            self.auto_on_message_list[func.__name__] = funcblocker(
+                wrapper, timer, roles, positive_roles, coro)
             return wrapper
         return wrap
 
     async def run_auto_on_message(self, message):
         for func in self.auto_on_message_list.values():
-            message_info = func.proc(message.created_at, message.author, message)
+            message_info = func.proc(
+                message.created_at, message.author, message)
             await self.send_message(message_info)
             if func.coro is not None and message_info is not None:
                 await func.coro(*message_info.args, **message_info.kwargs)
 
-    def command_on_message(self, timer = None, roles = None, positive_roles = True, coro = None):
+    def command_on_message(self, timer=None, roles=None, positive_roles=True, coro=None):
         """
         Decorator for command_on_message function
         name of the function is the command YangBot looks for
-        
+
         e.g. 
 
         @bot.command_on_message(timer, roles, positive_roles, coro)
         def test(message):
             return message_data(0000000000, message.content, args, kwargs)
-        
+
         procs on $test
 
         args:
@@ -96,31 +99,33 @@ class YangBot():
         def wrap(func):
             def wrapper(message):
                 return func(message)
-            self.command_on_message_list[func.__name__] = funcblocker(wrapper, timer, roles, positive_roles, coro)
+            self.command_on_message_list[func.__name__] = funcblocker(
+                wrapper, timer, roles, positive_roles, coro)
             return wrapper
         return wrap
-    
+
     async def run_command_on_message(self, message):
         """
         Precondition: message content starts with '$'
         """
         command = message.content.split()[0][1:]
         if command in self.command_on_message_list:
-            message_info = self.command_on_message_list[command].proc(message.created_at, message.author, message)
+            message_info = self.command_on_message_list[command].proc(
+                message.created_at, message.author, message)
             await self.send_message(message_info)
             if self.command_on_message_list[command].coro is not None and message_info is not None:
                 await self.command_on_message_list[command].coro(*message_info.args, **message_info.kwargs)
 
-    def on_member_join(self, coro = None):
+    def on_member_join(self, coro=None):
         """
         Decorator for on_member_join function
-        
+
         e.g. 
 
         @bot.on_member_join(coro)
         def test(user):
             return message_data(None, None, args, kwargs)
-        
+
         procs on all member joins
 
         args:
@@ -131,27 +136,28 @@ class YangBot():
         def wrap(func):
             def wrapper(user):
                 return func(user)
-            self.on_member_join_list[func.__name__] = funcblocker(wrapper, coro=coro)
+            self.on_member_join_list[func.__name__] = funcblocker(
+                wrapper, coro=coro)
             return wrapper
         return wrap
-    
+
     async def run_on_member_join(self, user):
         for func in self.on_member_join_list.values():
             message_info = func.simple_proc(user)
             await self.send_message(message_info)
             if func.coro is not None and message_info is not None:
                 await func.coro(*message_info.args, **message_info.kwargs)
-    
-    def on_member_update(self, coro = None):
+
+    def on_member_update(self, coro=None):
         """
         Decorator for on_member_udpate function
-        
+
         e.g. 
 
         @bot.on_member_update(coro)
         def test(user):
             return message_data(None, None, args, kwargs)
-        
+
         procs on all member updates (see discord.py documentation for what this means)
 
         args:
@@ -162,13 +168,14 @@ class YangBot():
         def wrap(func):
             def wrapper(before, after):
                 return func(before, after)
-            self.on_member_update_list[func.__name__] = funcblocker(wrapper, None, None, False, coro)
+            self.on_member_update_list[func.__name__] = funcblocker(
+                wrapper, None, None, False, coro)
             return wrapper
         return wrap
-    
+
     async def run_on_member_update(self, before, after):
         for func in self.on_member_update_list.values():
             message_info = func.simple_proc(before, after)
-            await self.send_message(message_info)
+            message = await self.send_message(message_info)
             if func.coro is not None and message_info is not None:
-                await func.coro(*message_info.args, **message_info.kwargs)
+                await func.coro(message, *message_info.args, **message_info.kwargs)

@@ -1,5 +1,6 @@
 import discord
 
+
 async def add_roles(member, roles):
     """
     Give a member roles
@@ -9,6 +10,7 @@ async def add_roles(member, roles):
     roles = list of role objects to give
     """
     await member.add_roles(*roles)
+
 
 async def change_nickname(member, name):
     """

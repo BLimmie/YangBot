@@ -9,7 +9,8 @@ class funcblocker:
         timer (timedelta) = time between method procs, None if no timer
         roles (list of string) = list of role names, None if no restriction
         positive_roles (boolean) = True if only proc if user has roles, False if only proc if user has none of the roles
-        coro (couroutine) = couroutine to run after sending message
+        coro (couroutine) = couroutine to run after sending message. 
+        The first argument of the coro should be the message that was sent or None if no message was sent.
         """
         self.func = func
         self.timer = timer
@@ -17,7 +18,7 @@ class funcblocker:
         self.roles = roles
         self.positive_roles = positive_roles
         self.coro = coro
-    
+
     def simple_proc(self, *args, **kwargs):
         """
         Run the function with the given args
@@ -49,9 +50,9 @@ class funcblocker:
         elif self.positive_roles:
             if any(elem in self.roles for elem in member.roles):
                 role = True
-        else: # self.positive_roles = False
+        else:  # self.positive_roles = False
             if not any(elem in self.roles for elem in member.roles):
                 role = True
 
-        if role: # and too_soon = False
+        if role:  # and too_soon = False
             return self.func(*args, **kwargs)

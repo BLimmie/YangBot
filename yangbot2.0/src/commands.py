@@ -3,6 +3,7 @@ import psycopg2
 from src.tools.message_return import message_data
 from src.modules.db_helper import member_exists
 
+
 def init(bot):
     @bot.command_on_message()
     def catfact(message):
@@ -20,7 +21,7 @@ def init(bot):
                     INSERT INTO Members (id, default_nickname)
                     VALUES (%s, %s) ;
                 """,
-                (user.id, user.display_name))
+                            (user.id, user.display_name))
                 conn.commit()
             except:
                 conn.rollback()
@@ -34,7 +35,7 @@ def init(bot):
                     SET role_%s = True
                     WHERE id = '%s' ;
                 """,
-                (role.id, user.id))
+                            (role.id, user.id))
                 conn.commit()
             except psycopg2.Error as e:
                 conn.rollback()
@@ -53,7 +54,7 @@ def init(bot):
                 DELETE FROM Members
                 WHERE id = '%s' ;
             """,
-            (user.id,))
+                        (user.id,))
             conn.commit()
         except psycopg2.Error as e:
             conn.rollback()
@@ -64,7 +65,7 @@ def init(bot):
                 INSERT INTO Members (id, default_nickname)
                 VALUES (%s, %s) ;
             """,
-            (user.id, user.nick if user.nick is not None else user.name))
+                        (user.id, user.nick if user.nick is not None else user.name))
             conn.commit()
         except:
             conn.rollback()
@@ -77,7 +78,7 @@ def init(bot):
                     SET role_%s = True
                     WHERE id = '%s' ;
                 """,
-                (role.id, user.id))
+                            (role.id, user.id))
                 conn.commit()
             except psycopg2.Error as e:
                 conn.rollback()

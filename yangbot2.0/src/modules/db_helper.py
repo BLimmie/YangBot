@@ -1,5 +1,6 @@
 import psycopg2
 
+
 def member_exists(conn, id):
     """
     Check if a member exists in the database
@@ -14,6 +15,7 @@ def member_exists(conn, id):
         return cur.fetchone() is not None
     except:
         conn.rollback()
+
 
 def fetch_member(conn, id):
     """

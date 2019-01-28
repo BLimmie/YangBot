@@ -26,6 +26,6 @@ for _, role in roles.items():
     ALTER TABLE Members
     ADD COLUMN role_%s bool DEFAULT False;
     """,
-    (role,))
+                (role,))
 
 conn.commit()

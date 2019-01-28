@@ -2,6 +2,7 @@ import psycopg2
 
 from src.tools.message_return import message_data
 
+
 def init(bot):
     pass
     # @bot.auto_on_message(None, None, True)

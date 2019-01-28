@@ -3,13 +3,16 @@ import psycopg2
 from src.tools.message_return import message_data
 from src.modules.db_helper import member_exists, fetch_member
 
+
 def init(bot):
     @bot.on_member_update()
     def update_database(before, after):
         user_id = after.id
         conn = bot.conn
-        roles_deleted = [role.id for role in before.roles if role not in after.roles]
-        roles_added = [role.id for role in after.roles if role not in before.roles]
+        roles_deleted = [
+            role.id for role in before.roles if role not in after.roles]
+        roles_added = [
+            role.id for role in after.roles if role not in before.roles]
         print(roles_deleted)
         print(roles_added)
         if len(roles_deleted) == 0 and len(roles_added) == 0:
@@ -21,7 +24,7 @@ def init(bot):
                     INSERT INTO Members (id, default_nickname)
                     VALUES (%s, %s) ;
                 """,
-                (after.id, after.display_name))
+                            (after.id, after.display_name))
                 conn.commit()
             except:
                 conn.rollback()
@@ -33,7 +36,7 @@ def init(bot):
                     SET role_%s = False
                     WHERE id = '%s' ;
                 """,
-                (role, user_id))
+                            (role, user_id))
                 conn.commit()
             except psycopg2.Error as e:
                 conn.rollback()
@@ -46,7 +49,7 @@ def init(bot):
                     SET role_%s = True
                     WHERE id = '%s' ;
                 """,
-                (role, user_id))
+                            (role, user_id))
                 conn.commit()
             except psycopg2.Error as e:
                 conn.rollback()
