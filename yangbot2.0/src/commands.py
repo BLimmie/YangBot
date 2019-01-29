@@ -2,12 +2,7 @@ import psycopg2
 
 from src.tools.message_return import message_data
 from src.modules.db_helper import member_exists
-<<<<<<< Updated upstream
-from src.modules.discord_helper import kick_member
-=======
-from src.modules.discord_helper import change_nickname
->>>>>>> Stashed changes
-
+from src.modules.discord_helper import change_nickname, kick_member
 
 def init(bot):
     @bot.command_on_message()
@@ -89,17 +84,16 @@ def init(bot):
                 conn.rollback()
 
         return message_data(message.channel, "User registration reset")
-<<<<<<< Updated upstream
     
     @bot.command_on_message(coro=kick_member)
     def kickme(message):
         conn = bot.conn
         if not member_exists(conn, message.author.id):
-            return message_data(message.channel, "You aren't registered in my memory yet. Please register with $register")
-        return message_data(message.author, "See you later!",[message.author])
-=======
+            return message_data(message.channel, "You aren't registered in my memory yet. Please register with $register first")
+        return message_data(message.author, "See you later!", args=[message.author])
 
     async def nickname_request(message, member, new_nickname):
+        await member.send("Your nickname request has been submitted")
         await message.add_reaction('✅')
         await message.add_reaction('❎')
         def check(reaction, user):
@@ -108,4 +102,14 @@ def init(bot):
         reaction, user = bot.client.wait_for("reaction_add", check=check)
         if str(reaction.emoji) == '✅':
             change_nickname(member, new_nickname)
->>>>>>> Stashed changes
+
+    @bot.command_on_message(coro=nickname_request)
+    def nickname(message):
+        user = message.author
+        content = message.content
+        nickname = " ".join(content.split()[1:])
+        return message_data(
+            bot.client.get_channel(bot.config["requests_channel"]), 
+            message= "Member {} is requesting a nickname change\nNew nickname: {}".format(user.display_name, nickname), 
+            args=[user, nickname]
+        )
