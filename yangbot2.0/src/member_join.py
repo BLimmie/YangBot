@@ -28,4 +28,5 @@ def init(bot):
             #     dm = user.create_dm()
             # else:
             #     dm = user.dm_channel
-            return message_data(None, None, [user, member_roles, nickname])
+            return message_data(user, "Your roles have been restored", [user, member_roles, nickname])
+            

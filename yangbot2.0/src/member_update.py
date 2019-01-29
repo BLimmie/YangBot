@@ -9,12 +9,8 @@ def init(bot):
     def update_database(before, after):
         user_id = after.id
         conn = bot.conn
-        roles_deleted = [
-            role.id for role in before.roles if role not in after.roles]
-        roles_added = [
-            role.id for role in after.roles if role not in before.roles]
-        print(roles_deleted)
-        print(roles_added)
+        roles_deleted = [role.id for role in before.roles if role not in after.roles]
+        roles_added = [role.id for role in after.roles if role not in before.roles]
         if len(roles_deleted) == 0 and len(roles_added) == 0:
             return
         if not member_exists(conn, user_id):

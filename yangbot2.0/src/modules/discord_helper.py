@@ -21,3 +21,12 @@ async def change_nickname(member, name):
     name (string) = nickname to give member
     """
     await member.edit(nick=name)
+
+async def kick_member(member):
+    """
+    Kicks a member
+
+    args:
+    member = member object
+    """
+    await member.kick()

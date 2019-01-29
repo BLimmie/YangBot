@@ -2,6 +2,7 @@ import psycopg2
 
 from src.tools.message_return import message_data
 from src.modules.db_helper import member_exists
+from src.modules.discord_helper import kick_member
 
 
 def init(bot):
@@ -84,3 +85,10 @@ def init(bot):
                 conn.rollback()
 
         return message_data(message.channel, "User registration reset")
+    
+    @bot.command_on_message(coro=kick_member)
+    def kickme(message):
+        conn = bot.conn
+        if not member_exists(conn, message.author.id):
+            return message_data(message.channel, "You aren't registered in my memory yet. Please register with $register")
+        return message_data(message.author, "See you later!",[message.author])
