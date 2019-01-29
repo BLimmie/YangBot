@@ -1,12 +1,12 @@
 import psycopg2
 
 from src.tools.message_return import message_data
-from src.modules.db_helper import member_exists, fetch_member
+from src.modules.db_helper import member_exists, fetch_member, refresh_member_in_db
 
 
 def init(bot):
     @bot.on_member_update()
-    def update_database(before, after):
+    def update_database_roles(before, after):
         user_id = after.id
         conn = bot.conn
         roles_deleted = [role.id for role in before.roles if role not in after.roles]
@@ -22,6 +22,8 @@ def init(bot):
                 """,
                             (after.id, after.display_name))
                 conn.commit()
+                refresh_member_in_db(conn, after, bot.config["roles"])
+                return
             except:
                 conn.rollback()
         for role in roles_deleted:
@@ -48,4 +50,38 @@ def init(bot):
                             (role, user_id))
                 conn.commit()
             except psycopg2.Error as e:
+                conn.rollback()
+
+    @bot.on_member_update()
+    def update_database_name(before, after):
+        if before.display_name == after.display_name:
+            return
+        conn = bot.conn
+        print(before.display_name, after.display_name)
+        if not member_exists(conn, after.id):
+            try:
+                cur = conn.cursor()
+                cur.execute("""
+                    INSERT INTO Members (id, default_nickname)
+                    VALUES (%s, %s) ;
+                """,
+                            (after.id, after.display_name))
+                conn.commit()
+                refresh_member_in_db(conn, after, bot.config["roles"])
+                return
+            except:
+                conn.rollback()
+        else:
+            try:
+                cur = conn.cursor()
+                cur.execute("""
+                        UPDATE Members
+                        SET default_nickname = %s
+                        WHERE id = '%s' ;
+                    """, 
+                    (after.display_name, after.id)
+                )
+                conn.commit()
+                print("we got here")
+            except:
                 conn.rollback()

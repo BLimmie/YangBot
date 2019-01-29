@@ -30,13 +30,13 @@ class YangBot():
         """
         if message_info is None:
             return
-        if message_info.message is None:
+        if message_info.message is None and message_info.embed is None:
             return
         if isinstance(message_info.channel, int):
             channel = self.client.get_channel(message_info.channel)
         else:
             channel = message_info.channel
-        message = await channel.send(message_info.message)
+        message = await channel.send(message_info.message, embed=message_info.embed)
         return message
 
     def auto_on_message(self, timer=None, roles=None, positive_roles=True, coro=None):
@@ -71,9 +71,9 @@ class YangBot():
         for func in self.auto_on_message_list.values():
             message_info = func.proc(
                 message.created_at, message.author, message)
-            await self.send_message(message_info)
+            message = await self.send_message(message_info)
             if func.coro is not None and message_info is not None:
-                await func.coro(*message_info.args, **message_info.kwargs)
+                await func.coro(message, *message_info.args, **message_info.kwargs)
 
     def command_on_message(self, timer=None, roles=None, positive_roles=True, coro=None):
         """
@@ -112,9 +112,9 @@ class YangBot():
         if command in self.command_on_message_list:
             message_info = self.command_on_message_list[command].proc(
                 message.created_at, message.author, message)
-            await self.send_message(message_info)
+            message = await self.send_message(message_info)
             if self.command_on_message_list[command].coro is not None and message_info is not None:
-                await self.command_on_message_list[command].coro(*message_info.args, **message_info.kwargs)
+                await self.command_on_message_list[command].coro(message, *message_info.args, **message_info.kwargs)
 
     def on_member_join(self, coro=None):
         """
@@ -144,9 +144,9 @@ class YangBot():
     async def run_on_member_join(self, user):
         for func in self.on_member_join_list.values():
             message_info = func.simple_proc(user)
-            await self.send_message(message_info)
+            message = await self.send_message(message_info)
             if func.coro is not None and message_info is not None:
-                await func.coro(*message_info.args, **message_info.kwargs)
+                await func.coro(message, *message_info.args, **message_info.kwargs)
 
     def on_member_update(self, coro=None):
         """

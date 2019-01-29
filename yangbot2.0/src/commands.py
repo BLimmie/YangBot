@@ -2,7 +2,11 @@ import psycopg2
 
 from src.tools.message_return import message_data
 from src.modules.db_helper import member_exists
+<<<<<<< Updated upstream
 from src.modules.discord_helper import kick_member
+=======
+from src.modules.discord_helper import change_nickname
+>>>>>>> Stashed changes
 
 
 def init(bot):
@@ -85,6 +89,7 @@ def init(bot):
                 conn.rollback()
 
         return message_data(message.channel, "User registration reset")
+<<<<<<< Updated upstream
     
     @bot.command_on_message(coro=kick_member)
     def kickme(message):
@@ -92,3 +97,15 @@ def init(bot):
         if not member_exists(conn, message.author.id):
             return message_data(message.channel, "You aren't registered in my memory yet. Please register with $register")
         return message_data(message.author, "See you later!",[message.author])
+=======
+
+    async def nickname_request(message, member, new_nickname):
+        await message.add_reaction('✅')
+        await message.add_reaction('❎')
+        def check(reaction, user):
+            return reaction.message.id == message.id and not user.bot and (str(reaction.emoji) == '✅' or str(reaction.emoji) == '❎')
+
+        reaction, user = bot.client.wait_for("reaction_add", check=check)
+        if str(reaction.emoji) == '✅':
+            change_nickname(member, new_nickname)
+>>>>>>> Stashed changes
