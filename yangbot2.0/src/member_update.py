@@ -57,7 +57,6 @@ def init(bot):
         if before.display_name == after.display_name:
             return
         conn = bot.conn
-        print(before.display_name, after.display_name)
         if not member_exists(conn, after.id):
             try:
                 cur = conn.cursor()
@@ -82,6 +81,5 @@ def init(bot):
                     (after.display_name, after.id)
                 )
                 conn.commit()
-                print("we got here")
             except:
                 conn.rollback()

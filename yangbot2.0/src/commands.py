@@ -99,9 +99,9 @@ def init(bot):
         def check(reaction, user):
             return reaction.message.id == message.id and not user.bot and (str(reaction.emoji) == '✅' or str(reaction.emoji) == '❎')
 
-        reaction, user = bot.client.wait_for("reaction_add", check=check)
+        reaction, user = await bot.client.wait_for("reaction_add", check=check)
         if str(reaction.emoji) == '✅':
-            change_nickname(member, new_nickname)
+            await change_nickname(member, new_nickname)
 
     @bot.command_on_message(coro=nickname_request)
     def nickname(message):
