@@ -22,7 +22,7 @@ async def change_nickname(member, name):
     """
     await member.edit(nick=name)
 
-async def kick_member(member):
+async def kick_member(message, member):
     """
     Kicks a member
 
