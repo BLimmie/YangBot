@@ -67,7 +67,7 @@ def init(bot):
         conn = bot.conn
         if not member_exists(conn, message.author.id):
             return message_data(message.channel, "You aren't registered in my memory yet. Please register with $register first")
-        return message_data(message.author, "See you later!", args=[message.author])
+        return message_data(message.author, "See you later! Rejoin at http://ucsbfriendos.org", args=[message.author])
 
     async def nickname_request(message, member, new_nickname):
         await member.send("Your nickname request has been submitted")
