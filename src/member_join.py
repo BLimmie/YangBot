@@ -20,7 +20,7 @@ def init(bot):
         conn = bot.conn
         if member_exists(conn, user.id):
             member = fetch_member(conn, user.id)
-            roles = bot.config["roles"].values()
+            roles = sorted(bot.config["roles"].values())
             member_roles = [bot.client.get_guild(int(bot.config["server_id"])).get_role(
                 role[0]) for role in zip(roles, member[2:]) if role[1]]
             nickname = member[1]

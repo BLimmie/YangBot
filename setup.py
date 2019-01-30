@@ -21,7 +21,7 @@ cur.execute("""
 
 conn.commit()
 
-for _, role in roles.items():
+for role in sorted(roles.values()):
     cur.execute("""
     ALTER TABLE Members
     ADD COLUMN role_%s bool DEFAULT False;
