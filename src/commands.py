@@ -1,7 +1,7 @@
 import psycopg2
 
 from src.tools.message_return import message_data
-from src.modules.db_helper import member_exists
+from src.modules.db_helper import member_exists, refresh_member_in_db
 from src.modules.discord_helper import change_nickname, kick_member
 
 def init(bot):
@@ -23,22 +23,11 @@ def init(bot):
                 """,
                             (user.id, user.display_name))
                 conn.commit()
+                refresh_member_in_db(conn,user,bot.config["roles"])
             except:
                 conn.rollback()
         else:
             return message_data(message.channel, "User already registered")
-        for role in user.roles:
-            try:
-                cur = conn.cursor()
-                cur.execute("""
-                    UPDATE Members
-                    SET role_%s = True
-                    WHERE id = '%s' ;
-                """,
-                            (role.id, user.id))
-                conn.commit()
-            except psycopg2.Error as e:
-                conn.rollback()
         return message_data(message.channel, "User registered")
 
     @bot.command_on_message()
@@ -65,23 +54,11 @@ def init(bot):
                 INSERT INTO Members (id, default_nickname)
                 VALUES (%s, %s) ;
             """,
-                        (user.id, user.nick if user.nick is not None else user.name))
+                        (user.id, user.display_name))
             conn.commit()
+            refresh_member_in_db(conn, user, bot.config["roles"])
         except:
             conn.rollback()
-
-        for role in user.roles:
-            try:
-                cur = conn.cursor()
-                cur.execute("""
-                    UPDATE Members
-                    SET role_%s = True
-                    WHERE id = '%s' ;
-                """,
-                            (role.id, user.id))
-                conn.commit()
-            except psycopg2.Error as e:
-                conn.rollback()
 
         return message_data(message.channel, "User registration reset")
     

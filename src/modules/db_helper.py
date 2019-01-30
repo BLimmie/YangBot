@@ -76,7 +76,6 @@ def refresh_member_in_db(conn, member, config_roles):
                         (int(role), member.id)
                     )
                     conn.commit()
-                    print(int(role), "True")
                 except:
                     conn.rollback()
                     return FAIL
@@ -91,7 +90,30 @@ def refresh_member_in_db(conn, member, config_roles):
                         (int(role), member.id)
                     )
                     conn.commit()
-                    print(int(role), "False")
                 except:
                     conn.rollback()
                     return FAIL
+
+def remove_role(conn, role_id):
+    try:
+        cur = conn.cursor()
+        cur.execute("""
+            ALTER TABLE Members
+            DROP COLUMN role_%s;
+        """,
+        (role_id,))
+        conn.commit()
+    except:
+        conn.rollback()
+
+def add_role(conn, role_id):
+    try:
+        cur = conn.cursor()
+        cur.execute("""
+            ALTER TABLE Members
+            ADD COLUMN role_%s bool DEFAULT False;
+        """,
+        (role_id,))
+        conn.commit()
+    except:
+        conn.rollback()

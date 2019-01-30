@@ -24,9 +24,5 @@ def init(bot):
             member_roles = [bot.client.get_guild(int(bot.config["server_id"])).get_role(
                 role[0]) for role in zip(roles, member[2:]) if role[1]]
             nickname = member[1]
-            # if user.dm_channel is None:
-            #     dm = user.create_dm()
-            # else:
-            #     dm = user.dm_channel
             return message_data(user, "Your roles have been restored", args=[user, member_roles, nickname])
             
