@@ -78,7 +78,14 @@ def init(bot):
 
         reaction, user = await bot.client.wait_for("reaction_add", check=check)
         if str(reaction.emoji) == '✅':
-            await change_nickname(member, new_nickname)
+            try:
+                await change_nickname(member, new_nickname)
+            except:
+                await member.send("Nickname can't be changed")
+                return
+            await member.send("Your nickname request has been approved")
+        else:
+            await member.send("Your nickname request has been rejected")
 
     @bot.command_on_message(coro=nickname_request)
     def nickname(message):

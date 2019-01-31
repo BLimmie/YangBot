@@ -12,7 +12,7 @@ import src.member_update as member_update
 
 config = json.load(open('config.json'))
 
-DATABASE_URL = os.environ['YANGBOT_DB']
+DATABASE_URL = os.environ['DATABASE_URL']
 conn = psycopg2.connect(DATABASE_URL, sslmode='require')
 
 client = discord.Client()
