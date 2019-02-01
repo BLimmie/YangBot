@@ -111,3 +111,22 @@ def init(bot):
             message= "Member {} is requesting a nickname change\nNew nickname: {}".format(user.display_name, nickname), 
             args=[user, nickname]
         )
+
+    async def remove_message(message, command):
+        await command.delete()
+    
+    send_roles = [
+        bot.config["roles"]["Club Officers"],
+        bot.config["roles"]["Admins"],
+        bot.config["roles"]["Yangbot Devs"],
+        bot.config["roles"]["Server Legacy"]
+    ]
+    @bot.command_on_message(roles=send_roles,positive_roles=True,coro=remove_message)
+    def send(message):
+        content = message.content
+        if len(message.channel_mentions) > 0:
+            return message_data(
+                message.channel_mentions[0],
+                content[content.find('>')+1:],
+                args=[message]
+            )
