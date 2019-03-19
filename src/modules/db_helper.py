@@ -1,6 +1,5 @@
 import psycopg2
 
-
 SUCCESS = 0
 FAIL = None
 
@@ -101,7 +100,7 @@ def remove_role(conn, role_id):
             ALTER TABLE Members
             DROP COLUMN role_%s;
         """,
-        (role_id,))
+        (int(role_id),))
         conn.commit()
     except:
         conn.rollback()
@@ -113,7 +112,23 @@ def add_role(conn, role_id):
             ALTER TABLE Members
             ADD COLUMN role_%s bool DEFAULT False;
         """,
-        (role_id,))
+        (int(role_id),))
         conn.commit()
-    except:
+    except Exception as e:
+        print(e)
         conn.rollback()
+
+if __name__ == "__main__":
+    import os
+    import argparse
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--id')
+    parser.add_argument('--delete', action='store_true')
+    args = parser.parse_args()
+    DATABASE_URL = os.environ['DATABASE_URL']
+    conn = psycopg2.connect(DATABASE_URL, sslmode='require')
+    print(DATABASE_URL)
+    if args.delete:
+        remove_role(conn, args.id)
+    else:
+        add_role(conn, args.id)
