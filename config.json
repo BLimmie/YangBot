@@ -21,7 +21,9 @@
         "Admins": 322140419448242176,
         "Club Officers": 270730327469719553,
         "2021": 557352577814233158,
-        "2023": 557347165547003951
+        "2023": 557347165547003951,
+        "Timeout": 557351724566708274,
+        "Muted": 500037399494262825
     },
     "role_schema": [270730327469719553, 
         322140419448242176, 
@@ -42,7 +44,9 @@
         518908406057402388, 
         526130516324515842,
         557352577814233158,
-        557347165547003951
+        557347165547003951,
+        557351724566708274,
+        500037399494262825
     ],
     "self_roles": ["Fitness Peeps", "IV Dining", "Lib Sessions", "Dining Peeps"],
     "admin_role_whitelist": ["Admins", "Club Officers", "Yangbot Interns", "Friendo", "Gaucho", "Fitness Peeps", "IV Dining", "Lib Sessions", "Dining Peeps", "2021", "2023"]
