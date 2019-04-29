@@ -2,6 +2,7 @@ import requests
 
 def send_format(catfact):
     return """
+    Thank you for subscribing to CatFacts™
     Did you know:
     ```
     {}
