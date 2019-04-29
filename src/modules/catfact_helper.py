@@ -1,19 +1,9 @@
-import aiohttp
-import asyncio
+import requests
 
 def get_catfact():
-    async def _get_catfact():
-        async with aiohttp.ClientSession() as session:
-            async with session.get('https://catfact.ninja/fact') as resp:
-                data = await resp.json()
-                return data['fact']
-    main_loop = asyncio.get_event_loop()
-    loop = asyncio.new_event_loop()
-    asyncio.set_event_loop(loop)
-    result = loop.run_until_complete(_get_catfact())
-    loop.close()
-    asyncio.set_event_loop(main_loop)
-    return result
+	response = requests.get("https://catfact.ninja/fact")
+	data = response.json()
+	return data['fact']
     
 
 
