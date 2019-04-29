@@ -2,12 +2,12 @@ import requests
 
 def send_format(catfact):
     return """
-    Thank you for subscribing to CatFacts™
-    Did you know:
-    ```
-    {}
-    ```
-    Type "UNSUBSCRIBE" to unsubscribe from future catfacts.
+Thank you for subscribing to CatFacts™
+Did you know:
+```
+{}
+```
+Type "UNSUBSCRIBE" to unsubscribe from future catfacts.
     """.format(catfact)
 
 def get_catfact():
