@@ -3,11 +3,12 @@ import psycopg2
 from src.tools.message_return import message_data
 from src.modules.db_helper import member_exists, refresh_member_in_db
 from src.modules.discord_helper import change_nickname, kick_member
+from src.modules.catfact_helper import get_catfact
 
 def init(bot):
     @bot.command_on_message()
     def catfact(message):
-        pass
+        return message_data(message.channel, get_catfact())
 
     @bot.command_on_message()
     def register(message):
