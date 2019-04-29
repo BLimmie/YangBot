@@ -42,12 +42,12 @@ def fetch_member_roles(conn,id,roles):
         cur = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
         cur.execute("SELECT * FROM Members where id = '%s'", (id,))
         member = cur.fetchone()
-        roles = []
+        member_roles= []
         for role in roles:
             key = "role_"+str(role)
             if member[key]:
-                roles.append(role)
-        return roles
+                member_roles.append(role)
+        return member_roles
     except:
         conn.rollback()
         return FAIL
