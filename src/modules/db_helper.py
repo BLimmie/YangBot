@@ -1,4 +1,5 @@
 import psycopg2
+import psycopg2.extras
 
 SUCCESS = 0
 FAIL = None
@@ -36,6 +37,29 @@ def fetch_member(conn, id):
         conn.rollback()
         return FAIL
 
+def fetch_member_roles(conn,id):
+    try:
+        cur = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
+        cur.execute("SELECT * FROM Members where id = '%s'", (id,))
+        member = cur.fetchone()
+        roles = []
+        for col_name in member:
+            if col_name.startswith("role_"):
+                roles.append(col_name[len("role_"):])
+        return roles
+    except:
+        conn.rollback()
+        return FAIL
+
+def fetch_member_nickname(conn,id):
+    try:
+        cur = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
+        cur.execute("SELECT * FROM Members where id = '%s'", (id,))
+        member = cur.fetchone()
+        return member["default_nickname"]
+    except:
+        conn.rollback()
+        return FAIL
 
 def refresh_member_in_db(conn, member, config_roles):
     """
