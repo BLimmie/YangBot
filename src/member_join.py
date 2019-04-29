@@ -19,7 +19,7 @@ def init(bot):
     def restore_roles(user):
         conn = bot.conn
         if member_exists(conn, user.id):
-            roles = sorted(bot.config["role_schema"].values())
+            roles = sorted(bot.config["role_schema"])
             member = fetch_member_roles(conn, user.id, roles)
             member_roles = [bot.client.get_guild(int(bot.config["server_id"])).get_role(
                 role) for role in member]
