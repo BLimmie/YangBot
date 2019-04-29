@@ -5,8 +5,7 @@ def send_format(catfact):
 Thank you for subscribing to CatFacts™
 Did you know:
 ```
-{}
-```
+{}```
 Type "UNSUBSCRIBE" to unsubscribe from future catfacts.
     """.format(catfact)
 
