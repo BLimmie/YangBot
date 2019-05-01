@@ -25,7 +25,7 @@ def init(bot):
             await toxic_message.delete()
             await toxic_message.channel.send("We didn't accept you into this school to be toxic.")
 
-    @bot.auto_on_message(None, None, True)
+    @bot.auto_on_message(None, None, True, coro=remove_toxicity)
     def check_toxicity(message):
         send_message, score = toxicity_helper.get_toxicity(message)
         return message_data(bot.config["toxic_notif_channel"], send_message, args=[score,message])
