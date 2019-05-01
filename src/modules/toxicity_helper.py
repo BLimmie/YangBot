@@ -1,6 +1,7 @@
 import requests
 import os
 import json
+from datetime import timedelta
 
 api_key = os.environ["PERSPECTIVE_API"]
 TOXIC_THRESHOLD = .83
@@ -16,7 +17,7 @@ def send_format(message, score):
     return  "Message has been marked for toxicity:\nUser: {}\nChannel: {}\nTime: {}\nMessage: {}\nCertainty: {}".format(
                     message.author.display_name, 
                     message.channel.mention, 
-                    (message.timestamp - timedelta(hours=7)), 
+                    (message.created_at - timedelta(hours=7)), 
                     message.clean_content, 
                     score*100
                 )
