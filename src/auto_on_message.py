@@ -14,7 +14,7 @@ def init(bot):
 
     @bot.auto_on_message(None, None, True)
     def private_message(message):
-        if isinstance(message.channel, (discord.DMChannel, discord.GroundChannel)):
+        if isinstance(message.channel, (discord.DMChannel, discord.GroupChannel)):
             return message_data(message.channel, "I do not reply to private messages. If you have any questions, please message one of the mods.")
         return None
     # @bot.auto_on_message(None,None,True)
