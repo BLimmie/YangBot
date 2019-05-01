@@ -40,7 +40,7 @@ def get_toxicity(message):
     if is_toxic:
         return send_format(message, score), score
     else:
-        return None
+        return None, score
     
 
 
