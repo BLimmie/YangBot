@@ -1,6 +1,5 @@
 import psycopg2
 
-from src.tools.message_return import message_data
 from src.modules.db_helper import member_exists, fetch_member, refresh_member_in_db
 
 
@@ -77,7 +76,7 @@ def init(bot):
                         UPDATE Members
                         SET default_nickname = %s
                         WHERE id = '%s' ;
-                    """, 
+                    """,
                     (after.display_name, after.id)
                 )
                 conn.commit()

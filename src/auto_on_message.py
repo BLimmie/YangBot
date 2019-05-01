@@ -1,4 +1,3 @@
-import psycopg2
 import discord
 
 from src.tools.message_return import message_data

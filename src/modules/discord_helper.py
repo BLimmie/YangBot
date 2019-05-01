@@ -1,6 +1,3 @@
-import discord
-
-
 async def add_roles(member, roles):
     """
     Give a member roles

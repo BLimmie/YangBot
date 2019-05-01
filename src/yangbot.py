@@ -1,9 +1,6 @@
 import discord
-import asyncio
-import inspect
 
 from src.tools.funcblocker import funcblocker
-from src.tools.message_return import message_data
 
 
 class YangBot():
@@ -153,7 +150,7 @@ class YangBot():
         """
         Decorator for on_member_udpate function
 
-        e.g. 
+        e.g.
 
         @bot.on_member_update(coro)
         def test(user):

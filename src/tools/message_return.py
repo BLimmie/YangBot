@@ -1,5 +1,5 @@
 class message_data:
-    def __init__(self, channel=None, message=None, embed=None, args=[], kwargs={}):
+    def __init__(self, channel=None, message=None, embed=None, args=None, kwargs=None):
         """
         message_data is a container to be returned at the end of each YangBot function
 
@@ -11,5 +11,5 @@ class message_data:
         self.channel = channel
         self.message = message
         self.embed = embed
-        self.args = args
-        self.kwargs = kwargs
+        self.args = args if args is not None else []
+        self.kwargs = kwargs if kwargs is not None else {}

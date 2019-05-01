@@ -1,5 +1,4 @@
 import psycopg2
-import json
 
 from src.tools.message_return import message_data
 

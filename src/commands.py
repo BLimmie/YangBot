@@ -108,8 +108,8 @@ def init(bot):
                 args=[user, None]
             )
         return message_data(
-            bot.client.get_channel(bot.config["requests_channel"]), 
-            message= "Member {} is requesting a nickname change\nNew nickname: {}".format(user.display_name, nickname), 
+            bot.client.get_channel(bot.config["requests_channel"]),
+            message= "Member {} is requesting a nickname change\nNew nickname: {}".format(user.display_name, nickname),
             args=[user, nickname]
         )
 

@@ -84,7 +84,7 @@ def refresh_member_in_db(conn, member, config_roles):
         except:
             conn.rollback()
             return FAIL
-        
+
         member_roles = [role.id for role in member.roles]
         for role in config_roles.values():
             if int(role) in member_roles:

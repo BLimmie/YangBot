@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta
+from datetime import datetime
 
 
 class funcblocker:
@@ -9,7 +9,7 @@ class funcblocker:
         timer (timedelta) = time between method procs, None if no timer
         roles (list of string) = list of role ids, None if no restriction
         positive_roles (boolean) = True if only proc if user has roles, False if only proc if user has none of the roles
-        coro (couroutine) = couroutine to run after sending message. 
+        coro (couroutine) = couroutine to run after sending message.
         The first argument of the coro should be the message that was sent or None if no message was sent.
         """
         self.func = func

@@ -15,10 +15,10 @@ def format_json(message):
 
 def send_format(message, score):
     return  "Message has been marked for toxicity:\nUser: {}\nChannel: {}\nTime: {}\nMessage: {}\nCertainty: {}".format(
-                    message.author.display_name, 
-                    message.channel.mention, 
-                    (message.created_at - timedelta(hours=7)), 
-                    message.clean_content, 
+                    message.author.display_name,
+                    message.channel.mention,
+                    (message.created_at - timedelta(hours=7)),
+                    message.clean_content,
                     score*100
                 )
 
@@ -41,7 +41,7 @@ def get_toxicity(message):
         return send_format(message, score), score
     else:
         return None, score
-    
+
 
 
 if __name__ == "__main__":
