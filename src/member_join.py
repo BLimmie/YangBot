@@ -1,5 +1,3 @@
-import psycopg2
-
 from src.tools.message_return import message_data
 
 from src.modules.db_helper import member_exists, fetch_member_roles, fetch_member_nickname
@@ -11,7 +9,7 @@ def init(bot):
         try:
             await add_roles(user, member_roles)
         except:
-            pass
+            print("Roles cannot be added to user: {}".format(user.name))
         await change_nickname(user, nickname)
 
     @bot.on_member_join(restore)

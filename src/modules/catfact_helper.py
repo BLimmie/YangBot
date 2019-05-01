@@ -13,7 +13,7 @@ def get_catfact():
 	response = requests.get("https://catfact.ninja/fact")
 	data = response.json()
 	return send_format(data['fact'])
-    
+
 
 
 if __name__ == "__main__":

@@ -62,7 +62,7 @@ def init(bot):
             conn.rollback()
 
         return message_data(message.channel, "User registration reset")
-    
+
     @bot.command_on_message(coro=kick_member)
     def kickme(message):
         conn = bot.conn

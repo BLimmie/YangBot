@@ -1,6 +1,6 @@
 import psycopg2
 
-from src.modules.db_helper import member_exists, fetch_member, refresh_member_in_db
+from src.modules.db_helper import member_exists, refresh_member_in_db
 
 
 def init(bot):

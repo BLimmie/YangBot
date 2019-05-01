@@ -1,5 +1,3 @@
-import discord
-
 from src.tools.funcblocker import funcblocker
 
 
