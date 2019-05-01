@@ -68,12 +68,13 @@ class YangBot():
         return wrap
 
     async def run_auto_on_message(self, message):
-        for func in self.auto_on_message_list.values():
-            message_info = func.proc(
-                message.created_at, message.author, message)
-            message = await self.send_message(message_info)
-            if func.coro is not None and message_info is not None:
-                await func.coro(message, *message_info.args, **message_info.kwargs)
+        if message is not None:
+            for func in self.auto_on_message_list.values():
+                message_info = func.proc(
+                    message.created_at, message.author, message)
+                message = await self.send_message(message_info)
+                if func.coro is not None and message_info is not None:
+                    await func.coro(message, *message_info.args, **message_info.kwargs)
 
     def command_on_message(self, timer=None, roles=None, positive_roles=True, coro=None):
         """
