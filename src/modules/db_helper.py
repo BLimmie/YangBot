@@ -71,8 +71,6 @@ def refresh_member_in_db(conn, member, config_roles):
     member = member object to refresh
     """
     if member_exists(conn, member.id):
-        print(config_roles)
-        print("Member found")
         try:
             cur = conn.cursor()
             cur.execute("""
