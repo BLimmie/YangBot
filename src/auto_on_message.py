@@ -7,7 +7,7 @@ import src.modules.toxicity_helper as toxicity_helper
 SUPER_TOXIC_THRESHOLD = .91
 
 def init(bot):
-    
+
     @bot.auto_on_message(None, None, True)
     def unsubscribe(message):
         if message.content.lower().strip() == "unsubscribe":

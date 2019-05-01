@@ -24,4 +24,3 @@ def init(bot):
                 role) for role in member]
             nickname = fetch_member_nickname(conn, user.id)
             return message_data(user, "Your roles have been restored", args=[user, member_roles, nickname])
-            

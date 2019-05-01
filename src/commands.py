@@ -115,7 +115,7 @@ def init(bot):
 
     async def remove_message(message, command):
         await command.delete()
-    
+
     send_roles = [
         bot.config["roles"]["Club Officers"],
         bot.config["roles"]["Admins"],

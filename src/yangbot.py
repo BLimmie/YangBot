@@ -78,7 +78,7 @@ class YangBot():
         Decorator for command_on_message function
         name of the function is the command YangBot looks for
 
-        e.g. 
+        e.g.
 
         @bot.command_on_message(timer, roles, positive_roles, coro)
         def test(message):
@@ -118,7 +118,7 @@ class YangBot():
         """
         Decorator for on_member_join function
 
-        e.g. 
+        e.g.
 
         @bot.on_member_join(coro)
         def test(user):

@@ -77,7 +77,7 @@ def refresh_member_in_db(conn, member, config_roles):
                     UPDATE Members
                     SET default_nickname = %s
                     WHERE id = '%s' ;
-                """, 
+                """,
                 (member.display_name, member.id)
             )
             conn.commit()
@@ -94,7 +94,7 @@ def refresh_member_in_db(conn, member, config_roles):
                             UPDATE Members
                             SET role_%s = True
                             WHERE id = '%s' ;
-                        """, 
+                        """,
                         (int(role), member.id)
                     )
                     conn.commit()
@@ -108,7 +108,7 @@ def refresh_member_in_db(conn, member, config_roles):
                             UPDATE Members
                             SET role_%s = False
                             WHERE id = '%s' ;
-                        """, 
+                        """,
                         (int(role), member.id)
                     )
                     conn.commit()
