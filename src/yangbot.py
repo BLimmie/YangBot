@@ -72,9 +72,9 @@ class YangBot():
             for func in self.auto_on_message_list.values():
                 message_info = func.proc(
                     message.created_at, message.author, message)
-                message = await self.send_message(message_info)
+                send_message = await self.send_message(message_info)
                 if func.coro is not None and message_info is not None:
-                    await func.coro(message, *message_info.args, **message_info.kwargs)
+                    await func.coro(send_message, *message_info.args, **message_info.kwargs)
 
     def command_on_message(self, timer=None, roles=None, positive_roles=True, coro=None):
         """
@@ -113,9 +113,9 @@ class YangBot():
         if command in self.command_on_message_list:
             message_info = self.command_on_message_list[command].proc(
                 message.created_at, message.author, message)
-            message = await self.send_message(message_info)
+            send_message = await self.send_message(message_info)
             if self.command_on_message_list[command].coro is not None and message_info is not None:
-                await self.command_on_message_list[command].coro(message, *message_info.args, **message_info.kwargs)
+                await self.command_on_message_list[command].coro(send_message, *message_info.args, **message_info.kwargs)
 
     def on_member_join(self, coro=None):
         """
