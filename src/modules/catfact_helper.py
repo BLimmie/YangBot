@@ -16,9 +16,9 @@ def get_catfact():
     """
     Gets a catfact from the catfact API
     """
-	response = requests.get("https://catfact.ninja/fact")
-	data = response.json()
-	return send_format(data['fact'])
+    response = requests.get("https://catfact.ninja/fact")
+    data = response.json()
+    return send_format(data['fact'])
 
 
 
