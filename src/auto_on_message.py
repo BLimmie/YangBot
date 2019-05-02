@@ -10,11 +10,17 @@ def init(bot):
 
     @bot.auto_on_message(None, None, True)
     def unsubscribe(message):
+        """
+        Extension of $catfact
+        """
         if message.content.lower().strip() == "unsubscribe":
             return message_data(message.channel, get_catfact())
 
     @bot.auto_on_message(None, None, True)
     def private_message(message):
+        """
+        Yang will respond to private messages with a notice to not message him privately
+        """
         if isinstance(message.channel, (discord.DMChannel, discord.GroupChannel)):
             return message_data(message.channel, "I do not reply to private messages. If you have any questions, please message one of the mods.")
         return None
@@ -26,8 +32,12 @@ def init(bot):
 
     @bot.auto_on_message(None, None, True, coro=remove_toxicity)
     def check_toxicity(message):
+        """
+        Notifies admins if a message is toxic (>.83) and removes it if super toxic (>.91)
+        """
         send_message, score = toxicity_helper.get_toxicity(message)
         return message_data(bot.config["toxic_notif_channel"], send_message, args=[score,message])
+
     # @bot.auto_on_message(None,None,True)
     # def test(message):
     #     print(message.author.nick)

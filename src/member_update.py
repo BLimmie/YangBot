@@ -6,6 +6,9 @@ from src.modules.db_helper import member_exists, refresh_member_in_db
 def init(bot):
     @bot.on_member_update()
     def update_database_roles(before, after):
+        """
+        Updates the member roles in the database after member is updated
+        """
         user_id = after.id
         conn = bot.conn
         roles_deleted = [role.id for role in before.roles if role not in after.roles]
@@ -53,6 +56,9 @@ def init(bot):
 
     @bot.on_member_update()
     def update_database_name(before, after):
+        """
+        Updates the member nickname in the database after member is updated
+        """
         if before.display_name == after.display_name:
             return
         conn = bot.conn

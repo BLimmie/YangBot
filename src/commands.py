@@ -8,10 +8,18 @@ from src.modules.catfact_helper import get_catfact
 def init(bot):
     @bot.command_on_message()
     def catfact(message):
+        """
+        $catfact
+        Gets random catfact
+        """
         return message_data(message.channel, get_catfact())
 
     @bot.command_on_message()
     def register(message):
+        """
+        $register
+        Registers a user in the db
+        """
         print("Registering")
         user = message.author
         conn = bot.conn
@@ -33,6 +41,10 @@ def init(bot):
 
     @bot.command_on_message()
     def resetregister(message):
+        """
+        $resetregister
+        Resets the registration in the db in case of bugs
+        """
         user = message.author
         conn = bot.conn
         if not member_exists(conn, user.id):
@@ -92,6 +104,11 @@ def init(bot):
 
     @bot.command_on_message(coro=nickname_request)
     def nickname(message):
+        """
+        $nickname [nickname]
+        Requests to change nickname to [nickname]
+        Admins click on emoji react to approve/disapprove request
+        """
         user = message.author
         content = message.content
         if len(content.split()) < 2:
@@ -124,6 +141,10 @@ def init(bot):
     ]
     @bot.command_on_message(roles=send_roles,positive_roles=True,coro=remove_message)
     def send(message):
+        """
+        $send [channel_mention] [message]
+        Sends [message] to [channel_mention] and deletes the command to send
+        """
         content = message.content
         if len(message.channel_mentions) > 0:
             return message_data(

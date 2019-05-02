@@ -14,6 +14,9 @@ def init(bot):
 
     @bot.on_member_join(restore)
     def restore_roles(user):
+        """
+        Restores roles and nickname on member join if member exists in database
+        """
         conn = bot.conn
         if member_exists(conn, user.id):
             roles = sorted(bot.config["role_schema"])

@@ -10,10 +10,16 @@ header = {'Content-type': 'application/json'}
 url = 'https://commentanalyzer.googleapis.com/v1alpha1/comments:analyze?key={}'.format(api_key)
 
 def format_json(message):
+    """
+    Formats the data json to send to the Perspective API
+    """
     data = {'comment': {'text': message}, 'languages': ["en"],'requestedAttributes': {'TOXICITY':{}, 'SEVERE_TOXICITY': {}} }
     return json.dumps(data)
 
 def send_format(message, score):
+    """
+    Formats the message to send content string
+    """
     return  "Message has been marked for toxicity:\nUser: {}\nChannel: {}\nTime: {}\nMessage: {}\nCertainty: {}".format(
                     message.author.display_name,
                     message.channel.mention,
@@ -23,6 +29,9 @@ def send_format(message, score):
                 )
 
 def _get_toxicity(message_content):
+    """
+    Helper function for getting the toxicity of a string
+    """
     toxic_json = requests.post(url, headers=header, data=format_json(message_content))
     toxic_json = toxic_json.json()
     try:
@@ -34,7 +43,7 @@ def _get_toxicity(message_content):
 
 def get_toxicity(message):
     """
-    Pass a message, not a string
+    Gets the toxicity of a message object and returns the formatted message to send and toxicity score
     """
     is_toxic, score = _get_toxicity(message.clean_content)
     if is_toxic:

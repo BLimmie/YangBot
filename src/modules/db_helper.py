@@ -38,6 +38,14 @@ def fetch_member(conn, id):
         return FAIL
 
 def fetch_member_roles(conn,id,roles):
+    """
+    Return all the member role objects of a member
+
+    args:
+    conn = database connection. Typically bot.conn
+    id = member.id
+    roles = list of all role ids within the server
+    """
     try:
         cur = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
         cur.execute("SELECT * FROM Members where id = '%s'", (id,))
@@ -53,6 +61,13 @@ def fetch_member_roles(conn,id,roles):
         return FAIL
 
 def fetch_member_nickname(conn,id):
+    """
+    Return the nickname of the member
+
+    args:
+    conn = database connection. Typically bot.conn
+    id = member.id
+    """
     try:
         cur = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
         cur.execute("SELECT * FROM Members where id = '%s'", (id,))
