@@ -12,7 +12,7 @@ def is_repeat(message_list, n):
     first = message_list[0]
     authors = []
     for item in message_list:
-        if item.message != first.message or item.author in authors:
+        if item.message != first.message:
             return False
         authors.append(item.author)
     return True
