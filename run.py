@@ -16,12 +16,14 @@ DATABASE_URL = os.environ['DATABASE_URL']
 conn = psycopg2.connect(DATABASE_URL, sslmode='require')
 
 client = discord.Client()
-bot = YangBot(conn, client, config, repeated_messages=4)
+@client.event
+async def on_ready():
+    bot = YangBot(conn, client, config, repeated_messages=4)
 
-auto_on_message.init(bot)
-commands.init(bot)
-member_join.init(bot)
-member_update.init(bot)
+    auto_on_message.init(bot)
+    commands.init(bot)
+    member_join.init(bot)
+    member_update.init(bot)
 
 
 @client.event
