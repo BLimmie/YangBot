@@ -1,6 +1,6 @@
 import psycopg2
 
-from src.modules.db_helper import member_exists, refresh_member_in_db
+from src.modules.db_helper import member_exists, insert_member
 
 
 def init(bot):
@@ -16,18 +16,7 @@ def init(bot):
         if len(roles_deleted) == 0 and len(roles_added) == 0:
             return
         if not member_exists(conn, user_id):
-            try:
-                cur = conn.cursor()
-                cur.execute("""
-                    INSERT INTO Members (id, default_nickname)
-                    VALUES (%s, %s) ;
-                """,
-                            (after.id, after.display_name))
-                conn.commit()
-                refresh_member_in_db(conn, after, bot.config["roles"])
-                return
-            except:
-                conn.rollback()
+            insert_member(conn, bot, after)
         for role in roles_deleted:
             try:
                 cur = conn.cursor()
@@ -63,18 +52,7 @@ def init(bot):
             return
         conn = bot.conn
         if not member_exists(conn, after.id):
-            try:
-                cur = conn.cursor()
-                cur.execute("""
-                    INSERT INTO Members (id, default_nickname)
-                    VALUES (%s, %s) ;
-                """,
-                            (after.id, after.display_name))
-                conn.commit()
-                refresh_member_in_db(conn, after, bot.config["roles"])
-                return
-            except:
-                conn.rollback()
+            insert_member(conn, bot, after)
         else:
             try:
                 cur = conn.cursor()

@@ -1,7 +1,7 @@
 import psycopg2
 
 from src.tools.message_return import message_data
-from src.modules.db_helper import member_exists, refresh_member_in_db
+from src.modules.db_helper import member_exists, insert_member
 from src.modules.discord_helper import change_nickname, kick_member
 from src.modules.catfact_helper import get_catfact
 
@@ -24,17 +24,7 @@ def init(bot):
         user = message.author
         conn = bot.conn
         if not member_exists(conn, user.id):
-            try:
-                cur = conn.cursor()
-                cur.execute("""
-                    INSERT INTO Members (id, default_nickname)
-                    VALUES (%s, %s) ;
-                """,
-                            (user.id, user.display_name))
-                conn.commit()
-                refresh_member_in_db(conn,user,bot.config["roles"])
-            except:
-                conn.rollback()
+            insert_member(conn, bot, user)
         else:
             return message_data(message.channel, "User already registered")
         return message_data(message.channel, "User registered")
@@ -61,17 +51,7 @@ def init(bot):
         except psycopg2.Error as e:
             conn.rollback()
 
-        try:
-            cur = conn.cursor()
-            cur.execute("""
-                INSERT INTO Members (id, default_nickname)
-                VALUES (%s, %s) ;
-            """,
-                        (user.id, user.display_name))
-            conn.commit()
-            refresh_member_in_db(conn, user, bot.config["roles"])
-        except:
-            conn.rollback()
+        insert_member(conn, bot, user)
 
         return message_data(message.channel, "User registration reset")
 

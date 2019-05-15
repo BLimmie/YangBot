@@ -20,7 +20,6 @@ class YangBot():
         self.config = config
 
         self.channels = list(self.client.get_all_channels())
-        print(self.channels)
         self.repeat_n = repeated_messages
         self.repeated_messages_dict = {(channel.id):[] for channel in self.channels}
 

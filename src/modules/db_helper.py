@@ -4,6 +4,21 @@ import psycopg2.extras
 SUCCESS = 0
 FAIL = None
 
+def insert_member(conn, bot, member):
+    try:
+        cur = conn.cursor()
+        cur.execute("""
+            INSERT INTO Members (id, default_nickname)
+            VALUES (%s, %s) ;
+        """,
+                    (member.id, member.display_name))
+        conn.commit()
+        refresh_member_in_db(conn, member, bot.config["roles"])
+        return SUCCESS
+    except:
+        conn.rollback()
+        return FAIL
+
 def member_exists(conn, id):
     """
     Check if a member exists in the database
