@@ -4,7 +4,7 @@ class message_author:
         self.author = author
     
     def __eq__(self, other):
-        return self.message == other.message# and self.author == other.author
+        return self.message == other.message and self.author == other.author
 
 def is_repeat(message_list, n):
     if len(message_list) != n:
@@ -37,7 +37,7 @@ if __name__ == "__main__":
             self.test_list_3 = [message_author("1", 1), message_author("1", 2), message_author("1", 2), message_author("1", 3)]
             self.test_list_short = [message_author("1", 1), message_author("1", 2), message_author("1", 3)]
     print("Testing is_repeat")
-    
+
     test = test_class()
     n = 4
     print("Test 1 {}".format("passed" if is_repeat(test.test_list_1, n) == True else "failed"))

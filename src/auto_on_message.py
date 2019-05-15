@@ -45,7 +45,6 @@ def init(bot):
         """
         Repeats a message if it has been repeated bot.repeat_n times in a row in a channel
         """
-        bot.repeated_messages_dict[message.channel.id]
         m_a = message_author(message.content, message.author)
         cycle(bot.repeated_messages_dict[message.channel.id], m_a, bot.repeat_n)
         if is_repeat(bot.repeated_messages_dict[message.channel.id], bot.repeat_n):
