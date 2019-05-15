@@ -4,7 +4,7 @@ class message_author:
         self.author = author
     
     def __eq__(self, other):
-        return self.message == other.message and self.author != other.author
+        return self.message == other.message.lower() and self.author != other.author
 
 def is_repeat(message_list, n):
     if len(message_list) != n:

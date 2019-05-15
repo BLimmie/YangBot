@@ -41,7 +41,7 @@ def init(bot):
 
 
     @bot.auto_on_message(None, None, True)
-    def repeated_message(message):
+    def mission_complete(message):
         """
         Repeats a message if it has been repeated bot.repeat_n times in a row in a channel
         """
