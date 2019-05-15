@@ -3,6 +3,7 @@ import discord
 from src.tools.message_return import message_data
 from src.modules.catfact_helper import get_catfact
 import src.modules.toxicity_helper as toxicity_helper
+from src.modules.repeat_helper import message_author, is_repeat, cycle, flush
 
 SUPER_TOXIC_THRESHOLD = .91
 
@@ -37,6 +38,22 @@ def init(bot):
         """
         send_message, score = toxicity_helper.get_toxicity(message)
         return message_data(bot.config["toxic_notif_channel"], send_message, args=[score,message])
+
+
+    @bot.auto_on_message(None, None, True)
+    def repeated_message(message):
+        """
+        Repeats a message if it has been repeated bot.repeat_n times in a row in a channel
+        """
+        bot.repeated_messages_dict[message.channel.id]
+        m_a = message_author(message.content, message.author)
+        cycle(bot.repeated_messages_dict[message.channel.id], m_a, bot.repeat_n)
+        if is_repeat(bot.repeated_messages_dict[message.channel.id], bot.repeat_n):
+            send = bot.repeated_messages_dict[message.channel.id][-1].message
+            flush(bot.repeated_messages_dict[message.channel.id])
+            return message_data(message.channel, send)
+        return None
+
 
     # @bot.auto_on_message(None,None,True)
     # def test(message):

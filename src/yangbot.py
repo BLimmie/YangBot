@@ -2,7 +2,7 @@ from src.tools.funcblocker import funcblocker
 
 
 class YangBot():
-    def __init__(self, dbconn, client, config):
+    def __init__(self, dbconn, client, config, repeated_messages=4):
         """
         Initialization of all data and functions of the bot
         """
@@ -18,6 +18,10 @@ class YangBot():
         self.conn = dbconn
         self.client = client
         self.config = config
+
+        self.channels = list(client.get_all_channels())
+        self.repeat_n = repeated_messages
+        self.repeated_messages_dict = {(channel.id):[] for channel in self.channels}
 
     async def send_message(self, message_info):
         """

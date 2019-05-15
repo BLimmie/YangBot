@@ -16,7 +16,7 @@ DATABASE_URL = os.environ['DATABASE_URL']
 conn = psycopg2.connect(DATABASE_URL, sslmode='require')
 
 client = discord.Client()
-bot = YangBot(conn, client, config)
+bot = YangBot(conn, client, config, repeated_messages=4)
 
 auto_on_message.init(bot)
 commands.init(bot)
@@ -26,9 +26,9 @@ member_update.init(bot)
 
 @client.event
 async def on_message(message):
-    if message.content.startswith('$'):
-        await bot.run_command_on_message(message)
     if not message.author.bot:
+        if message.content.startswith('$'):
+            await bot.run_command_on_message(message)
         await bot.run_auto_on_message(message)
 
 
