@@ -18,6 +18,7 @@ conn = psycopg2.connect(DATABASE_URL, sslmode='require')
 client = discord.Client()
 @client.event
 async def on_ready():
+    global bot
     bot = YangBot(conn, client, config, repeated_messages=4)
 
     auto_on_message.init(bot)
