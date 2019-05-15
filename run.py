@@ -8,7 +8,7 @@ import src.auto_on_message as auto_on_message
 import src.commands as commands
 import src.member_join as member_join
 import src.member_update as member_update
-
+bot=None
 
 config = json.load(open('config.json'))
 
@@ -25,6 +25,7 @@ async def on_ready():
     commands.init(bot)
     member_join.init(bot)
     member_update.init(bot)
+    print("Bot is ready")
 
 
 @client.event

@@ -32,6 +32,8 @@ def _get_toxicity(message_content):
     """
     Helper function for getting the toxicity of a string
     """
+    if message_content == "":
+        return False, 0
     toxic_json = requests.post(url, headers=header, data=format_json(message_content))
     toxic_json = toxic_json.json()
     try:

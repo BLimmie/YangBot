@@ -2,7 +2,7 @@ class message_author:
     def __init__(self, message, author):
         self.message = message
         self.author = author
-    
+
     def __eq__(self, other):
         return self.message.lower() == other.message.lower() and self.author != other.author
 
