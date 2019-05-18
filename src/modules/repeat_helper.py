@@ -1,3 +1,5 @@
+import itertools
+
 class message_author:
     def __init__(self, message, author):
         self.message = message
@@ -13,11 +15,9 @@ def is_repeat(message_list, n):
     if len(message_list) != n:
         return False
     first = message_list[0]
-    authors = []
-    for item in message_list:
-        if item.message != first.message:
-            return False
-        authors.append(item.author)
+
+    if any(a!=b for a,b in itertools.combinations(message_list,2)):
+        return False
     return True
 
 def cycle(message_list, msg, n):
@@ -33,6 +33,12 @@ def flush(message_list):
     message_list.clear()
 
 if __name__ == "__main__":
+    print("testing equality")
+    a = message_author("1", 1)
+    b = message_author("1", 1)
+
+    print("Test Equals {}".format("passed" if (a == b) == False else "failed"))
+
     class test_class:
         def __init__(self):
             self.test_list_1 = [message_author("1", 1), message_author("1", 2), message_author("1", 3), message_author("1", 4)]
