@@ -6,6 +6,9 @@ class message_author:
     def __eq__(self, other):
         return self.message.lower() == other.message.lower() and self.author != other.author
 
+    def __ne__(self, other):
+        return (self.message.lower() != other.message.lower()) or (self.author == other.author)
+
 def is_repeat(message_list, n):
     if len(message_list) != n:
         return False
