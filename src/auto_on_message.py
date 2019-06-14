@@ -5,7 +5,7 @@ from src.modules.catfact_helper import get_catfact
 import src.modules.toxicity_helper as toxicity_helper
 from src.modules.repeat_helper import message_author, is_repeat, cycle, flush
 
-SUPER_TOXIC_THRESHOLD = .92
+SUPER_TOXIC_THRESHOLD = .91
 
 def init(bot):
 
