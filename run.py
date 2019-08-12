@@ -19,7 +19,7 @@ client = discord.Client()
 @client.event
 async def on_ready():
     global bot
-    bot = YangBot(conn, client, config, repeated_messages=4)
+    bot = YangBot(conn, client, config, repeated_messages=6)
 
     auto_on_message.init(bot)
     commands.init(bot)
