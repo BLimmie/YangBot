@@ -67,7 +67,6 @@ class YangBot():
         return wrap
 
     async def run_auto_on_message(self, message):
-        print(self.auto_on_message_list["fire"].last_time)
         if message is not None:
             for func in self.auto_on_message_list.values():
                 message_info = func.proc(
