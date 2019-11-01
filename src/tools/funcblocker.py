@@ -38,12 +38,12 @@ class funcblocker:
             too_soon = False
         elif (time - self.last_time) > self.timer:
             too_soon = False
-        self.last_time = time
-
+        
         # Save computation time if role condition not satisfied
         if too_soon:
             return
-
+        self.last_time = time
+        
         # Check role condition
         if self.roles is None:
             role = True
