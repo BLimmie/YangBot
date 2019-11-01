@@ -59,7 +59,7 @@ def init(bot):
         """
         fire
         """
-        if ("fire","update") in zip(message.content.lower().split(), message.content.lower().split()[1:]):
+        if "fire" in message.content.lower().split() and "update" in message.content.lower().split():
             return message_data(message.channel,"There is no threat to the campus")
         return None
     # @bot.auto_on_message(None,None,True)
