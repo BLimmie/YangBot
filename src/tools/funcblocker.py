@@ -42,7 +42,6 @@ class funcblocker:
         # Save computation time if role condition not satisfied
         if too_soon:
             return
-        self.last_time = time
         
         # Check role condition
         if self.roles is None:
@@ -55,4 +54,7 @@ class funcblocker:
                 role = True
 
         if role:  # and too_soon = False
-            return self.func(*args, **kwargs)
+            message = self.func(*args, **kwargs)
+            if message is not None:
+                self.last_time = time
+            return message
