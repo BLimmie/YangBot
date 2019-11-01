@@ -1,4 +1,5 @@
 import discord
+from datetime import timedelta
 
 from src.tools.message_return import message_data
 from src.modules.catfact_helper import get_catfact
@@ -53,7 +54,14 @@ def init(bot):
             return message_data(message.channel, send)
         return None
 
-
+    @bot.auto_on_message(timedelta(minutes=5),None,True)
+    def fire(message):
+        """
+        fire
+        """
+        if "fire" in message.content.lower().split():
+            return message_data(message.channel,"There is no threat to the campus")
+        return None
     # @bot.auto_on_message(None,None,True)
     # def test(message):
     #     print(message.author.nick)
