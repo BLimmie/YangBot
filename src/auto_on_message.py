@@ -54,12 +54,12 @@ def init(bot):
             return message_data(message.channel, send)
         return None
 
-    @bot.auto_on_message(timedelta(minutes=5),None,True)
+    @bot.auto_on_message(timedelta(minutes=1),None,True)
     def fire(message):
         """
         fire
         """
-        if "fire" in message.content.lower().split():
+        if ("fire","update") in zip(message.content.lower().split(), message.content.lower().split()[1:]):
             return message_data(message.channel,"There is no threat to the campus")
         return None
     # @bot.auto_on_message(None,None,True)
