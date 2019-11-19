@@ -1,6 +1,6 @@
 psycopg2-binary
 aiohttp
 asyncio
-git+https://github.com/Rapptz/discord.py@rewrite#egg=discord.py[voice]
+discord.py[voice]
 requests
 asgiref
