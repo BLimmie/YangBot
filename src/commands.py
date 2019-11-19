@@ -67,9 +67,9 @@ def init(bot):
             return
         await member.send("Your nickname request has been submitted")
         await message.add_reaction('✅')
-        await message.add_reaction('❎')
+        await message.add_reaction('❌')
         def check(reaction, user):
-            return reaction.message.id == message.id and not user.bot and (str(reaction.emoji) == '✅' or str(reaction.emoji) == '❎')
+            return reaction.message.id == message.id and not user.bot and (str(reaction.emoji) == '✅' or str(reaction.emoji) == '❌')
 
         reaction, user = await bot.client.wait_for("reaction_add", check=check)
         if str(reaction.emoji) == '✅':
@@ -82,33 +82,33 @@ def init(bot):
         else:
             await member.send("Your nickname request has been rejected")
 
-#     @bot.command_on_message(coro=nickname_request)
-#     def nickname(message):
-#         """
-#         $nickname [nickname]
-#         Requests to change nickname to [nickname]
-#         Admins click on emoji react to approve/disapprove request
-#         """
-#         user = message.author
-#         content = message.content
-#         if len(content.split()) < 2:
-#             return message_data(
-#                 message.channel,
-#                 message= "No nickname requested, usage is $nickname [new nickname]",
-#                 args=[user, None]
-#             )
-#         nickname = " ".join(content.split()[1:])
-#         if len(nickname) > 32:
-#             return message_data(
-#                 message.channel,
-#                 message= "Nickname requested is too long",
-#                 args=[user, None]
-#             )
-#         return message_data(
-#             bot.client.get_channel(bot.config["requests_channel"]),
-#             message= "Member {} is requesting a nickname change\nNew nickname: {}".format(user.display_name, nickname),
-#             args=[user, nickname]
-#         )
+    @bot.command_on_message(coro=nickname_request)
+    def nickname(message):
+        """
+        $nickname [nickname]
+        Requests to change nickname to [nickname]
+        Admins click on emoji react to approve/disapprove request
+        """
+        user = message.author
+        content = message.content
+        if len(content.split()) < 2:
+            return message_data(
+                message.channel,
+                message= "No nickname requested, usage is $nickname [new nickname]",
+                args=[user, None]
+            )
+        nickname = " ".join(content.split()[1:])
+        if len(nickname) > 32:
+            return message_data(
+                message.channel,
+                message= "Nickname requested is too long",
+                args=[user, None]
+            )
+        return message_data(
+            bot.client.get_channel(bot.config["requests_channel"]),
+            message= "Member {} is requesting a nickname change\nNew nickname: {}".format(user.display_name, nickname),
+            args=[user, nickname]
+        )
 
     async def remove_message(message, command):
         await command.delete()
