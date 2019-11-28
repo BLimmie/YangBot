@@ -1,3 +1,4 @@
+import traceback
 from src.tools.funcblocker import funcblocker
 
 
@@ -68,12 +69,16 @@ class YangBot():
 
     async def run_auto_on_message(self, message):
         if message is not None:
-            for func in self.auto_on_message_list.values():
-                message_info = func.proc(
-                    message.created_at, message.author, message)
-                send_message = await self.send_message(message_info)
-                if func.coro is not None and message_info is not None:
-                    await func.coro(send_message, *message_info.args, **message_info.kwargs)
+            for key, func in self.auto_on_message_list.items():
+                try:
+                    message_info = func.proc(
+                        message.created_at, message.author, message)
+                    send_message = await self.send_message(message_info)
+                    if func.coro is not None and message_info is not None:
+                        await func.coro(send_message, *message_info.args, **message_info.kwargs)
+                except Exception:
+                    traceback.print_exc()
+                    assert false
 
     def command_on_message(self, timer=None, roles=None, positive_roles=True, coro=None):
         """
