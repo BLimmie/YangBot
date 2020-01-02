@@ -13,6 +13,6 @@ class message_data:
         """
         self.channel = channel
         self.message = message
-        self.embed = discord.Embed(**embed)
+        self.embed = discord.Embed(**embed) if embed is not None else None
         self.args = args if args is not None else []
         self.kwargs = kwargs if kwargs is not None else {}
