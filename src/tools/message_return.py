@@ -1,3 +1,6 @@
+import discord
+
+
 class message_data:
     def __init__(self, channel=None, message=None, embed=None, args=None, kwargs=None):
         """
@@ -10,6 +13,6 @@ class message_data:
         """
         self.channel = channel
         self.message = message
-        self.embed = embed
+        self.embed = discord.Embed(**embed)
         self.args = args if args is not None else []
         self.kwargs = kwargs if kwargs is not None else {}

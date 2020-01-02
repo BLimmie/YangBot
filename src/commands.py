@@ -1,4 +1,5 @@
 import psycopg2
+import random
 
 from src.tools.message_return import message_data
 from src.modules.db_helper import member_exists, insert_member
@@ -132,3 +133,29 @@ def init(bot):
                 content[content.find('>')+1:],
                 args=[message]
             )
+
+    @bot.command_on_message()
+    def choose(message):
+        """
+        $choose choice1; choice2[; choice3 ....]
+        Chooses an option from the list
+        """
+        content = message.content
+        l = " ".join(content.split()[1:])
+        opts = l.split("; ")
+        if len(opts) < 2:
+            return message_data(
+                message.channel,
+                message= "Usage: `$choose choice1; choice2[; choice3...]`"
+            )
+        chosen_opt = random.choice(opts)
+        return message_data(
+            message.channel,
+            message = "",
+            embed = {
+                "title": ":thinking:",
+                "description": chosen_opt,
+                "color": 53380
+            }
+        )
+
