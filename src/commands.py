@@ -143,7 +143,7 @@ def init(bot):
         content = message.content
         l = " ".join(content.split()[1:])
         opts = l.split("; ")
-        if len(opts) < 2 or ";" in opts:
+        if len(opts) < 2 or ";" not in content:
             return message_data(
                 message.channel,
                 message= "Usage: `$choose choice1; choice2[; choice3...]`"
