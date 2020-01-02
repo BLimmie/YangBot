@@ -148,7 +148,7 @@ def init(bot):
                 message.channel,
                 message= "Usage: `$choose choice1; choice2[; choice3...]`"
             )
-        chosen_opt = random.choice(opts)
+        chosen_opt = opts[random.randint(0,len(opts)-1)]
         return message_data(
             message.channel,
             message = "",
