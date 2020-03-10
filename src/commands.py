@@ -3,7 +3,7 @@ import random
 
 from src.tools.message_return import message_data
 from src.modules.db_helper import member_exists, insert_member
-from src.modules.discord_helper import change_nickname, kick_member
+from src.modules.discord_helper import change_nickname, kick_member, try_send
 from src.modules.catfact_helper import get_catfact
 
 def init(bot):
@@ -66,7 +66,7 @@ def init(bot):
     async def nickname_request(message, member, new_nickname):
         if new_nickname == None:
             return
-        await member.send("Your nickname request has been submitted")
+        await try_send(member, "Your nickname request has been submitted")
         await message.add_reaction('✅')
         await message.add_reaction('❌')
         def check(reaction, user):
@@ -77,11 +77,11 @@ def init(bot):
             try:
                 await change_nickname(member, new_nickname)
             except:
-                await member.send("Nickname can't be changed")
+                await try_send(member, "Nickname can't be changed")
                 return
-            await member.send("Your nickname request has been approved")
+            await try_send(member, "Your nickname request has been approved")
         else:
-            await member.send("Your nickname request has been rejected")
+            await try_send(member, "Your nickname request has been rejected")
 
     @bot.command_on_message(coro=nickname_request)
     def nickname(message):
