@@ -33,11 +33,12 @@ def init(bot):
     async def remove_toxicity(message, scores, toxic_message):
         if message is None:
             return
+        print(message.embed)
         if super_toxic_heuristic(scores):
             await toxic_message.delete()
             await toxic_message.channel.send("We didn't accept you into this school to be toxic.")
         else:
-            ban_emoji = message.guild.fetch_emoji(BAN_EMOJI_ID)
+            ban_emoji = await message.guild.fetch_emoji(BAN_EMOJI_ID)
             await message.add_reaction(ban_emoji)
             def check(reaction, user):
                 return reaction.message.id == message.id and not user.bot and (reaction.emoji == ban_emoji)
