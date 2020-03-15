@@ -6,7 +6,10 @@ from src.modules.catfact_helper import get_catfact
 import src.modules.toxicity_helper as toxicity_helper
 from src.modules.repeat_helper import message_author, is_repeat, cycle, flush
 
-SUPER_TOXIC_THRESHOLD = .91
+BAN_EMOJI_ID = 338384063691751424
+
+def super_toxic_heuristic(scores):
+    return False
 
 def init(bot):
 
@@ -27,18 +30,30 @@ def init(bot):
             return message_data(message.channel, "I do not reply to private messages. If you have any questions, please message one of the mods.")
         return None
 
-    async def remove_toxicity(message, score, toxic_message):
-        if score > SUPER_TOXIC_THRESHOLD:
+    async def remove_toxicity(message, scores, toxic_message):
+        if super_toxic_heuristic(scores):
             await toxic_message.delete()
             await toxic_message.channel.send("We didn't accept you into this school to be toxic.")
+        else:
+            ban_emoji = message.guild.fetch_emoji(BAN_EMOJI_ID)
+            message.add_reaction(ban_emoji)
+            def check(reaction, user):
+                return reaction.message.id == message.id and not user.bot and (reaction.emoji == ban_emoji)
+
+            reaction, user = await bot.client.wait_for("reaction_add", check=check)
+            if reaction == ban_emoji:
+                try:
+                    toxic_message.delete()
+                except:
+                    await message.channel.send("Message unable to be deleted")
 
     @bot.auto_on_message(None, None, True, coro=remove_toxicity)
     def check_toxicity(message):
         """
         Notifies admins if a message is toxic (>.83) and removes it if super toxic (>.91)
         """
-        send_message, score = toxicity_helper.get_toxicity(message)
-        return message_data(bot.config["toxic_notif_channel"], send_message, args=[score,message])
+        send_message, scores = toxicity_helper.get_toxicity(message)
+        return message_data(bot.config["toxic_notif_channel"], message="", embed=send_message, args=[scores,message])
 
 
     @bot.auto_on_message(None, None, True)
@@ -54,14 +69,14 @@ def init(bot):
             return message_data(message.channel, send)
         return None
 
-    @bot.auto_on_message(timedelta(minutes=1),None,True)
-    def fire(message):
-        """
-        fire
-        """
-        if "fire" in message.content.lower().split() and "update" in message.content.lower().split():
-            return message_data(message.channel,"There is no threat to the campus")
-        return None
+    # @bot.auto_on_message(timedelta(minutes=1),None,True)
+    # def fire(message):
+    #     """
+    #     fire
+    #     """
+    #     if "fire" in message.content.lower().split() and "update" in message.content.lower().split():
+    #         return message_data(message.channel,"There is no threat to the campus")
+    #     return None
     # @bot.auto_on_message(None,None,True)
     # def test(message):
     #     print(message.author.nick)
