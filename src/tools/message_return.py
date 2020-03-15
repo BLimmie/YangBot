@@ -15,6 +15,7 @@ class message_data:
         self.message = message
         self.embed = discord.Embed(**embed) if embed is not None else None
         for item in embed['fields']:
+            print(item)
             self.embed.add_field(name=item['name'],value=item['value'],inline=item['inline'])
         self.args = args if args is not None else []
         self.kwargs = kwargs if kwargs is not None else {}
