@@ -43,11 +43,11 @@ def init(bot):
                 return reaction.message.id == message.id and not user.bot and (reaction.emoji == ban_emoji)
 
             reaction, user = await bot.client.wait_for("reaction_add", check=check)
-            if reaction == ban_emoji:
-                try:
-                    await toxic_message.delete()
-                except:
-                    await message.channel.send("Message unable to be deleted")
+            
+            try:
+                await toxic_message.delete()
+            except:
+                await message.channel.send("Message unable to be deleted")
 
     @bot.auto_on_message(None, None, True, coro=remove_toxicity)
     def check_toxicity(message):
