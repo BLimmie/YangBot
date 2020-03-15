@@ -53,7 +53,9 @@ def init(bot):
         Notifies admins if a message is toxic (>.83) and removes it if super toxic (>.91)
         """
         send_message, scores = toxicity_helper.get_toxicity(message)
-        return message_data(bot.config["toxic_notif_channel"], message="", embed=send_message, args=[scores,message])
+        m = None if send_message is None else ""
+
+        return message_data(bot.config["toxic_notif_channel"], message=m, embed=send_message, args=[scores,message])
 
 
     @bot.auto_on_message(None, None, True)
