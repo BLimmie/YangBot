@@ -78,7 +78,7 @@ class YangBot():
                         await func.coro(send_message, *message_info.args, **message_info.kwargs)
                 except Exception:
                     traceback.print_exc()
-                    assert false
+                    assert False
 
     def command_on_message(self, timer=None, roles=None, positive_roles=True, coro=None):
         """
