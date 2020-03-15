@@ -31,6 +31,8 @@ def init(bot):
         return None
 
     async def remove_toxicity(message, scores, toxic_message):
+        if message is None:
+            return
         if super_toxic_heuristic(scores):
             await toxic_message.delete()
             await toxic_message.channel.send("We didn't accept you into this school to be toxic.")
