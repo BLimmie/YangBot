@@ -38,7 +38,7 @@ def init(bot):
             await toxic_message.channel.send("We didn't accept you into this school to be toxic.")
         else:
             ban_emoji = message.guild.fetch_emoji(BAN_EMOJI_ID)
-            message.add_reaction(ban_emoji)
+            await message.add_reaction(ban_emoji)
             def check(reaction, user):
                 return reaction.message.id == message.id and not user.bot and (reaction.emoji == ban_emoji)
 
