@@ -36,7 +36,6 @@ class YangBot():
             channel = self.client.get_channel(message_info.channel)
         else:
             channel = message_info.channel
-        print(message_info)
         message = await channel.send(message_info.message, embed=message_info.embed)
         return message
 
