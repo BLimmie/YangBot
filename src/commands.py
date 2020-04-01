@@ -159,22 +159,22 @@ def init(bot):
             }
         )
     
-    async def roulette(message):
+    async def roulette(message, orig_message):
         kill = random.random() < 0.1
-        if message.author.id in send_roles:
+        if orig_message.author.id in send_roles:
             kill = False
         if kill:
-            await message.author.edit(roles=[])
-            refresh_member_in_db(bot.conn, message.author, bot.config["roles"])
-            await message.author.kick()
-            await message.channel.send("Judicial Affairs has found you guilty of cheating on a final")
+            await orig_message.author.edit(roles=[])
+            refresh_member_in_db(bot.conn, orig_message.author, bot.config["roles"])
+            await orig_message.author.kick()
+            await orig_message.channel.send("Judicial Affairs has found you guilty of cheating on a final")
         else:
-            await message.channel.send("Judicial Affairs has decided to not expel you from UCSB")
+            await orig_message.channel.send("Judicial Affairs has decided to not expel you from UCSB")
 
     @bot.command_on_message(coro=roulette)
     def cheat(message):
         return message_data(
             message.channel,
             message = None,
-            args=[]
+            args=[message]
         )
