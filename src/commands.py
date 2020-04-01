@@ -2,7 +2,7 @@ import psycopg2
 import random
 
 from src.tools.message_return import message_data
-from src.modules.db_helper import member_exists, insert_member
+from src.modules.db_helper import member_exists, insert_member, refresh_member_in_db
 from src.modules.discord_helper import change_nickname, kick_member, try_send
 from src.modules.catfact_helper import get_catfact
 
@@ -158,4 +158,23 @@ def init(bot):
                 "color": 53380
             }
         )
+    
+    async def roulette(message):
+        kill = random.random() < 0.1
+        if message.author.id in send_roles:
+            kill = False
+        if kill:
+            await message.author.edit(roles=[])
+            refresh_member_in_db(bot.conn, message.author, bot.config["roles"])
+            await message.author.kick()
+            await message.channel.send("Judicial Affairs has found you guilty of cheating on a final")
+        else:
+            await message.channel.send("Judicial Affairs has decided to not expel you from UCSB")
 
+    @bot.command_on_message(coro=roulette)
+    def cheat(message):
+        return message_data(
+            message.channel,
+            message = None,
+            args=[]
+        )
