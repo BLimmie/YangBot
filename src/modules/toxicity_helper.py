@@ -4,7 +4,7 @@ import json
 from datetime import timedelta
 
 api_key = os.environ["PERSPECTIVE_API"]
-TOXIC_THRESHOLD = .80
+TOXIC_THRESHOLD = .87
 header = {'Content-type': 'application/json'}
 TOXIC = "TOXICITY"
 S_TOXIC = "SEVERE_TOXICITY"
