@@ -161,7 +161,7 @@ def init(bot):
     
     async def roulette(message, orig_message):
         kill = random.random() < 0.1
-        if orig_message.author.id in send_roles:
+        if any(id in orig_message.author.roles for id in send_roles):
             kill = False
         if kill:
             await orig_message.author.edit(roles=[])
