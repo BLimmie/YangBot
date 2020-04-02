@@ -171,10 +171,10 @@ def init(bot):
         else:
             await orig_message.channel.send("Judicial Affairs has decided to not expel you from UCSB")
 
-    @bot.command_on_message(coro=roulette)
-    def cheat(message):
-        return message_data(
-            message.channel,
-            message = None,
-            args=[message]
-        )
+    # @bot.command_on_message(coro=roulette)
+    # def cheat(message):
+    #     return message_data(
+    #         message.channel,
+    #         message = None,
+    #         args=[message]
+    #     )
