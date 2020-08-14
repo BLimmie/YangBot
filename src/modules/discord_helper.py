@@ -31,6 +31,6 @@ async def kick_member(message, member):
 
 async def try_send(member, message):
     try:
-        member.send(message)
+        await member.send(message)
     except:
         print("Unable to send PM")
