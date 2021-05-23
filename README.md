@@ -1,2 +1,2 @@
 # YangBot
-YangBot is a Discord Server Bot that takes the form of UCSB's Chancellor Yang
+YangBot is a Discord Server Bot that helps students as they navigate the school environment.
