@@ -1,7 +1,7 @@
 import os
 from discord.ext import commands
+from discord.utils import get
 import YangBotTests
-import asyncio
 import discord
 my_secret = os.environ['TOKEN2']
 channel_id = int(os.environ['CHANNEL_ID'])
@@ -10,14 +10,15 @@ bot = commands.Bot(command_prefix=';;')
 
 @bot.event
 async def on_ready(m):
-  yangBot = bot.get_user_info(392801609362440198)
+  channel = bot.get_channel(channel_id)
   timeout = 0
-  while yangBot.status != discord.Status.online:
-    if timeout < 5:
-      await asyncio.sleep(5)
-      timeout += 1
-    else:
-      return
+  while timeout < 5:
+    try:
+      await channel.send('$ping')
+      await bot.wait_for("message",check = lambda message: message.author == await get.user(392801609362440198) and message.content == 'pong!',timeout = 5)
+    except:
+      timeout+=1
+    
   testout = '```\nTest Results:\n'
   await m.send('testing...')
   for i in YangBotTests.integration_test.__subclasses__():
