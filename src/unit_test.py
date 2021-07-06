@@ -1,7 +1,12 @@
+from discord import channel
 from modules.catfact_helper import send_format, get_catfact
+from modules.toxicity_helper import format_json, _calculate_heuristic
 import unittest
-from modules.test import get_choose, get_toxicity, _get_toxicity, _calculate_heuristic, send_format2, send, format_json
+from modules.test import get_choose, send
+from modules.test import get_choose, get_toxicity, _get_toxicity, send, send_format2
 import json
+from tools.message_return import message_data
+import discord
 
 TOXIC = "TOXICITY"
 S_TOXIC = "SEVERE_TOXICITY"
@@ -31,6 +36,7 @@ mix_scores = {
             THREAT: 0.9,
             }
 
+
 # CAT FACT- $catfact
 class TestCatFact(unittest.TestCase):
     # get_catfact()
@@ -41,6 +47,10 @@ class TestCatFact(unittest.TestCase):
     # send_format in catfact_helper
     def test_send_format(self):
         self.assertIn("Thank you for subscribing to CatFacts™", send_format('catfact'))
+
+    # message_data
+    def test_message_data(self):
+        self.assertIsInstance(message_data('dev-testing', get_catfact()), message_data)
 
 # CHOOSE- $choose
 class TestChoose(unittest.TestCase):
@@ -54,6 +64,25 @@ class TestChoose(unittest.TestCase):
     # send(option)
     def test_send(self):
         self.assertIn("hello", send('x'))
+
+    # message_data- $choose x; y; z
+    def test_message_data(self):
+        self.assertIsInstance(message_data(
+            channel='dev-testing',
+            message = "", 
+            embed = {
+                "title": ":thinking:",
+                "description": 'x',
+                "color": 53380
+            }
+        ), message_data)
+
+    # message_data- Empty $choose
+    def test_message_data_empty(self):
+        self.assertIsInstance(message_data(
+                channel='dev-testing',
+                message= "Usage: `$choose choice1; choice2[; choice3...]`"
+            ), message_data)
 
 # TOXICITY CHECK
 class TestToxicityCheck(unittest.TestCase):
@@ -120,16 +149,10 @@ class TestToxicityCheck(unittest.TestCase):
         self.assertEqual((send_format2('bitch U MAKE THE BURRITO', mix_scores), mix_scores), get_toxicity('bitch U MAKE THE BURRITO', mix_scores))
         # Non-Toxic Check: "hello"
         self.assertEqual((None, {}), get_toxicity('hello', {}))
+        
+            
 
         
 
 if __name__ == '__main__':
     unittest.main()
-
-    # def __init__(self, function): 
-    #     """
-    #     Initialization of all data and functions of unit test
-    #     """
-
-    # def __call__(self):
-    #     return True

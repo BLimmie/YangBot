@@ -5,6 +5,7 @@ import requests
 import os
 import json
 from datetime import timedelta
+from modules.toxicity_helper import format_json, _calculate_heuristic
 from dotenv import load_dotenv
 load_dotenv()
 
@@ -63,22 +64,22 @@ def get_choose(message):
     return send(chosen_opt)
     
 # TOXICITY CHECK
-def format_json(message):
-    """
-    Formats the data json to send to the Perspective API
-    """
-    data = {
-        'comment': {'text': message}, 
-        'languages': ["en"],
-        'requestedAttributes': {
-            TOXIC:{}, 
-            S_TOXIC: {},
-            IDENTITY: {},
-            INSULT: {},
-            THREAT: {},
-            } 
-        }
-    return json.dumps(data)
+# def format_json(message):
+#     """
+#     Formats the data json to send to the Perspective API
+#     """
+#     data = {
+#         'comment': {'text': message}, 
+#         'languages': ["en"],
+#         'requestedAttributes': {
+#             TOXIC:{}, 
+#             S_TOXIC: {},
+#             IDENTITY: {},
+#             INSULT: {},
+#             THREAT: {},
+#             } 
+#         }
+#     return json.dumps(data)
 
 def send_format2(message, score):
     """
@@ -144,12 +145,12 @@ def send_format2(message, score):
                     score*100
                 )
 
-def _calculate_heuristic(scores):
-    for att, score in scores.items():
-        if att != TOXIC:
-            if score > TOXIC_THRESHOLD:
-                return True
-    return False
+# def _calculate_heuristic(scores):
+#     for att, score in scores.items():
+#         if att != TOXIC:
+#             if score > TOXIC_THRESHOLD:
+#                 return True
+#     return False
 
 def _get_toxicity(message_content, scores):
     """
