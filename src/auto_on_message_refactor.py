@@ -10,7 +10,7 @@ BAN_EMOJI_ID = 338384063691751424
 
 def super_toxic_heuristic(scores):
     return False
-
+    
 class bot_function:
   def __init__(self, bot):
     self.bot = bot
