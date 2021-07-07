@@ -10,7 +10,7 @@ BAN_EMOJI_ID = 338384063691751424
 
 def super_toxic_heuristic(scores):
     return False
-    
+
 class bot_function:
   def __init__(self, bot):
     self.bot = bot
@@ -23,18 +23,19 @@ class auto_on_message(bot_function):
     async def action(self, message):
         raise NotImplementedError
 
-"""
-Extension of $catfact
-"""
 class unsubscribe(auto_on_message):
+    """
+    Extension of $catfact
+    """
     async def action(self, message):
         if message.content.lower().strip() == "unsubscribe":
             return message_data(message.channel, get_catfact())
 # print(help(unsubscribe))
-"""
-Yang will respond to private messages with a notice to not message him privately
-"""
+
 class private_message(auto_on_message):
+    """
+    Yang will respond to private messages with a notice to not message him privately
+    """
     async def action(self, message):
         if isinstance(message.channel, (discord.DMChannel, discord.GroupChannel)):
             return message_data(message.channel, "I do not reply to private messages. If you have any questions, please message one of the mods.")
