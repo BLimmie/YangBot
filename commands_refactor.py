@@ -34,9 +34,9 @@ class register(command_on_message):
   async def action(self,message):
     print("Registering")
     user = message.author
-    conn = bot.conn
+    conn = self.bot.conn
     if not member_exists(conn, user.id):
-      insert_member(conn, bot, user)
+      insert_member(conn, self.bot, user)
     else:
       return message_data(message.channel, "User already registered")
     return message_data(message.channel, "User registered")
@@ -44,7 +44,7 @@ class register(command_on_message):
 class resetregister(command_on_message):
   async def action(self, message):
     user = message.author
-    conn = bot.conn
+    conn = self.bot.conn
     if not member_exists(conn, user.id):
       return message_data(message.channel, "User not registered. Use $register to register.")
     try:
@@ -53,12 +53,12 @@ class resetregister(command_on_message):
       conn.commit()
     except psycopg2.Error as e:
       conn.rollback()
-    insert_member(conn, bot, user)
+    insert_member(conn, self.bot, user)
     return message_data(message.channel, "User registration reset")
 @func_decorator()
 class kickme(command_on_message):
   async def action(self, message):
-    conn = bot.conn
+    conn = self.bot.conn
     if not member_exists(conn, message.author.id):
       return message_data(message.channel, "You aren't registered in my memory yet. Please register with $register first")
     await message.author.send("See you later!")
@@ -74,7 +74,7 @@ class nickname(command_on_message):
       await message.add_reaction('❌')
       def check(reaction, user):
             return reaction.message.id == message.id and not user.bot and (str(reaction.emoji) == '✅' or str(reaction.emoji) == '❌')
-      reaction, user = await bot.client.wait_for("reaction_add", check=check)
+      reaction, user = await self.bot.client.wait_for("reaction_add", check=check)
       if str(reaction.emoji) == '✅':
         try:
           await change_nickname(member, new_nickname)
@@ -93,9 +93,9 @@ class nickname(command_on_message):
     nickname = " ".join(content.split()[1:])
     if len(nickname) > 32:
       return message_data(message.channel,"Nickname requested is too long")
-    requests_channel = bot.client.get_channel(bot.config["requests_channel"])
+    requests_channel = self.bot.client.get_channel(self.bot.config["requests_channel"])
     message = await requests_channel.send("Member {} is requesting a nickname change\nNew nickname: {}".format(user.display_name, nickname))
-    await nickname_request(message, user, nickname)
+    await self.nickname_request(message, user, nickname)
     return 
 
 
