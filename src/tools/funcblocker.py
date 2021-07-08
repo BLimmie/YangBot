@@ -58,3 +58,8 @@ class funcblocker:
             if message is not None:
                 self.last_time = time
             return message
+
+def func_decorator(timer = None, roles = None, positive_roles = None):
+        def wrap(func):
+            return funcblocker(func,timer,roles,positive_roles)
+        return wrap
