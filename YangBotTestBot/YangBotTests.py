@@ -14,7 +14,7 @@ class catfact(integration_test):
       integration_test.__init__(self)
       self.bot = bot
       self.channel = channel
-      self.message = '$get_catfact' # the command sent by the testbot
+      self.message = '$catfact' # the command sent by the testbot
     def check(self):
       def m(message):
         return 'unsubscribe' in message.content # returns T/F depending on Yangbot's return message
@@ -29,6 +29,7 @@ class choose_empty(integration_test):
     self.message = '$choose'
   def check(self):
     def m(message):
+      print(message.content)
       return 'Usage:' in message.content
     return m
 
@@ -38,10 +39,12 @@ class choose_filled(integration_test):
     integration_test.__init__(self)
     self.bot = bot
     self.channel = channel
-    self.message = '$choose x;x'
+    self.message = '$choose x; x'
   def check(self):
     def m(message):
-      return 'x' in message.embed.description
+      embed = message.embeds[0]
+      print(embed)
+      return 'x' in embed.description
     return m
 
 class toxicity_check(integration_test):
@@ -52,5 +55,6 @@ class toxicity_check(integration_test):
     self.message = 'hey moron'
   def check(self):
     def m(message):
-      return "Message has been marked for toxicity:" in message.embed.title and message.channel == 421899094357704704
+      embed = message.embeds[0]
+      return "Message has been marked for toxicity:" in embed.title and message.channel == 421899094357704704
     return m
