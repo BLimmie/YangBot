@@ -1,7 +1,7 @@
 
 import psycopg2
 import random
-from new_funcblocker import func_decorator
+from src.tools.funcblocker import func_decorator
 from src.tools.message_return import message_data
 from src.modules.db_helper import member_exists, insert_member, refresh_member_in_db
 from src.modules.discord_helper import change_nickname, kick_member, try_send
