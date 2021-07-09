@@ -65,10 +65,17 @@ class TestChoose(unittest.TestCase):
     def test_send(self):
         self.assertIn("hello", send('x'))
 
+    # message_data- $choose
+    def test_message_data(self):
+        self.assertIsInstance(message_data(
+                channel = 'dev-testing',
+                message= "Usage: `$choose choice1; choice2[; choice3...]`"
+            ), message_data)
+
     # message_data- $choose x; y; z
     def test_message_data(self):
         self.assertIsInstance(message_data(
-            channel='dev-testing',
+            channel = 'dev-testing',
             message = "", 
             embed = {
                 "title": ":thinking:",
