@@ -53,8 +53,8 @@ def get_choose(message):
     $choose choice1; choice2[; choice3 ....]
     Chooses an option from the list
     """
-    # content = message.content
-    content = message
+    content = message.content
+    # content = message
     l = " ".join(content.split()[1:])
     opts = l.split("; ")
     if len(opts) < 2 or ";" not in content:

@@ -37,6 +37,10 @@ mix_scores = {
             }
 
 
+class Message:
+    def __init__(self, content):
+        self.content = content
+
 # CAT FACT- $catfact
 class TestCatFact(unittest.TestCase):
     # get_catfact()
@@ -57,25 +61,18 @@ class TestChoose(unittest.TestCase):
     # get_choose(message)
     def test_choose(self):
         # $choose x; y; z
-        self.assertIn("hello", get_choose('$choose x; y; z'))
+        self.assertIn("hello", get_choose(Message('$choose x; y; z')))
         # Empty $choose
-        self.assertIn("Usage: `$choose choice1; choice2[; choice3...]`", get_choose('$choose'))
+        self.assertIn("Usage: `$choose choice1; choice2[; choice3...]`", get_choose(Message('$choose')))
 
     # send(option)
     def test_send(self):
         self.assertIn("hello", send('x'))
 
-    # message_data- $choose
-    def test_message_data(self):
-        self.assertIsInstance(message_data(
-                channel = 'dev-testing',
-                message= "Usage: `$choose choice1; choice2[; choice3...]`"
-            ), message_data)
-
     # message_data- $choose x; y; z
     def test_message_data(self):
         self.assertIsInstance(message_data(
-            channel = 'dev-testing',
+            channel='dev-testing',
             message = "", 
             embed = {
                 "title": ":thinking:",
