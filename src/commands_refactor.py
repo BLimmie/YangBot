@@ -39,14 +39,20 @@ class on_member_update(bot_function):
   def action(self,message):
     raise NotImplementedError
 
-
+"""
+$catfact
+Gets random catfact
+"""
 class catfact(command_on_message):
   def __init__(self):
     super().__init__()
   async def action(self,message):
     return message_data(message.channel, get_catfact())
 
-
+"""
+$register
+Registers a user in the db
+"""
 class register(command_on_message):
   def __init__(self):
     super().__init__()
@@ -60,6 +66,10 @@ class register(command_on_message):
       return message_data(message.channel, "User already registered")
     return message_data(message.channel, "User registered")
 
+"""
+$resetregister
+Resets the registration in the db in case of bugs
+"""
 class resetregister(command_on_message):
   def __init__(self):
     super().__init__()
@@ -77,6 +87,10 @@ class resetregister(command_on_message):
     insert_member(conn, self.bot, user)
     return message_data(message.channel, "User registration reset")
 
+"""
+$kickme
+kicks an unregistered user???
+"""
 class kickme(command_on_message):
   def __init__(self):
     super().__init__()
@@ -88,6 +102,11 @@ class kickme(command_on_message):
     await kick_member(message.author)
     return
 
+"""
+$nickname [nickname]
+Requests to change nickname to [nickname]
+Admins click on emoji react to approve/disapprove request
+"""
 class nickname(command_on_message):
   def __init__(self):
     super().__init__()
@@ -128,7 +147,10 @@ class nickname(command_on_message):
 async def remove_message(message, command):
   await command.delete()
 
-
+"""
+$send [channel_mention] [message]
+Sends [message] to [channel_mention] and deletes the command to send
+"""
 class send(command_on_message):
   def __init__(self,rles = [
   bot.config["roles"]["Club Officers"],
@@ -145,7 +167,10 @@ class send(command_on_message):
         args=[message]
     )
 
-
+"""
+$choose choice1; choice2[; choice3 ....]
+Chooses an option from the list
+"""
 class choose(command_on_message):
   async def action(self, message):
     content = message.content
