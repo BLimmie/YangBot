@@ -20,5 +20,9 @@ async def on_message(message):
     if return_message is not None:
       channel = return_message.channel
       await channel.send(return_message.message, embed=return_message.embed)
+  await Botter.run_auto_on_message(message)
+
+
+
 
 bot.run(my_secret)
