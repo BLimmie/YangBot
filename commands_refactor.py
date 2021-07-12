@@ -2,44 +2,12 @@ from datetime import datetime
 from _typeshed import Self
 import psycopg2
 import random
-from src.tools.funcblocker import func_decorator
 from src.tools.message_return import message_data
 from src.modules.db_helper import member_exists, insert_member, refresh_member_in_db
 from src.modules.discord_helper import change_nickname, kick_member, try_send
 from src.modules.catfact_helper import get_catfact
 from src.modules.toxicity_helper import get_toxicity
-class bot_function:
-  def __init__(self,timer=None, roles=None, positive_roles=True):
-    self.timer = timer
-    self.last_time = datetime.now() - timer if timer is not None else datetime.now()
-    self.roles = roles
-    self.positive_roles = positive_roles
-  async def simple_proc(self, message):
-      return await self.action(message)
-  async def proc(self, message,time,member):
-    role = False
-    too_soon = True
-    if self.timer is None:
-      too_soon = False
-    elif (time - self.last_time)>self.timer:
-      too_soon = True
-    if too_soon:
-      return
-    if self.roles is None:
-      role = True
-    elif self.positive_roles:
-      if any(elem.id in self.roles for elem in member.roles):
-        role = True
-    else:  # self.positive_roles = False
-      if not any(elem.id in self.roles for elem in member.roles):
-        role = True
-    if role:  # and too_soon = False
-      msg = await self.action(message)
-      if msg is not None:
-        self.last_time = time
-      return msg
-  async def action(self,message):
-    raise NotImplementedError
+from src.tools.bot_function import bot_function
 
 class auto_on_message(bot_function):
   registry = []
@@ -178,8 +146,6 @@ class send(command_on_message):
     )
 
 
-
-
 class choose(command_on_message):
   async def action(self, message):
     content = message.content
@@ -196,8 +162,6 @@ class choose(command_on_message):
       "description": chosen_opt,
       "color": 53380}
       )
-
-
 
 class toxicity(auto_on_message):
   async def action(self, message):
