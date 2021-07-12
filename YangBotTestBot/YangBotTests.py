@@ -11,7 +11,6 @@ class integration_test():
 class catfact(integration_test):
 # tests catfact
     def __init__(self,bot,channel):
-      integration_test.__init__(self)
       self.bot = bot
       self.channel = channel
       self.message = '$catfact' # the command sent by the testbot
@@ -23,7 +22,6 @@ class catfact(integration_test):
 class choose_empty(integration_test):
 # choose command unfilled
   def __init__(self,bot,channel):
-    integration_test.__init__(self)
     self.bot = bot
     self.channel = channel
     self.message = '$choose'
@@ -36,7 +34,6 @@ class choose_empty(integration_test):
 class choose_filled(integration_test):
 # test choose command filled
   def __init__(self,bot,channel):
-    integration_test.__init__(self)
     self.bot = bot
     self.channel = channel
     self.message = '$choose x; x'
@@ -49,7 +46,6 @@ class choose_filled(integration_test):
 
 class toxicity_check(integration_test):
   def __init__(self,bot,channel):
-    integration_test.__init__(self)
     self.bot = bot
     self.channel = channel
     self.message = 'hey moron'
