@@ -13,10 +13,12 @@ class YangBot():
     
     for action in command_on_message.__subclasses__():
       action.bot = bot
+      action.conn = conn
       self.command_on_message_list[action.__name__] = action()
     
     for action in auto_on_message.__subclasses__():
         action.bot = bot
+        action.conn = conn
         self.auto_on_message_list[action.__name__] = action()
   
   async def run_command_on_message(self,message):

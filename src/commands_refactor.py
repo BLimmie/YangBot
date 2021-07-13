@@ -110,7 +110,7 @@ class nickname(command_on_message):
       await message.add_reaction('❌')
       def check(reaction, user):
             return reaction.message.id == message.id and not user.bot and (str(reaction.emoji) == '✅' or str(reaction.emoji) == '❌')
-      reaction, user = await self.bot.client.wait_for("reaction_add", check=check)
+      reaction, user = await self.bot.wait_for("reaction_add", check=check)
       if str(reaction.emoji) == '✅':
         try:
           await change_nickname(member, new_nickname)
@@ -129,7 +129,7 @@ class nickname(command_on_message):
     nickname = " ".join(content.split()[1:])
     if len(nickname) > 32:
       return message_data(message.channel,"Nickname requested is too long")
-    requests_channel = self.bot.client.get_channel(self.bot.config["requests_channel"])
+    requests_channel = self.bot.get_channel(self.bot.config["requests_channel"])
     message = await requests_channel.send("Member {} is requesting a nickname change\nNew nickname: {}".format(user.display_name, nickname))
     await self.nickname_request(message, user, nickname)
     return 
