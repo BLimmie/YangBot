@@ -1,54 +1,53 @@
 import discord
 from datetime import timedelta
 
-from tools.funcblocker import func_decorator
-from tools.message_return import message_data
-from modules.catfact_helper import get_catfact
-import modules.toxicity_helper as toxicity_helper
-from modules.repeat_helper import message_author, is_repeat, cycle, flush
+from src.tools.bot_function import bot_function
+from src.tools.message_return import message_data
+from src.modules.catfact_helper import get_catfact
+import src.modules.toxicity_helper as toxicity_helper
+from src.modules.repeat_helper import message_author, is_repeat, cycle, flush
 
 BAN_EMOJI_ID = 338384063691751424
 
 def super_toxic_heuristic(scores):
     return False
 
-class bot_function:
-  def __init__(self, bot):
-    self.bot = bot
-  def __call__(self, *args, **kwargs):
-    raise NotImplementedError
-
 class auto_on_message(bot_function):
-    async def __call__(self, message, *args, **kwargs):
-        return await self.action(message) 
-    async def action(self, message):
+    registry = []
+    def __init__(self,*args):
+        super().__init__(*args)
+        auto_on_message.registry.append(self)
+    async def action(self,message):
         raise NotImplementedError
 
-@func_decorator()
 class unsubscribe(auto_on_message):
     """
     Extension of $catfact
     """
+    def __init__(self):
+        super().__init__()
     async def action(self, message):
         if message.content.lower().strip() == "unsubscribe":
             return message_data(message.channel, get_catfact())
 # print(help(unsubscribe))
 
-@func_decorator()
 class private_message(auto_on_message):
     """
     Yang will respond to private messages with a notice to not message him privately
     """
+    def __init__(self):
+        super().__init__()
     async def action(self, message):
         if isinstance(message.channel, (discord.DMChannel, discord.GroupChannel)):
             return message_data(message.channel, "I do not reply to private messages. If you have any questions, please message one of the mods.")
         return None
 
-@func_decorator()
 class check_toxicity(auto_on_message):
     """
     Notifies admins if a message is toxic (>.83) and removes it if super toxic (>.91)
     """
+    def __init__(self):
+        super().__init__()
     async def remove_toxicity(self, message, scores, toxic_message):
         if message is None:
             return
@@ -77,11 +76,12 @@ class check_toxicity(auto_on_message):
         await self.remove_toxicity(t_message, scores, message)
         return 
 
-@func_decorator()
 class mission_complete(auto_on_message):
     """
     Repeats a message if it has been repeated bot.repeat_n times in a row in a channel
     """
+    def __init__(self):
+        super().__init__()
     async def action(self, message):
         m_a = message_author(message.content, message.author)
         cycle(self.bot.repeated_messages_dict[message.channel.id], m_a, self.bot.repeat_n)
