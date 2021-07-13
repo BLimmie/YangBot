@@ -1,6 +1,6 @@
 import os
 from discord.ext import commands
-from YangBot import YangBot
+from src.yangbot import YangBot
 my_secret = os.environ['YB_LOGIN']
 bot = commands.Bot(command_prefix='$')
 Botter = None
