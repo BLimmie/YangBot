@@ -1,16 +1,16 @@
 import os
 from discord.ext import commands
 from YangBot import YangBot
-my_secret = os.environ['TOKEN'] #Needs actual YangBot token
+my_secret = os.environ['TOKEN']
 bot = commands.Bot(command_prefix='$')
 Botter = None
-
+DATABASE_URL = os.environ['DATABASE_URL']
+conn = psycopg2.connect(DATABASE_URL, sslmode='require')
 
 @bot.event
 async def on_ready():
   global Botter
-  global bot
-  Botter = YangBot(bot)
+  Botter = YangBot(bot,conn)
   print('Bot is ready!')
 
 @bot.event

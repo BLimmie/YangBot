@@ -3,11 +3,11 @@ from src.tools.funcblocker import funcblocker
 from commands_refactor import command_on_message
 from auto_on_message_refactor import auto_on_message
 
-# There is still some funkyness with db-related commands
 
 class YangBot():
-  def __init__(self,bot):
+  def __init__(self,bot,conn):
     self.bot = bot
+    self.conn = conn
     self.command_on_message_list = {}
     self.auto_on_message_list = {}
     
