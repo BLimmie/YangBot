@@ -1,7 +1,7 @@
 import os
 from discord.ext import commands
 from YangBot import YangBot
-my_secret = os.environ['TOKEN']
+my_secret = os.environ['TOKEN'] #Needs actual YangBot token
 bot = commands.Bot(command_prefix='$')
 Botter = None
 
