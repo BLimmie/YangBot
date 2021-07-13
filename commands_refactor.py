@@ -147,6 +147,8 @@ class send(command_on_message):
 
 
 class choose(command_on_message):
+  def __init__(self):
+    super().__init__()
   async def action(self, message):
     content = message.content
     l = " ".join(content.split()[1:])
@@ -162,10 +164,4 @@ class choose(command_on_message):
       "description": chosen_opt,
       "color": 53380}
       )
-
-class toxicity(auto_on_message):
-  async def action(self, message):
-    send_message, scores = get_toxicity(message)
-    m = None if send_message is None else ""
-    return message_data(bot.config["toxic_notif_channel"], message=m, embed=send_message)
     
