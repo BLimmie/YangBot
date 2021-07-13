@@ -9,14 +9,6 @@ from src.modules.catfact_helper import get_catfact
 from src.modules.toxicity_helper import get_toxicity
 from src.tools.bot_function import bot_function
 
-class auto_on_message(bot_function):
-  registry = []
-  def __init__(self,*args):
-    super().__init__(*args)
-    auto_on_message.registry.append(self)
-  async def action(self,message):
-    raise NotImplementedError
-
 class command_on_message(bot_function):
   registry = []
   def __init__(self,*args):
@@ -39,21 +31,21 @@ class on_member_update(bot_function):
   def action(self,message):
     raise NotImplementedError
 
-"""
-$catfact
-Gets random catfact
-"""
 class catfact(command_on_message):
+  """
+  $catfact
+  Gets random catfact
+  """
   def __init__(self):
     super().__init__()
   async def action(self,message):
     return message_data(message.channel, get_catfact())
 
-"""
-$register
-Registers a user in the db
-"""
 class register(command_on_message):
+  """
+  $register
+  Registers a user in the db
+  """
   def __init__(self):
     super().__init__()
   async def action(self,message):
@@ -66,11 +58,11 @@ class register(command_on_message):
       return message_data(message.channel, "User already registered")
     return message_data(message.channel, "User registered")
 
-"""
-$resetregister
-Resets the registration in the db in case of bugs
-"""
 class resetregister(command_on_message):
+  """
+  $resetregister
+  Resets the registration in the db in case of bugs
+  """
   def __init__(self):
     super().__init__()
   async def action(self, message):
@@ -87,11 +79,11 @@ class resetregister(command_on_message):
     insert_member(conn, self.bot, user)
     return message_data(message.channel, "User registration reset")
 
-"""
-$kickme
-kicks an unregistered user???
-"""
 class kickme(command_on_message):
+  """
+  $kickme
+  kicks an unregistered user???
+  """
   def __init__(self):
     super().__init__()
   async def action(self, message):
@@ -102,12 +94,12 @@ class kickme(command_on_message):
     await kick_member(message.author)
     return
 
-"""
-$nickname [nickname]
-Requests to change nickname to [nickname]
-Admins click on emoji react to approve/disapprove request
-"""
 class nickname(command_on_message):
+  """
+  $nickname [nickname]
+  Requests to change nickname to [nickname]
+  Admins click on emoji react to approve/disapprove request
+  """
   def __init__(self):
     super().__init__()
   async def nickname_request(self, message, member, new_nickname):
@@ -147,11 +139,11 @@ class nickname(command_on_message):
 async def remove_message(message, command):
   await command.delete()
 
-"""
-$send [channel_mention] [message]
-Sends [message] to [channel_mention] and deletes the command to send
-"""
 class send(command_on_message):
+  """
+  $send [channel_mention] [message]
+  Sends [message] to [channel_mention] and deletes the command to send
+  """
   def __init__(self,rles = [
   bot.config["roles"]["Club Officers"],
   bot.config["roles"]["Admins"],
@@ -167,11 +159,11 @@ class send(command_on_message):
         args=[message]
     )
 
-"""
-$choose choice1; choice2[; choice3 ....]
-Chooses an option from the list
-"""
 class choose(command_on_message):
+  """
+  $choose choice1; choice2[; choice3 ....]
+  Chooses an option from the list
+  """
   async def action(self, message):
     content = message.content
     l = " ".join(content.split()[1:])
