@@ -1,7 +1,7 @@
 from datetime import datetime
 
 class bot_function:
-    def __init__(self, bot,timer=None, roles=None, positive_roles=True):
+    def __init__(self, bot, timer=None, roles=None, positive_roles=True):
         self.bot = bot
         self.timer = timer
         self.last_time = datetime.now() - timer if timer is not None else datetime.now()
