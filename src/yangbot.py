@@ -6,6 +6,7 @@ from auto_on_message_refactor import auto_on_message
 
 class YangBot():
   def __init__(self,bot,conn):
+    self.debug = False
     self.bot = bot
     self.conn = conn
     self.command_on_message_list = {}
