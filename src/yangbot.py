@@ -8,6 +8,7 @@ class YangBot():
         """
         Initialization of all data
         """
+        self.debug = False
         self.bot = bot
         self.conn = conn
         self.command_on_message_list = {}
