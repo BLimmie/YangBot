@@ -17,20 +17,6 @@ class command_on_message(bot_function):
   async def action(self,message):
     raise NotImplementedError
 
-class on_member_join(bot_function):
-  registry = []
-  def __init__(self):
-    on_member_join.registery.append(self)
-  async def action(self,message):
-    raise NotImplementedError
-
-class on_member_update(bot_function):
-  registry = []
-  def __init__(self):
-    on_member_update.registery.append(self)
-  def action(self,message):
-    raise NotImplementedError
-
 """
 $catfact
 Gets random catfact
