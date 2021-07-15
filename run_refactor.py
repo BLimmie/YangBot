@@ -2,11 +2,14 @@ import os
 from discord.ext import commands
 from src.yangbot import YangBot
 import psycopg2
+import json
 
 my_secret = os.environ['YB_LOGIN']
 bot = commands.Bot(command_prefix='$')
 Botter = None
 debug = False
+
+config = json.load(open('config.json'))
 
 DATABASE_URL = os.environ['DATABASE_URL']
 conn = psycopg2.connect(DATABASE_URL, sslmode='require')
@@ -14,7 +17,7 @@ conn = psycopg2.connect(DATABASE_URL, sslmode='require')
 @bot.event
 async def on_ready():
     global Botter
-    Botter = YangBot(bot, conn)
+    Botter = YangBot(bot, conn, config)
     print('Bot is ready!')
 
 @bot.event
