@@ -6,8 +6,11 @@ class bot_function:
         self.last_time = datetime.now() - timer if timer is not None else datetime.now()
         self.roles = roles
         self.positive_roles = positive_roles
-    async def simple_proc(self, message):
-        return await self.action(message)
+    async def simple_proc(self, user = None, before = None, after = None):
+        self.user = user if user is not None else None
+        self.before = before if before is not None else None
+        self.after = after if after is not None else None
+        return await self.action(user, before, after)
     async def proc(self, message, time, member):
         """
         Run the function with the given time, member, and args.
