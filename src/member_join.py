@@ -16,7 +16,6 @@ class restore_roles(on_member_join):
     """
     def __init__(self):
         super().__init__()
-        
     async def restore(message, user, member_roles, nickname):
         try:
             await add_roles(user, member_roles)
@@ -27,7 +26,7 @@ class restore_roles(on_member_join):
     async def action(self, user):
         conn = self.bot.conn
         if member_exists(conn, user.id):
-            roles = sorted(self.bot.config["role_schema"])
+            roles = sorted(self.bot.roles.items(), key=lambda x: x[1])
             member = fetch_member_roles(conn, user.id, roles)
             member_roles = [self.bot.client.get_guild(int(self.bot.config["server_id"])).get_role(
                 role) for role in member]
