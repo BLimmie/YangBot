@@ -13,6 +13,8 @@ class update_database_roles(on_member_update):
     """
     Updates the member roles in the database after member is updated
     """
+    def __init__(self):
+        super().__init__()
     async def action(self, before, after):
         user_id = after.id
         conn = self.bot.conn
@@ -52,6 +54,8 @@ class update_database_name(on_member_update):
     """
     Updates the member nickname in the database after member is updated
     """
+    def __init__(self):
+        super().__init__()
     async def action(self, before, after):
         if before.display_name == after.display_name:
             return
