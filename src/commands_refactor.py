@@ -130,12 +130,9 @@ $send [channel_mention] [message]
 Sends [message] to [channel_mention] and deletes the command to send
 """
 class send(command_on_message):
-  def __init__(self,rles = [
-  bot.config["roles"]["Club Officers"],
-  bot.config["roles"]["Admins"],
-  bot.config["roles"]["Yangbot Devs"],
-  bot.config["roles"]["Server Legacy"]]):
-    super().__init__(None, rles, True)
+  def __init__(self):
+    self.roleslist = [self.guildRoles["Club Officers"],self.guildRoles["Admins"],self.guildRoles["Yangbot Devs"],self.guildRoles["Server Legacy"]]
+    super().__init__(None, self.roleslist, True)
   async def action(self, message):
     content = message.content
     if len(message.channel_mentions) > 0:
