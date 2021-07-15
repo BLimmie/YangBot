@@ -1,6 +1,8 @@
 import traceback
 from commands_refactor import command_on_message
 from auto_on_message_refactor import auto_on_message
+from member_join import on_member_join
+from member_update import on_member_update
 
 
 class YangBot():
@@ -38,7 +40,10 @@ class YangBot():
         }
         self.command_on_message_list = {}
         self.auto_on_message_list = {}
+        self.on_member_join_list = {}
+        self.on_member_update_list = {}
         
+        # Actions in Command on Message
         for action in command_on_message.__subclasses__():
             action.bot = bot
             action.conn = conn
@@ -46,23 +51,50 @@ class YangBot():
             action.guildRoles = self.roles
             self.command_on_message_list[action.__name__] = action()
     
+        # Actions in Auto on Message
         for action in auto_on_message.__subclasses__():
             action.bot = bot
             action.conn = conn
             action.guildRoles = self.roles
             self.auto_on_message_list[action.__name__] = action()
 
+        # Actions on Member Join
+        for action in on_member_join.__subclasses__():
+            action.bot = bot
+            action.conn = conn
+            action.config = config
+            action.guildRoles = self.roles
+            self.on_member_join_list[action.__name__] = action()
+    
+        # Actions on Member Update
+        for action in on_member_update.__subclasses__():
+            action.bot = bot
+            action.conn = conn
+            action.guildRoles = self.roles
+            self.on_member_update_list[action.__name__] = action()
+
+    # Run Command on Message
     async def run_command_on_message(self, message):
         command = message.content.split()[0][1:]
         if command in self.command_on_message_list:
             return await self.command_on_message_list[command].proc(message, message.created_at, message.author)
             
+    # Run Auto on Message            
     async def run_auto_on_message(self, message):
         if message is not None:
             for key, func in self.auto_on_message_list.items():
                 try:
-                    return await func.proc(message,message.created_at,message.author)
+                    return await func.proc(message, message.created_at, message.author)
                 except Exception:
                     traceback.print_exc()
                     assert False
-                    
+    
+    # Run on Member Join
+    async def run_on_member_join(self, user):
+        for func in self.on_member_join_list.values():
+            return await func.simple_proc(user)
+    
+    # Run on Member Update
+    async def run_on_member_update(self, before, after):
+        for func in self.on_member_update_list.values():
+            return await func.simple_proc(before, after)
