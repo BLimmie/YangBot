@@ -5,8 +5,9 @@ from src.tools.bot_function import bot_function
 
 class on_member_join(bot_function):
     registry = []
-    def __init__(self):
-        on_member_join.registery.append(self)
+    def __init__(self, *args):
+        super().__init__(*args)
+        on_member_join.registry.append(self)
     async def action(self, message):
         raise NotImplementedError
 
