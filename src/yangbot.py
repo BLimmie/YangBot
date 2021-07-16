@@ -1,4 +1,8 @@
 import traceback
+from typing import List
+
+import discord
+
 from commands_refactor import command_on_message
 from auto_on_message_refactor import auto_on_message
 from member_join import on_member_join
@@ -6,12 +10,12 @@ from member_update import on_member_update
 
 
 class YangBot():
-    def __init__(self, bot, conn, config):
+    def __init__(self, conn, client, config):
         """
         Initialization of all data
         """
         self.debug = False
-        self.bot = bot
+        self.client = client
         self.conn = conn
         self.config = config
         self.roles = {
@@ -45,32 +49,22 @@ class YangBot():
         
         # Actions in Command on Message
         for action in command_on_message.__subclasses__():
-            action.bot = bot
-            action.conn = conn
-            action.config = config
-            action.guildRoles = self.roles
+            action.bot = self
             self.command_on_message_list[action.__name__] = action()
     
         # Actions in Auto on Message
         for action in auto_on_message.__subclasses__():
-            action.bot = bot
-            action.conn = conn
-            action.guildRoles = self.roles
+            action.bot = self
             self.auto_on_message_list[action.__name__] = action()
 
         # Actions on Member Join
         for action in on_member_join.__subclasses__():
-            action.bot = bot
-            action.conn = conn
-            action.config = config
-            action.guildRoles = self.roles
+            action.bot = self
             self.on_member_join_list[action.__name__] = action()
     
         # Actions on Member Update
         for action in on_member_update.__subclasses__():
-            action.bot = bot
-            action.conn = conn
-            action.guildRoles = self.roles
+            action.bot = self
             self.on_member_update_list[action.__name__] = action()
 
     # Run Command on Message
@@ -98,3 +92,6 @@ class YangBot():
     async def run_on_member_update(self, before, after):
         for func in self.on_member_update_list.values():
             return await func.simple_proc(before, after)
+
+    def get_roles(self, role_ids: List[str]) -> List[int]:
+        return [self.roles[id] for id in role_ids]

@@ -1,8 +1,8 @@
 import psycopg2
 from src.modules.db_helper import member_exists, insert_member
-from src.tools.bot_function import bot_function
+from src.tools.botfunction import BotFunction
 
-class on_member_update(bot_function):
+class on_member_update(BotFunction):
     registry = []
     def __init__(self, *args):
         super().__init__(*args)

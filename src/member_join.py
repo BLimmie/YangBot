@@ -1,9 +1,9 @@
 from src.tools.message_return import message_data
 from src.modules.db_helper import member_exists, fetch_member_roles, fetch_member_nickname
 from src.modules.discord_helper import add_roles, change_nickname
-from src.tools.bot_function import bot_function
+from src.tools.botfunction import BotFunction
 
-class on_member_join(bot_function):
+class on_member_join(BotFunction):
     registry = []
     def __init__(self, *args):
         super().__init__(*args)
