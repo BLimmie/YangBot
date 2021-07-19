@@ -20,11 +20,6 @@ client = discord.Client()
 async def on_ready():
     global bot
     bot = YangBot(conn, client, config)
-
-    auto_on_message.init(bot)
-    commands.init(bot)
-    member_join.init(bot)
-    member_update.init(bot)
     print("Bot is ready")
 
 
@@ -32,8 +27,11 @@ async def on_ready():
 async def on_message(message):
     if not message.author.bot:
         if message.content.startswith('$'):
-            await bot.run_command_on_message(message)
+            return_message = await bot.run_command_on_message(message)
         await bot.run_auto_on_message(message)
+        if return_message is not None:
+            channel = return_message.channel
+            await channel.send(return_message.message, embed = return_message.embed)
 
 
 @client.event

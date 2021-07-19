@@ -24,11 +24,42 @@ class catfact(command_on_message):
     Gets random catfact
     """
 
-    def __init__(self):
-        super().__init__()
+    def __init__(self,*args,**kwargs):
+        super().__init__(*args,**kwargs)
 
     async def action(self, message, *args, **kwargs):
         return message_data(message.channel, get_catfact())
+  
+class debug(command_on_message):
+    """
+    $debug
+    activates debug mode 
+    """
+    def __init__(self,*args,**kwargs):
+        self.roleslist = ["Admins", "Yangbot Devs", "Server Legacy"]
+        super().__init__(roles = self.roleslist, role_whitelist = True, *args, **kwargs)
+    
+    async def action(self, message, *args, **kwargs):
+        if self.bot.debug is False:
+            self.bot.debug = True
+            await message.channel.send('Debug mode on')
+        elif self.bot.debug is True:
+            self.bot.debug = False
+            await message.channel.send('Debug mode off')
+
+class sigkill(command_on_message):
+    """
+    $debug
+    kills bot processes when in debug mode
+    """
+    def __init__(self,*args,**kwargs):
+        self.roleslist = ["Admins", "Yangbot Devs", "Server Legacy"]
+        super().__init__(roles = self.roleslist, role_whitelist = True, *args, **kwargs)
+    async def action(self):
+      return
+    async def debug_action(self, message):
+      await message.channel.send('Killing bot processes...')
+      exit()
 
 
 class register(command_on_message):
@@ -37,8 +68,8 @@ class register(command_on_message):
     Registers a user in the db
     """
 
-    def __init__(self):
-        super().__init__()
+    def __init__(self,*args,**kwargs):
+        super().__init__(*args,**kwargs)
 
     async def action(self, message, *args, **kwargs):
         print("Registering")
@@ -57,8 +88,8 @@ class resetregister(command_on_message):
     Resets the registration in the db in case of bugs
     """
 
-    def __init__(self):
-        super().__init__()
+    def __init__(self,*args,**kwargs):
+        super().__init__(*args,**kwargs)
 
     async def action(self, message, *args, **kwargs):
         user = message.author
@@ -81,8 +112,8 @@ class kickme(command_on_message):
     kicks an unregistered user???
     """
 
-    def __init__(self):
-        super().__init__()
+    def __init__(self,*args,**kwargs):
+        super().__init__(*args,**kwargs)
 
     async def action(self, message, *args, **kwargs):
         conn = self.bot.conn
@@ -92,6 +123,15 @@ class kickme(command_on_message):
         await message.author.send("See you later!")
         await kick_member(message.author)
         return
+    async def debug_action(self, message, *args, **kwargs):
+        conn = self.bot.conn
+        if not member_exists(conn, message.author.id):
+            return message_data(message.channel,
+                                "You aren't registered in my memory yet. Please register with $register first")
+        await message.author.send("See you later!")
+        await kick_member(message.author)
+        return
+
 
 
 class nickname(command_on_message):
@@ -101,8 +141,8 @@ class nickname(command_on_message):
     Admins click on emoji react to approve/disapprove request
     """
 
-    def __init__(self):
-        super().__init__()
+    def __init__(self,*args,**kwargs):
+        super().__init__(*args,**kwargs)
 
     async def nickname_request(self, message, member, new_nickname):
         if new_nickname == None:
@@ -115,7 +155,7 @@ class nickname(command_on_message):
             return reaction.message.id == message.id and not user.bot and (
                     str(reaction.emoji) == '✅' or str(reaction.emoji) == '❌')
 
-        reaction, user = await self.bot.wait_for("reaction_add", check=check)
+        reaction, user = await self.bot.client.wait_for("reaction_add", check=check)
         if str(reaction.emoji) == '✅':
             try:
                 await change_nickname(member, new_nickname)
@@ -134,7 +174,7 @@ class nickname(command_on_message):
         nickname = " ".join(content.split()[1:])
         if len(nickname) > 32:
             return message_data(message.channel, "Nickname requested is too long")
-        requests_channel = self.bot.get_channel(self.bot.config["requests_channel"])
+        requests_channel = self.bot.client.get_channel(self.bot.config["requests_channel"])
         message = await requests_channel.send(
             "Member {} is requesting a nickname change\nNew nickname: {}".format(user.display_name, nickname))
         await self.nickname_request(message, user, nickname)
@@ -151,10 +191,9 @@ class send(command_on_message):
     Sends [message] to [channel_mention] and deletes the command to send
     """
 
-    def __init__(self):
-        self.roleslist = self.bot.get_roles(["Club Officers", "Admins", "Yangbot Devs", "Server Legacy"])
-        super().__init__(roles=self.roleslist, role_whitelist=True)
-
+    def __init__(self,*args,**kwargs):
+        self.roleslist = ["Club Officers", "Admins", "Yangbot Devs", "Server Legacy"]
+        super().__init__(roles = self.roleslist, role_whitelist = True, *args, **kwargs)
     async def action(self, message, *args, **kwargs):
         content = message.content
         if len(message.channel_mentions) > 0:
@@ -171,8 +210,8 @@ class choose(command_on_message):
     Chooses an option from the list
     """
 
-    def __init__(self):
-        super().__init__()
+    def __init__(self,*args,**kwargs):
+        super().__init__(*args,**kwargs)
 
     async def action(self, message, *args, **kwargs):
         content = message.content

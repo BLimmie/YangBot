@@ -49,23 +49,19 @@ class YangBot():
         
         # Actions in Command on Message
         for action in command_on_message.__subclasses__():
-            action.bot = self
-            self.command_on_message_list[action.__name__] = action()
+            self.command_on_message_list[action.__name__] = action(bot = self)
     
         # Actions in Auto on Message
         for action in auto_on_message.__subclasses__():
-            action.bot = self
-            self.auto_on_message_list[action.__name__] = action()
+            self.auto_on_message_list[action.__name__] = action(bot = self)
 
         # Actions on Member Join
         for action in on_member_join.__subclasses__():
-            action.bot = self
-            self.on_member_join_list[action.__name__] = action()
+            self.on_member_join_list[action.__name__] = action(bot = self)
     
         # Actions on Member Update
         for action in on_member_update.__subclasses__():
-            action.bot = self
-            self.on_member_update_list[action.__name__] = action()
+            self.on_member_update_list[action.__name__] = action(bot = self)
 
     # Run Command on Message
     async def run_command_on_message(self, message):
@@ -78,7 +74,7 @@ class YangBot():
         if message is not None:
             for key, func in self.auto_on_message_list.items():
                 try:
-                    return await func.proc(message, message.created_at, message.author)
+                    return await func.proc( message.created_at, message.author, message)
                 except Exception:
                     traceback.print_exc()
                     assert False
