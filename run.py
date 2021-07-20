@@ -4,10 +4,6 @@ import os
 import psycopg2
 
 from src.yangbot import YangBot
-import src.auto_on_message as auto_on_message
-import src.commands as commands
-import src.member_join as member_join
-import src.member_update as member_update
 bot=None
 
 config = json.load(open('config.json'))
@@ -25,13 +21,14 @@ async def on_ready():
 
 @client.event
 async def on_message(message):
-    if not message.author.bot:
-        if message.content.startswith('$'):
+
+    if not message.author.bot or message.author.id == 856999058709938177: # TestBot ID
+        if message.content.startswith('$'):            
             return_message = await bot.run_command_on_message(message)
+            if return_message is not None:
+                channel = return_message.channel
+                await channel.send(return_message.message, embed=return_message.embed)
         await bot.run_auto_on_message(message)
-        if return_message is not None:
-            channel = return_message.channel
-            await channel.send(return_message.message, embed = return_message.embed)
 
 
 @client.event
@@ -44,3 +41,5 @@ async def on_member_update(before, after):
     await bot.run_on_member_update(before, after)
 
 client.run(os.environ['YB_LOGIN'])
+
+
