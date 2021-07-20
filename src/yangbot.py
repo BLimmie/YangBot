@@ -3,20 +3,20 @@ from typing import List
 
 import discord
 
-from commands_refactor import command_on_message
-from auto_on_message_refactor import auto_on_message
-from member_join import on_member_join
-from member_update import on_member_update
+from src.commands_refactor import command_on_message
+from src.auto_on_message_refactor import auto_on_message
+from src.member_join import on_member_join
+from src.member_update import on_member_update
 
 
 class YangBot():
-    def __init__(self, conn, client, config):
+    def __init__(self, dbconn, client, config):
         """
         Initialization of all data
         """
         self.debug = False
         self.client = client
-        self.conn = conn
+        self.conn = dbconn
         self.config = config
         self.roles = {
         "Fitness Peeps": 526130516324515842,
@@ -74,7 +74,7 @@ class YangBot():
         if message is not None:
             for key, func in self.auto_on_message_list.items():
                 try:
-                    return await func.proc( message.created_at, message.author, message)
+                    return await func.proc(message, message.created_at, message.author)
                 except Exception:
                     traceback.print_exc()
                     assert False
