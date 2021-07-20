@@ -3,19 +3,19 @@ from src.modules.db_helper import member_exists, insert_member
 from src.tools.botfunction import BotFunction
 
 class on_member_update(BotFunction):
-    registry = []
-    def __init__(self, *args):
-        super().__init__(*args)
-        on_member_update.registry.append(self)
-    async def action(self, message):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    async def action(self, message, *args, **kwargs):
         raise NotImplementedError
 
 class update_database_roles(on_member_update):
     """
     Updates the member roles in the database after member is updated
     """
-    def __init__(self):
-        super().__init__()
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
     async def action(self, before, after):
         user_id = after.id
         conn = self.bot.conn
@@ -55,8 +55,9 @@ class update_database_name(on_member_update):
     """
     Updates the member nickname in the database after member is updated
     """
-    def __init__(self):
-        super().__init__()
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
     async def action(self, before, after):
         if before.display_name == after.display_name:
             return

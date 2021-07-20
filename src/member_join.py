@@ -4,19 +4,19 @@ from src.modules.discord_helper import add_roles, change_nickname
 from src.tools.botfunction import BotFunction
 
 class on_member_join(BotFunction):
-    registry = []
-    def __init__(self, *args):
-        super().__init__(*args)
-        on_member_join.registry.append(self)
-    async def action(self, message):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    async def action(self, message, *args, **kwargs):
         raise NotImplementedError
 
 class restore_roles(on_member_join):
     """
     Restores roles and nickname on member join if member exists in database
     """
-    def __init__(self):
-        super().__init__()
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
     async def restore(message, user, member_roles, nickname):
         try:
             await add_roles(user, member_roles)

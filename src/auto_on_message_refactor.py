@@ -27,8 +27,8 @@ class unsubscribe(auto_on_message):
     Extension of $catfact
     """
 
-    def __init__(self):
-        super().__init__()
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
     async def action(self, message, *args, **kwargs):
         if message.content.lower().strip() == "unsubscribe":
@@ -42,8 +42,8 @@ class private_message(auto_on_message):
     Yang will respond to private messages with a notice to not message him privately
     """
 
-    def __init__(self):
-        super().__init__()
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
     async def action(self, message, *args, **kwargs):
         if isinstance(message.channel, (discord.DMChannel, discord.GroupChannel)):
@@ -57,8 +57,8 @@ class check_toxicity(auto_on_message):
     Notifies admins if a message is toxic (>.83) and removes it if super toxic (>.91)
     """
 
-    def __init__(self):
-        super().__init__()
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
     async def remove_toxicity(self, message, scores, toxic_message):
         if message is None:
@@ -95,8 +95,8 @@ class mission_complete(auto_on_message):
     Repeats a message if it has been repeated bot.repeat_n times in a row in a channel
     """
 
-    def __init__(self):
-        super().__init__()
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
     async def action(self, message, *args, **kwargs):
         m_a = message_author(message.content, message.author)
