@@ -2,7 +2,7 @@ import discord
 
 import src.modules.toxicity_helper as toxicity_helper
 from src.modules.catfact_helper import get_catfact
-from src.modules.repeat_helper import message_author, is_repeat, cycle, flush
+from src.modules.repeat_helper import message_author, is_repeat, cycle, flush, message_author_debug
 from src.tools.botfunction import BotFunction
 from src.tools.message_return import message_data
 
@@ -99,13 +99,21 @@ class mission_complete(auto_on_message):
         super().__init__(*args, **kwargs)
 
     async def action(self, message, *args, **kwargs):
-        m_a = message_author(message.content, message.author)
+        m_a = message_author(message.content, message.author,self.bot.debug)
         cycle(self.bot.repeated_messages_dict[message.channel.id], m_a, self.bot.repeat_n)
         if is_repeat(self.bot.repeated_messages_dict[message.channel.id], self.bot.repeat_n):
             send = self.bot.repeated_messages_dict[message.channel.id][-1].message
             flush(self.bot.repeated_messages_dict[message.channel.id])
             return message_data(message.channel, send)
         return None
+    
+    async def debug_action(self, message, *args, **kwargs):
+        m_a = message_author(message.content, message.author,self.bot.debug)
+        cycle(self.bot.repeated_messages_dict[message.channel.id], m_a, self.bot.repeat_n)
+        if is_repeat(self.bot.repeated_messages_dict[message.channel.id], self.bot.repeat_n):
+            send = self.bot.repeated_messages_dict[message.channel.id][-1].message
+            flush(self.bot.repeated_messages_dict[message.channel.id])
+            return message_data(message.channel, send)       
 
     # @bot.auto_on_message(timedelta(minutes=1),None,True)
     # def fire(message):
