@@ -114,7 +114,7 @@ def refresh_member_in_db(conn, member, bot_roles,debug):
     args:
     conn = database connection. Typically bot.conn
     member = member object to refresh
-    config_roles = get from bot.roles in roles refactor
+    bot_roles = get from bot.roles in roles refactor
     debug = debug bool from bot.debug
     """
     table = get_table(debug)
@@ -122,7 +122,7 @@ def refresh_member_in_db(conn, member, bot_roles,debug):
         try:
             cur = conn.cursor()
             cur.execute(sql.SQL("""
-                    UPDATE {}}
+                    UPDATE {}
                     SET default_nickname = %s
                     WHERE id = '%s' ;
                 """).format(sql.Identifier(table)),
@@ -138,25 +138,11 @@ def refresh_member_in_db(conn, member, bot_roles,debug):
             if int(role) in member_roles:
                 try:
                     cur = conn.cursor()
-                    cur.execute("""
-                            UPDATE Members
-                            SET role_%s = True
+                    cur.execute(sql.SQL("""
+                            UPDATE {}
+                            SET roles = CONCAT(roles,'%s'+',')
                             WHERE id = '%s' ;
-                        """,
-                        (int(role), member.id)
-                    )
-                    conn.commit()
-                except:
-                    conn.rollback()
-                    return FAIL
-            else:
-                try:
-                    cur = conn.cursor()
-                    cur.execute("""
-                            UPDATE Members
-                            SET role_%s = False
-                            WHERE id = '%s' ;
-                        """,
+                        """).format(sql.Identifier(table)),
                         (int(role), member.id)
                     )
                     conn.commit()
@@ -167,10 +153,10 @@ def refresh_member_in_db(conn, member, bot_roles,debug):
 def remove_role(conn, role_id):
     try:
         cur = conn.cursor()
-        cur.execute("""
-            ALTER TABLE Members
-            DROP COLUMN role_%s;
-        """,
+        cur.execute(sql.SQL("""
+            UPDATE {}
+            SET roles = REPLACE(roles,'%s','')
+        """).format(sql.Identifier(get_table)),
         (int(role_id),))
         conn.commit()
     except:
