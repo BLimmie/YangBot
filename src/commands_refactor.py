@@ -1,9 +1,10 @@
 import random
 
 import psycopg2
-
+import psycopg2.extras
+from psycopg2 import sql
 from src.modules.catfact_helper import get_catfact
-from src.modules.db_helper import member_exists, insert_member
+from src.modules.db_helper import member_exists, insert_member, get_table
 from src.modules.discord_helper import change_nickname, kick_member, try_send
 from src.tools.botfunction import BotFunction
 from src.tools.message_return import message_data
@@ -80,6 +81,17 @@ class register(command_on_message):
         else:
             return message_data(message.channel, "User already registered")
         return message_data(message.channel, "User registered")
+    
+    async def debug_action(self,message,*args,**kwargs):
+        print("Registering")
+        user = message.author
+        conn = self.bot.conn
+        debug = self.bot.debug
+        if not member_exists(conn,user,id,debug):
+            insert_member(conn,self.bot,user)
+        else:
+            return message_data(message.channel, "User already registered")
+        return message_data(message.channel, "User registered")
 
 
 class resetregister(command_on_message):
@@ -94,11 +106,12 @@ class resetregister(command_on_message):
     async def action(self, message, *args, **kwargs):
         user = message.author
         conn = self.bot.conn
+        table = get_table(self.bot.debug)
         if not member_exists(conn, user.id):
             return message_data(message.channel, "User not registered. Use $register to register.")
         try:
             cur = conn.cursor()
-            cur.execute("""DELETE FROM Members WHERE id = '%s' ;""", (user.id,))
+            cur.execute(sql.SQL("""DELETE FROM {} WHERE id = '%s' ;""").format(sql.Identifier(table)), (user.id,))
             conn.commit()
         except psycopg2.Error as e:
             conn.rollback()
@@ -125,11 +138,11 @@ class kickme(command_on_message):
         return
     async def debug_action(self, message, *args, **kwargs):
         conn = self.bot.conn
-        if not member_exists(conn, message.author.id):
+        debug = self.bot.debug
+        if not member_exists(conn, message.author.id,debug):
             return message_data(message.channel,
                                 "You aren't registered in my memory yet. Please register with $register first")
         await message.author.send("See you later!")
-        await kick_member(message.author)
         return
 
 

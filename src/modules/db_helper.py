@@ -27,7 +27,7 @@ def insert_member(conn, bot, member):
         conn.rollback()
         return FAIL
 
-def member_exists(conn, id, debug):
+def member_exists(conn, id, debug = False):
     """
     Check if a member exists in the database
 
@@ -46,7 +46,7 @@ def member_exists(conn, id, debug):
         return FAIL
 
 
-def fetch_member(conn, id, debug):
+def fetch_member(conn, id, debug = False):
     """
     Return a member from the database as a tuple. Schema can be inferred from config.json
 
@@ -64,7 +64,7 @@ def fetch_member(conn, id, debug):
         conn.rollback()
         return FAIL
 
-def fetch_member_roles(conn,id,roles,debug):
+def fetch_member_roles(conn,id,roles,debug = False):
     """
     Return all the member role objects of a member
 
@@ -88,7 +88,7 @@ def fetch_member_roles(conn,id,roles,debug):
         conn.rollback()
         return FAIL
 
-def fetch_member_nickname(conn,id,debug):
+def fetch_member_nickname(conn,id,debug = False):
     """
     Return the nickname of the member
 
@@ -107,7 +107,7 @@ def fetch_member_nickname(conn,id,debug):
         conn.rollback()
         return FAIL
 
-def refresh_member_in_db(conn, member, bot_roles,debug):
+def refresh_member_in_db(conn, member, bot_roles,debug = False):
     """
     Refresh a member's database data
 
@@ -140,7 +140,7 @@ def refresh_member_in_db(conn, member, bot_roles,debug):
                     cur = conn.cursor()
                     cur.execute(sql.SQL("""
                             UPDATE {}
-                            SET roles = CONCAT(roles,'%s'+',')
+                            SET roles = CONCAT(roles,'%s',',')
                             WHERE id = '%s' ;
                         """).format(sql.Identifier(table)),
                         (int(role), member.id)
@@ -155,7 +155,7 @@ def remove_role(conn, role_id):
         cur = conn.cursor()
         cur.execute(sql.SQL("""
             UPDATE {}
-            SET roles = REPLACE(roles,'%s','')
+            SET roles = REPLACE(roles,',%s','')
         """).format(sql.Identifier(get_table)),
         (int(role_id),))
         conn.commit()
