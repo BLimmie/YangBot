@@ -162,6 +162,7 @@ def remove_role(conn, role_id):
     except:
         conn.rollback()
 
+# I don't know if this function is necessary anymore with the updated table format. 
 def add_role(conn, role_id):
     try:
         cur = conn.cursor()
