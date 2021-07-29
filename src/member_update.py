@@ -29,8 +29,8 @@ class update_database_roles(on_member_update):
             try:
                 cur = conn.cursor()
                 cur.execute("""
-                    UPDATE Members
-                    SET role_%s = False
+                    UPDATE members
+                    SET roles = REPLACE(roles,',%s','')
                     WHERE id = '%s' ;
                 """,
                             (role, user_id))
@@ -42,11 +42,11 @@ class update_database_roles(on_member_update):
             try:
                 cur = conn.cursor()
                 cur.execute("""
-                    UPDATE Members
-                    SET role_%s = True
-                    WHERE id = '%s' ;
+                    UPDATE members
+                    SET roles = CONCAT(roles,%s,',')
+                    WHERE id = '%s' AND roles NOT LIKE CONCAT('%%',%s,'%%') ;
                 """,
-                            (role, user_id))
+                            (role, user_id,role))
                 conn.commit()
             except psycopg2.Error as e:
                 conn.rollback()
@@ -68,8 +68,8 @@ class update_database_name(on_member_update):
             try:
                 cur = conn.cursor()
                 cur.execute("""
-                        UPDATE Members
-                        SET default_nickname = %s
+                        UPDATE members
+                        SET nickname = %s
                         WHERE id = '%s' ;
                     """,
                     (after.display_name, after.id)
