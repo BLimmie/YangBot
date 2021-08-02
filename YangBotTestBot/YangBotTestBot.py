@@ -15,11 +15,13 @@ async def on_ready(m):
   while timeout < 5:
     try:
       await channel.send('$ping')
-      await bot.wait_for("message",check = lambda message: message.author == get.user(392801609362440198) and message.content == 'pong!',timeout = 5)
+      await bot.wait_for("message",check = lambda message: message.author == bot.get_user(392801609362440198) and message.content == 'pong!',timeout = 5)
+      break
     except:
       timeout+=1
       if timeout == 5:
         return
+  await m.send('$debug')
   testout = '```\nTest Results:\n'
   await m.send('testing...')
   for i in YangBotTests.integration_test.__subclasses__():

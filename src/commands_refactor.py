@@ -107,7 +107,7 @@ class resetregister(command_on_message):
         user = message.author
         conn = self.bot.conn
         table = get_table(self.bot.debug)
-        if not member_exists(conn, user.id):
+        if not member_exists(conn, user.id,self.bot.debug):
             return message_data(message.channel, "User not registered. Use $register to register.")
         try:
             cur = conn.cursor()
