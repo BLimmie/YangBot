@@ -64,7 +64,7 @@ def fetch_member(conn, id, debug = False):
         conn.rollback()
         return FAIL
 
-def fetch_member_roles(conn,id,roles,debug = False):
+def fetch_member_roles(conn,user_id,roles,debug = False):
     """
     Return all the member role objects of a member
 
@@ -77,10 +77,11 @@ def fetch_member_roles(conn,id,roles,debug = False):
     table = get_table(debug)
     try:
         cur = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
-        cur.execute(sql.SQL("SELECT * FROM {} where id = '%s'").format(sql.Identifier(table)), (id,))
+        cur.execute(sql.SQL("SELECT * FROM {} where id = '%s'").format(sql.Identifier(table)), (user_id,))
         member = cur.fetchone()
         member_roles= []
         for role in roles:
+            print(member["roles"].split(","))
             if str(role) in member["roles"].split(","):
                 member_roles.append(role)
         return member_roles
@@ -88,7 +89,7 @@ def fetch_member_roles(conn,id,roles,debug = False):
         conn.rollback()
         return FAIL
 
-def fetch_member_nickname(conn,id,debug = False):
+def fetch_member_nickname(conn,user_id,debug = False):
     """
     Return the nickname of the member
 
@@ -100,7 +101,7 @@ def fetch_member_nickname(conn,id,debug = False):
     table = get_table(debug)
     try:
         cur = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
-        cur.execute(sql.SQL("SELECT * FROM {} where id = '%s'").format(sql.Identifier(table)), (id,))
+        cur.execute(sql.SQL("SELECT * FROM {} where id = '%s'").format(sql.Identifier(table)), (user_id,))
         member = cur.fetchone()
         return member["nickname"]
     except:
