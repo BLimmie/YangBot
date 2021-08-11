@@ -10,7 +10,7 @@ cur.execute("""Drop table Members""")
 
 cur.execute("""
     CREATE TABLE Members (
-        ID bigint PRIMARY KEY NOT NULL,
+        id bigint PRIMARY KEY NOT NULL,
         nickname VARCHAR(32) NOT NULL,
         roles VARCHAR(255) NOT NULL
     );
