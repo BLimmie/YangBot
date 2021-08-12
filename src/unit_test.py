@@ -1,12 +1,14 @@
 from discord import channel
 from modules.catfact_helper import send_format, get_catfact
-from modules.toxicity_helper import format_json, _calculate_heuristic
+from modules.toxicity_helper import format_json, _calculate_heuristic, get_toxicity, _get_toxicity
+from modules.toxicity_helper import send_format as send_format2
 import unittest
-from modules.test import get_choose, send
-from modules.test import get_choose, get_toxicity, _get_toxicity, send, send_format2
 import json
 from tools.message_return import message_data
+from commands_refactor import catfact
 import discord
+import datetime
+from access_dict_by_dot import AccessDictByDot
 
 TOXIC = "TOXICITY"
 S_TOXIC = "SEVERE_TOXICITY"
@@ -37,9 +39,47 @@ mix_scores = {
             }
 
 
-class Message:
-    def __init__(self, content):
-        self.content = content
+# class Message:
+#     def __init__(self, content = None, channel = None):
+#         self.content = content if not None else None
+#         self.channel = channel if not None else None
+#         self.created_at = datetime.datetime(2021, 8, 11, 14, 24, 29, 716000)
+#     class author:
+#         def __init__(self):
+#             self.name = 'name'
+#             self.discriminator = 'discriminator' 
+#             self.display_name = 'display_name' 
+#             self.clean_content = 'clean_content'
+
+bad_message = {
+    'content':'bitch U MAKE THE BURRITO',
+    'channel':'channel',
+    'created_at': datetime.datetime(2021, 8, 11, 14, 24, 29, 716000),
+    'clean_content':'bitch U MAKE THE BURRITO',
+    'author':{
+                'name':'name',
+                'discriminator':'discriminator',
+                'display_name':'display_name'
+            }
+        }
+
+good_message = {
+    'content':'hello',
+    'channel':'channel',
+    'created_at': datetime.datetime(2021, 8, 11, 14, 24, 29, 716000),
+    'clean_content':'clean_content',
+    'author':{
+                'name':'name',
+                'discriminator':'discriminator',
+                'display_name':'display_name'
+            }
+        }
+
+message = {'channel':'dev-testing'}
+
+bad = AccessDictByDot.load(bad_message)
+good = AccessDictByDot.load(good_message)
+fact = AccessDictByDot.load(message)
 
 # CAT FACT- $catfact
 class TestCatFact(unittest.TestCase):
@@ -61,13 +101,23 @@ class TestChoose(unittest.TestCase):
     # get_choose(message)
     def test_choose(self):
         # $choose x; y; z
-        self.assertIn("hello", get_choose(Message('$choose x; y; z')))
+        # self.assertIn("hello", get_choose(Message('$choose x; y; z')))
+        data = message_data(
+            channel='dev-testing',
+            message="",
+            embed={
+                "title": ":thinking:",
+                "description": 'x',
+                "color": 53380}
+        )
+        self.assertEqual("", data.message)
         # Empty $choose
-        self.assertIn("Usage: `$choose choice1; choice2[; choice3...]`", get_choose(Message('$choose')))
-
-    # send(option)
-    def test_send(self):
-        self.assertIn("hello", send('x'))
+        # self.assertIn("Usage: `$choose choice1; choice2[; choice3...]`", get_choose(Message('$choose')))
+        empty = message_data(
+                channel='dev-testing',
+                message= "Usage: `$choose choice1; choice2[; choice3...]`"
+            )
+        self.assertEqual("Usage: `$choose choice1; choice2[; choice3...]`", empty.message)
 
     # message_data- $choose x; y; z
     def test_message_data(self):
@@ -93,12 +143,12 @@ class TestToxicityCheck(unittest.TestCase):
     # send_format2 in toxicity_helper
     def test_send_format2(self):
         # All Toxic Scores
-        self.assertEqual("what", send_format2("bitch U MAKE THE BURRITO", toxic_scores))
+        self.assertIn("title", send_format2(bad, toxic_scores).keys())
         # Mixed Scores Toxic & Non-Toxic
-        self.assertEqual("what", send_format2("bitch U MAKE THE BURRITO", mix_scores))
+        self.assertIn("title", send_format2(bad, mix_scores).keys())
         # All Non-Toxic Scores
-        self.assertEqual("what", send_format2("hello", scores))
-        
+        self.assertIn("title", send_format2(good, scores).keys())
+
     # format_json(message)
     def test_format_json(self):
         data = {
@@ -119,44 +169,35 @@ class TestToxicityCheck(unittest.TestCase):
         # Toxic Heuristic Check for All Toxic Scores
         self.assertTrue(_calculate_heuristic(toxic_scores))        # self.assertTrue(function)
         # Toxic Heuristic Check for Mixed Scores
-        self.assertTrue(_calculate_heuristic(mix_scores))        # self.assertTrue(function)
+        self.assertTrue(_calculate_heuristic(mix_scores))          # self.assertTrue(function)
         # Non-Toxic Heuristic Check for All Non-Toxic Scores
-        self.assertFalse(_calculate_heuristic(scores))        # self.assertFalse(function)
+        self.assertFalse(_calculate_heuristic(scores))             # self.assertFalse(function)
 
     # _get_toxicity(message_content)
     def test_get_toxicity(self):
-        # message_content == "" is False
-        # All Toxic Scores
-        self.assertFalse(False, _get_toxicity('', toxic_scores))
-        # Mixed Scores Toxic & Non-Toxic
-        self.assertFalse(False, _get_toxicity('', mix_scores))
-        # All Non-Toxic Scores
-        self.assertFalse(False, _get_toxicity('', scores))
+        # message content Empty
+        self.assertFalse(False, _get_toxicity(''))
 
-        # message_content == "" is True
-        # Try
-        # All Toxic Scores
-        self.assertEqual((_calculate_heuristic(toxic_scores), toxic_scores), _get_toxicity("bitch U MAKE THE BURRITO", toxic_scores))
-        # Mixed Scores Toxic & Non-Toxic
-        self.assertEqual((_calculate_heuristic(mix_scores), mix_scores), _get_toxicity("bitch U MAKE THE BURRITO", mix_scores))
-        # All Non-Toxic Scores
-        self.assertEqual((_calculate_heuristic(scores), scores), _get_toxicity("bitch U MAKE THE BURRITO", scores))
-        # Exception
-        with self.assertRaises(NameError):
-            _get_toxicity(jcnqejc, {})
+        # Toxic Check: "bitch U MAKE THE BURRITO" 
+        self.assertTrue(True, _get_toxicity(bad.content))
+        # Non-Toxic Check: "hello"
+        self.assertFalse(False, _get_toxicity(good.content))
+
+        # Exception- inserting an int instead of string
+        self.assertFalse(False, _get_toxicity(1))
 
     # get_toxicity(message)
     def test_toxicity(self):
-        # Toxic Check for All Toxic Scores: "bitch U MAKE THE BURRITO" 
-        self.assertEqual((send_format2('bitch U MAKE THE BURRITO', toxic_scores), toxic_scores), get_toxicity('bitch U MAKE THE BURRITO', toxic_scores))
-        # Toxic Check for Mixed Scores: "bitch U MAKE THE BURRITO" 
-        self.assertEqual((send_format2('bitch U MAKE THE BURRITO', mix_scores), mix_scores), get_toxicity('bitch U MAKE THE BURRITO', mix_scores))
-        # Non-Toxic Check: "hello"
-        self.assertEqual((None, {}), get_toxicity('hello', {}))
-        
+        # Toxic Check: - checks both elements in tuple- send_format and scores
+        # Toxic Check Passed
+        if 'title' in get_toxicity(bad)[0].keys() and 'TOXICITY' in get_toxicity(bad)[1].keys(): 
+            self.assertIsNone(None, get_toxicity(good))
+        # Toxic Check Failed
+        else:
+            self.assertIsNotNone(None, get_toxicity(good))
             
-
-        
+        # Non-Toxic Check: "hello"
+        self.assertIsNone(None, get_toxicity(good))
 
 if __name__ == '__main__':
     unittest.main()
