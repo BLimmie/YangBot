@@ -4,7 +4,7 @@ import psycopg2
 import psycopg2.extras
 from psycopg2 import sql
 from src.modules.catfact_helper import get_catfact
-from src.modules.db_helper import member_exists, insert_member, get_table
+from src.modules.db_helper import member_exists, insert_member, get_table, connection_error
 from src.modules.discord_helper import change_nickname, kick_member, try_send
 from src.tools.botfunction import BotFunction
 from src.tools.message_return import message_data
@@ -24,7 +24,6 @@ class catfact(command_on_message):
     $catfact
     Gets random catfact
     """
-
     def __init__(self,*args,**kwargs):
         super().__init__(*args,**kwargs)
 
@@ -114,7 +113,7 @@ class resetregister(command_on_message):
             cur.execute(sql.SQL("""DELETE FROM {} WHERE id = '%s' ;""").format(sql.Identifier(table)), (user.id,))
             conn.commit()
         except psycopg2.Error as e:
-            conn.rollback()
+            connection_error(e, conn)
         insert_member(conn, self.bot, user)
         return message_data(message.channel, "User registration reset")
 

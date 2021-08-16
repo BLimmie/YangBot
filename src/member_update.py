@@ -1,5 +1,5 @@
 import psycopg2
-from src.modules.db_helper import member_exists, insert_member
+from src.modules.db_helper import member_exists, insert_member, connection_error
 from src.tools.botfunction import BotFunction
 
 class on_member_update(BotFunction):
@@ -36,7 +36,7 @@ class update_database_roles(on_member_update):
                             (role, user_id))
                 conn.commit()
             except psycopg2.Error as e:
-                conn.rollback()
+                connection_error(e, conn)
 
         for role in roles_added:
             try:
@@ -49,7 +49,7 @@ class update_database_roles(on_member_update):
                             (role, user_id,role))
                 conn.commit()
             except psycopg2.Error as e:
-                conn.rollback()
+                connection_error(e, conn)
 
 class update_database_name(on_member_update):
     """
@@ -75,5 +75,5 @@ class update_database_name(on_member_update):
                     (after.display_name, after.id)
                 )
                 conn.commit()
-            except:
-                conn.rollback()
+            except psycopg2.Error as e:
+                connection_error(e, conn)   
