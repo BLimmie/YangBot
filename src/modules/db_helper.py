@@ -11,6 +11,15 @@ def get_table(debug):
     else:
         return "members"
 
+def connection_error(e, conn):
+    if e is ConnectionError:
+            DATABASE_URL = os.environ['DATABASE_URL']
+            conn = psycopg2.connect(DATABASE_URL, sslmode='require')
+            return FAIL
+    else:
+        conn.rollback()
+        return FAIL
+
 def all_members(conn, client, bot):
     guild = client.get_guild(bot.config["server_id"]) # UCSB Server ID
     print(f"{guild}")
@@ -26,7 +35,7 @@ def all_members(conn, client, bot):
         if not member_exists(conn, member.id, debug = False):
             if bot.roles.get('Gaucho') in member_roles: 
                 # str(member_roles)[1:-1]
-                if "'" in m.display_name: 
+                if "'" in member.display_name: 
                     # Helps to insert display names containing apostrophes
                     cur.execute(f"""INSERT INTO Members
                             VALUES ('{member.id}','{member.display_name.replace("'", "''")}', '{','.join(map(str, member_roles))}')
@@ -53,9 +62,8 @@ def insert_member(conn, bot, member):
 
         refresh_member_in_db(conn, member, bot.roles)
         return SUCCESS
-    except:
-        conn.rollback()
-        return FAIL
+    except psycopg2.Error as e:
+        connection_error(e, conn)
 
 def member_exists(conn, id, debug = False):
     """
@@ -73,10 +81,8 @@ def member_exists(conn, id, debug = False):
         cur = conn.cursor()
         cur.execute(sql.SQL("SELECT id FROM {} where id = '%s'").format(sql.Identifier(table)), (id,))
         return cur.fetchone() is not None
-    except:
-        conn.rollback()
-        return FAIL
-
+    except psycopg2.Error as e:
+        connection_error(e, conn)
 
 def fetch_member(conn, id, debug = False):
     """
@@ -94,9 +100,8 @@ def fetch_member(conn, id, debug = False):
         cur = conn.cursor()
         cur.execute(sql.SQL("SELECT * FROM {} where id = '%s'").format(sql.Identifier(table)), (id,))
         return cur.fetchone()
-    except:
-        conn.rollback()
-        return FAIL
+    except psycopg2.Error as e:
+        connection_error(e, conn)
 
 def fetch_member_roles(conn, id, roles, debug = False):
     """
@@ -117,12 +122,13 @@ def fetch_member_roles(conn, id, roles, debug = False):
         member = cur.fetchone()
         member_roles= []
         for role in roles:
-            if str(role) in member["roles"].split(","):
+            if member["roles"] is None:
+                return None
+            elif str(role) in member["roles"].split(","):
                 member_roles.append(role)
         return member_roles
-    except:
-        conn.rollback()
-        return FAIL
+    except psycopg2.Error as e:
+        connection_error(e, conn)
 
 def fetch_member_nickname(conn, id, debug = False):
     """
@@ -141,9 +147,8 @@ def fetch_member_nickname(conn, id, debug = False):
         cur.execute(sql.SQL("SELECT * FROM {} where id = '%s'").format(sql.Identifier(table)), (id,))
         member = cur.fetchone()
         return member["nickname"]
-    except:
-        conn.rollback()
-        return FAIL
+    except psycopg2.Error as e:
+        connection_error(e, conn)
 
 def refresh_member_in_db(conn, member, bot_roles, debug = False):
     """
@@ -169,9 +174,8 @@ def refresh_member_in_db(conn, member, bot_roles, debug = False):
                 (member.display_name, member.id)
             )
             conn.commit()
-        except:
-            conn.rollback()
-            return FAIL
+        except psycopg2.Error as e:
+            connection_error(e, conn)
 
         member_roles = [role.id for role in member.roles]
         for role in bot_roles.values():
@@ -195,9 +199,8 @@ def refresh_member_in_db(conn, member, bot_roles, debug = False):
                             """).format(sql.Identifier(table)),
                             (int(role), member.id))
                     conn.commit()           
-                except:
-                    conn.rollback()
-                    return FAIL
+                except psycopg2.Error as e:
+                    connection_error(e, conn)
 
 def remove_role(conn, role_id):
     try:
@@ -208,8 +211,8 @@ def remove_role(conn, role_id):
         """).format(sql.Identifier(get_table(debug = False))),
         (int(role_id),))
         conn.commit()
-    except:
-        conn.rollback()
+    except psycopg2.Error as e:
+        connection_error(e, conn)
 
 # I don't know if this function is necessary anymore with the updated table format. 
 def add_role(conn, role_id):
@@ -221,9 +224,8 @@ def add_role(conn, role_id):
         """,
         (int(role_id),))
         conn.commit()
-    except Exception as e:
-        print(e)
-        conn.rollback()
+    except psycopg2.Error as e:
+        connection_error(e, conn)
 
 if __name__ == "__main__":
     import os
