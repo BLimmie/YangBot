@@ -20,6 +20,21 @@ def connection_error(e, conn):
         conn.rollback()
         return FAIL
 
+def dbfunc_run(func,tries):
+    for i in range(tries):
+        try:
+            func()
+            break
+        except psycopg2.Error as e:
+            if e is ConnectionError:
+                DATABASE_URL = os.environ['DATABASE_URL']
+                conn = psycopg2.connect(DATABASE_URL, sslmode='require')
+                continue
+            else:
+                conn.rollback()
+                return FAIL
+
+
 def all_members(conn, client, bot):
     guild = client.get_guild(bot.config["server_id"]) # UCSB Server ID
     print(f"{guild}")
