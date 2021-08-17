@@ -1,5 +1,5 @@
 import psycopg2
-from src.modules.db_helper import member_exists, insert_member, connection_error
+from src.modules.db_helper import member_exists, insert_member, connection_error, dbfunc_run
 from src.tools.botfunction import BotFunction
 
 class on_member_update(BotFunction):
@@ -25,8 +25,7 @@ class update_database_roles(on_member_update):
             return
         if not member_exists(conn, user_id):
             insert_member(conn, self.bot, after)
-        for role in roles_deleted:
-            try:
+        def db_action1():
                 cur = conn.cursor()
                 cur.execute("""
                     UPDATE members
@@ -35,11 +34,9 @@ class update_database_roles(on_member_update):
                 """,
                             (role, user_id))
                 conn.commit()
-            except psycopg2.Error as e:
-                connection_error(e, conn)
-
-        for role in roles_added:
-            try:
+        for role in roles_deleted:
+            dbfunc_run(db_action1)
+        def db_action2():
                 cur = conn.cursor()
                 cur.execute("""
                     UPDATE members
@@ -48,8 +45,8 @@ class update_database_roles(on_member_update):
                 """,
                             (role, user_id,role))
                 conn.commit()
-            except psycopg2.Error as e:
-                connection_error(e, conn)
+        for role in roles_added:
+            dbfunc_run(db_action2)
 
 class update_database_name(on_member_update):
     """
@@ -57,23 +54,21 @@ class update_database_name(on_member_update):
     """
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-
     async def action(self, before, after):
         if before.display_name == after.display_name:
             return
         conn = self.bot.conn
+        def db_action():
+            cur = conn.cursor()
+            cur.execute("""
+                    UPDATE members
+                    SET nickname = %s
+                    WHERE id = '%s' ;
+                """,
+                (after.display_name, after.id)
+            )
+            conn.commit()
         if not member_exists(conn, after.id):
             insert_member(conn, self.bot, after)
         else:
-            try:
-                cur = conn.cursor()
-                cur.execute("""
-                        UPDATE members
-                        SET nickname = %s
-                        WHERE id = '%s' ;
-                    """,
-                    (after.display_name, after.id)
-                )
-                conn.commit()
-            except psycopg2.Error as e:
-                connection_error(e, conn)   
+            dbfunc_run(db_action)
