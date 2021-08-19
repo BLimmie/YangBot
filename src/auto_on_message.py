@@ -1,36 +1,66 @@
 import discord
-from datetime import timedelta
 
-from src.tools.message_return import message_data
-from src.modules.catfact_helper import get_catfact
 import src.modules.toxicity_helper as toxicity_helper
-from src.modules.repeat_helper import message_author, is_repeat, cycle, flush
+from src.modules.catfact_helper import get_catfact
+from src.modules.repeat_helper import message_author, is_repeat, cycle, flush, message_author_debug
+from src.tools.botfunction import BotFunction
+from src.tools.message_return import message_data
 
 BAN_EMOJI_ID = 338384063691751424
+
 
 def super_toxic_heuristic(scores):
     return False
 
-def init(bot):
 
-    @bot.auto_on_message(None, None, True)
-    def unsubscribe(message):
-        """
-        Extension of $catfact
-        """
+class auto_on_message(BotFunction):
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    async def action(self, message, *args, **kwargs):
+        raise NotImplementedError
+
+
+class unsubscribe(auto_on_message):
+    """
+    Extension of $catfact
+    """
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    async def action(self, message, *args, **kwargs):
         if message.content.lower().strip() == "unsubscribe":
             return message_data(message.channel, get_catfact())
 
-    @bot.auto_on_message(None, None, True)
-    def private_message(message):
-        """
-        Yang will respond to private messages with a notice to not message him privately
-        """
+
+# print(help(unsubscribe))
+
+class private_message(auto_on_message):
+    """
+    Yang will respond to private messages with a notice to not message him privately
+    """
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    async def action(self, message, *args, **kwargs):
         if isinstance(message.channel, (discord.DMChannel, discord.GroupChannel)):
-            return message_data(message.channel, "I do not reply to private messages. If you have any questions, please message one of the mods.")
+            return message_data(message.channel,
+                                "I do not reply to private messages. If you have any questions, please message one of the mods.")
         return None
 
-    async def remove_toxicity(message, scores, toxic_message):
+
+class check_toxicity(auto_on_message):
+    """
+    Notifies admins if a message is toxic (>.83) and removes it if super toxic (>.91)
+    """
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    async def remove_toxicity(self, message, scores, toxic_message):
         if message is None:
             return
         if super_toxic_heuristic(scores):
@@ -39,39 +69,51 @@ def init(bot):
         else:
             ban_emoji = await message.guild.fetch_emoji(BAN_EMOJI_ID)
             await message.add_reaction(ban_emoji)
+
             def check(reaction, user):
                 return reaction.message.id == message.id and not user.bot and (reaction.emoji == ban_emoji)
 
-            reaction, user = await bot.client.wait_for("reaction_add", check=check)
-            
+            reaction, user = await self.bot.client.wait_for("reaction_add", check=check)
+
             try:
                 await toxic_message.delete()
             except:
                 await message.channel.send("Message unable to be deleted")
 
-    @bot.auto_on_message(None, None, True, coro=remove_toxicity)
-    def check_toxicity(message):
-        """
-        Notifies admins if a message is toxic (>.83) and removes it if super toxic (>.91)
-        """
+    async def action(self, message, *args, **kwargs):
         send_message, scores = toxicity_helper.get_toxicity(message)
         m = None if send_message is None else ""
 
-        return message_data(bot.config["toxic_notif_channel"], message=m, embed=send_message, args=[scores,message])
+        toxic_notif_channel = self.bot.client.get_channel(self.bot.config["toxic_notif_channel"])
+        t_message = await toxic_notif_channel.send(embed=send_message)
+        await self.remove_toxicity(t_message, scores, message)
+        return
 
 
-    @bot.auto_on_message(None, None, True)
-    def mission_complete(message):
-        """
-        Repeats a message if it has been repeated bot.repeat_n times in a row in a channel
-        """
-        m_a = message_author(message.content, message.author)
-        cycle(bot.repeated_messages_dict[message.channel.id], m_a, bot.repeat_n)
-        if is_repeat(bot.repeated_messages_dict[message.channel.id], bot.repeat_n):
-            send = bot.repeated_messages_dict[message.channel.id][-1].message
-            flush(bot.repeated_messages_dict[message.channel.id])
+class mission_complete(auto_on_message):
+    """
+    Repeats a message if it has been repeated bot.repeat_n times in a row in a channel
+    """
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    async def action(self, message, *args, **kwargs):
+        m_a = message_author(message.content, message.author,self.bot.debug)
+        cycle(self.bot.repeated_messages_dict[message.channel.id], m_a, self.bot.repeat_n)
+        if is_repeat(self.bot.repeated_messages_dict[message.channel.id], self.bot.repeat_n):
+            send = self.bot.repeated_messages_dict[message.channel.id][-1].message
+            flush(self.bot.repeated_messages_dict[message.channel.id])
             return message_data(message.channel, send)
         return None
+    
+    async def debug_action(self, message, *args, **kwargs):
+        m_a = message_author(message.content, message.author,self.bot.debug)
+        cycle(self.bot.repeated_messages_dict[message.channel.id], m_a, self.bot.repeat_n)
+        if is_repeat(self.bot.repeated_messages_dict[message.channel.id], self.bot.repeat_n):
+            send = self.bot.repeated_messages_dict[message.channel.id][-1].message
+            flush(self.bot.repeated_messages_dict[message.channel.id])
+            return message_data(message.channel, send)       
 
     # @bot.auto_on_message(timedelta(minutes=1),None,True)
     # def fire(message):
@@ -85,3 +127,7 @@ def init(bot):
     # def test(message):
     #     print(message.author.nick)
     #     return message_data(message.channel,message.author.nick)
+
+# if __name__ == '__main__':
+#     bot = auto_on_message()
+#     bot.run()
