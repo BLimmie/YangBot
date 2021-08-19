@@ -1,4 +1,4 @@
-from src.commands_refactor import register
+from src.commads import register
 
 
 class integration_test():

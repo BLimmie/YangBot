@@ -3,8 +3,8 @@ from typing import List
 
 import discord
 
-from src.commands_refactor import command_on_message
-from src.auto_on_message_refactor import auto_on_message
+from src.commands import command_on_message
+from src.auto_on_message import auto_on_message
 from src.member_join import on_member_join
 from src.member_update import on_member_update
 
