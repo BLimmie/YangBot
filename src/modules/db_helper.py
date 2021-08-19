@@ -20,6 +20,21 @@ def connection_error(e, conn):
         conn.rollback()
         return FAIL
 
+def dbfunc_run(func,tries = 2):
+    for i in range(tries):
+        try:
+            func()
+            break
+        except psycopg2.Error as e:
+            if e is ConnectionError:
+                DATABASE_URL = os.environ['DATABASE_URL']
+                conn = psycopg2.connect(DATABASE_URL, sslmode='require')
+                continue
+            else:
+                conn.rollback()
+                return FAIL
+
+
 def all_members(conn, client, bot):
     guild = client.get_guild(bot.config["server_id"]) # UCSB Server ID
     print(f"{guild}")
@@ -49,8 +64,7 @@ def all_members(conn, client, bot):
 def insert_member(conn, bot, member):
     # Debug Table or Members Table
     table = get_table(bot.debug)
-    
-    try:
+    def db_action():
         cur = conn.cursor()
         cur.execute(sql.SQL("""
             INSERT INTO {} (id, nickname)
@@ -59,11 +73,9 @@ def insert_member(conn, bot, member):
                     .format(sql.Identifier(table)),
                     (member.id, member.display_name))
         conn.commit()
-
         refresh_member_in_db(conn, member, bot.roles)
         return SUCCESS
-    except psycopg2.Error as e:
-        connection_error(e, conn)
+    dbfunc_run(db_action)
 
 def member_exists(conn, id, debug = False):
     """
@@ -77,12 +89,11 @@ def member_exists(conn, id, debug = False):
     # Debug Table or Members Table
     table = get_table(debug)
 
-    try:
+    def db_action():
         cur = conn.cursor()
         cur.execute(sql.SQL("SELECT id FROM {} where id = '%s'").format(sql.Identifier(table)), (id,))
         return cur.fetchone() is not None
-    except psycopg2.Error as e:
-        connection_error(e, conn)
+    dbfunc_run(db_action)
 
 def fetch_member(conn, id, debug = False):
     """
@@ -96,12 +107,11 @@ def fetch_member(conn, id, debug = False):
     # Debug Table or Members Table
     table = get_table(debug)
 
-    try:
+    def db_action():
         cur = conn.cursor()
         cur.execute(sql.SQL("SELECT * FROM {} where id = '%s'").format(sql.Identifier(table)), (id,))
         return cur.fetchone()
-    except psycopg2.Error as e:
-        connection_error(e, conn)
+    dbfunc_run(db_action)
 
 def fetch_member_roles(conn, id, roles, debug = False):
     """
@@ -116,7 +126,7 @@ def fetch_member_roles(conn, id, roles, debug = False):
     # Debug Table or Members Table
     table = get_table(debug)
 
-    try:
+    def db_action():
         cur = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
         cur.execute(sql.SQL("SELECT * FROM {} where id = '%s'").format(sql.Identifier(table)), (id,))
         member = cur.fetchone()
@@ -127,8 +137,7 @@ def fetch_member_roles(conn, id, roles, debug = False):
             elif str(role) in member["roles"].split(","):
                 member_roles.append(role)
         return member_roles
-    except psycopg2.Error as e:
-        connection_error(e, conn)
+    dbfunc_run(db_action)
 
 def fetch_member_nickname(conn, id, debug = False):
     """
@@ -142,13 +151,12 @@ def fetch_member_nickname(conn, id, debug = False):
     # Debug Table or Members Table
     table = get_table(debug)
 
-    try:
+    def db_action():
         cur = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
         cur.execute(sql.SQL("SELECT * FROM {} where id = '%s'").format(sql.Identifier(table)), (id,))
         member = cur.fetchone()
         return member["nickname"]
-    except psycopg2.Error as e:
-        connection_error(e, conn)
+    dbfunc_run(db_action)
 
 def refresh_member_in_db(conn, member, bot_roles, debug = False):
     """
@@ -164,7 +172,7 @@ def refresh_member_in_db(conn, member, bot_roles, debug = False):
     table = get_table(debug)
     
     if member_exists(conn, member.id):
-        try:
+        def db_action1():
             cur = conn.cursor()
             cur.execute(sql.SQL("""
                     UPDATE {}
@@ -174,13 +182,12 @@ def refresh_member_in_db(conn, member, bot_roles, debug = False):
                 (member.display_name, member.id)
             )
             conn.commit()
-        except psycopg2.Error as e:
-            connection_error(e, conn)
+        dbfunc_run(db_action1)
 
         member_roles = [role.id for role in member.roles]
         for role in bot_roles.values():
             if int(role) in member_roles:
-                try:
+                def db_action2():
                     cur = conn.cursor()
                     if int(role) != member_roles[-1]:
                         # Comma Separated Roles            
@@ -199,11 +206,10 @@ def refresh_member_in_db(conn, member, bot_roles, debug = False):
                             """).format(sql.Identifier(table)),
                             (int(role), member.id))
                     conn.commit()           
-                except psycopg2.Error as e:
-                    connection_error(e, conn)
+                dbfunc_run(db_action2)
 
 def remove_role(conn, role_id):
-    try:
+    def db_action():
         cur = conn.cursor()
         cur.execute(sql.SQL("""
             UPDATE {}
@@ -211,8 +217,7 @@ def remove_role(conn, role_id):
         """).format(sql.Identifier(get_table(debug = False))),
         (int(role_id),))
         conn.commit()
-    except psycopg2.Error as e:
-        connection_error(e, conn)
+    dbfunc_run(db_action)
 
 # I don't know if this function is necessary anymore with the updated table format. 
 def add_role(conn, role_id):

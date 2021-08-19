@@ -4,7 +4,7 @@ import psycopg2
 import psycopg2.extras
 from psycopg2 import sql
 from src.modules.catfact_helper import get_catfact
-from src.modules.db_helper import member_exists, insert_member, get_table, connection_error
+from src.modules.db_helper import member_exists, insert_member, get_table, connection_error, dbfunc_run
 from src.modules.discord_helper import change_nickname, kick_member, try_send
 from src.tools.botfunction import BotFunction
 from src.tools.message_return import message_data
@@ -106,14 +106,13 @@ class resetregister(command_on_message):
         user = message.author
         conn = self.bot.conn
         table = get_table(self.bot.debug)
-        if not member_exists(conn, user.id,self.bot.debug):
-            return message_data(message.channel, "User not registered. Use $register to register.")
-        try:
+        def db_action():
             cur = conn.cursor()
             cur.execute(sql.SQL("""DELETE FROM {} WHERE id = '%s' ;""").format(sql.Identifier(table)), (user.id,))
             conn.commit()
-        except psycopg2.Error as e:
-            connection_error(e, conn)
+        if not member_exists(conn, user.id,self.bot.debug):
+            return message_data(message.channel, "User not registered. Use $register to register.")
+        dbfunc_run(db_action)
         insert_member(conn, self.bot, user)
         return message_data(message.channel, "User registration reset")
 
