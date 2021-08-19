@@ -5,8 +5,6 @@ from modules.toxicity_helper import send_format as send_format2
 import unittest
 import json
 from tools.message_return import message_data
-from commands_refactor import catfact
-import discord
 import datetime
 from access_dict_by_dot import AccessDictByDot
 
