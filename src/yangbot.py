@@ -46,7 +46,7 @@ class YangBot():
         self.auto_on_message_list = {}
         self.on_member_join_list = {}
         self.on_member_update_list = {}
-        
+
         # Actions in Command on Message
         for action in command_on_message.__subclasses__():
             self.command_on_message_list[action.__name__] = action(bot = self)
@@ -70,11 +70,13 @@ class YangBot():
             return await self.command_on_message_list[command].proc(message, message.created_at, message.author)
             
     # Run Auto on Message            
-    async def run_auto_on_message(self, message):
+    async def run_auto_on_message(self, message): 
         if message is not None:
             for key, func in self.auto_on_message_list.items():
                 try:
-                    return await func.proc(message, message.created_at, message.author)
+                    function = await func.proc(message, message.created_at, message.author)
+                    if function is not None:
+                        return function
                 except Exception:
                     traceback.print_exc()
                     assert False
