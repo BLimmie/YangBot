@@ -28,15 +28,9 @@ class restore_roles(on_member_join):
         conn = self.bot.conn
         if member_exists(conn, user.id):
             roles = sorted(self.bot.roles.items(), key=lambda x: x[1])
-            member = fetch_member_roles(conn, user.id, roles,self.bot.debug)
+            member = fetch_member_roles(conn, user.id, roles, self.bot.debug)
             member_roles = [self.bot.client.get_guild(int(self.bot.config["server_id"])).get_role(
                 role) for role in member]
             nickname = fetch_member_nickname(conn, user.id,self.bot.debug)
-            await restore(user, member_roles, nickname)
+            await restore_roles(user, member_roles, nickname)
             return message_data(user, "Your roles have been restored")
-
-class twofactor(on_member_join):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args,**kwargs)
-    async def action(self,member):
-        await member.send("Current students: please respond to this message with your UCSB email \n Prospective students please respond with ")
