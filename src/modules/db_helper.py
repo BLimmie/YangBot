@@ -20,7 +20,7 @@ def connection_error(e, conn):
         conn.rollback()
         return FAIL
 
-def dbfunc_run(func,tries = 2):
+def dbfunc_run(func, tries = 2):
     for i in range(tries):
         try:
             func()
@@ -38,9 +38,8 @@ def dbfunc_run(func,tries = 2):
 def all_members(conn, client, bot):
     guild = client.get_guild(bot.config["server_id"]) # UCSB Server ID
     print(f"{guild}")
-    memberList = guild.members
     cur = conn.cursor()
-    for member in memberList:
+    for member in  guild.members:
         print(member.display_name)
         member_roles = []
         for role in member.roles:
@@ -132,8 +131,8 @@ def fetch_member_roles(conn, id, roles, debug = False):
         member = cur.fetchone()
         member_roles= []
         for role in roles:
-            if member["roles"] is None:
-                return None
+            if member[2] is None: # Column 2- roles is None
+                return member_roles
             elif str(role) in member["roles"].split(","):
                 member_roles.append(role)
         return member_roles
@@ -205,6 +204,7 @@ def refresh_member_in_db(conn, member, bot_roles, debug = False):
                                 WHERE id = '%s' ;
                             """).format(sql.Identifier(table)),
                             (int(role), member.id))
+                            
                     conn.commit()           
                 dbfunc_run(db_action2)
 
@@ -219,18 +219,13 @@ def remove_role(conn, role_id):
         conn.commit()
     dbfunc_run(db_action)
 
-# I don't know if this function is necessary anymore with the updated table format. 
 def add_role(conn, role_id):
-    try:
+    def db_action():
         cur = conn.cursor()
-        cur.execute("""
-            ALTER TABLE Members
-            ADD COLUMN role_%s bool DEFAULT False;
-        """,
-        (int(role_id),))
+        cur.execute(f"""UPDATE '{get_table(debug = False)}'
+                        SET roles = CONCAT(roles, '{role_id}')""")
         conn.commit()
-    except psycopg2.Error as e:
-        connection_error(e, conn)
+    dbfunc_run(db_action)
 
 if __name__ == "__main__":
     import os
