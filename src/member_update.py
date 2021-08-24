@@ -22,31 +22,29 @@ class update_database_roles(on_member_update):
         roles_deleted = [role.id for role in before.roles if role not in after.roles]
         roles_added = [role.id for role in after.roles if role not in before.roles]
         if len(roles_deleted) == 0 and len(roles_added) == 0:
-            return
+             return
         if not member_exists(conn, user_id):
-            insert_member(conn, self.bot, after)
-        def db_action1():
+                insert_member(conn, self.bot, after)
+        for role in roles_deleted:
                 cur = conn.cursor()
-                cur.execute("""
+                db_sql = ("""
                     UPDATE members
                     SET roles = REPLACE(roles,',%s','')
                     WHERE id = '%s' ;
                 """,
                             (role, user_id))
+                dbfunc_run(db_sql,cur)
                 conn.commit()
-        for role in roles_deleted:
-            dbfunc_run(db_action1)
-        def db_action2():
+        for role in roles_added:
                 cur = conn.cursor()
-                cur.execute("""
+                db_sql = ("""
                     UPDATE members
                     SET roles = CONCAT(roles,%s,',')
                     WHERE id = '%s' AND roles NOT LIKE CONCAT('%%',%s,'%%') ;
                 """,
                             (role, user_id,role))
+                dbfunc_run(db_sql,cur)
                 conn.commit()
-        for role in roles_added:
-            dbfunc_run(db_action2)
 
 class update_database_name(on_member_update):
     """
@@ -58,17 +56,16 @@ class update_database_name(on_member_update):
         if before.display_name == after.display_name:
             return
         conn = self.bot.conn
-        def db_action():
+        if not member_exists(conn, after.id):
+            insert_member(conn, self.bot, after)
+        else:
             cur = conn.cursor()
-            cur.execute("""
+            db_sql = ("""
                     UPDATE members
                     SET nickname = %s
                     WHERE id = '%s' ;
                 """,
                 (after.display_name, after.id)
             )
+            dbfunc_run(db_sql,cur)
             conn.commit()
-        if not member_exists(conn, after.id):
-            insert_member(conn, self.bot, after)
-        else:
-            dbfunc_run(db_action)

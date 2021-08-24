@@ -103,13 +103,12 @@ class resetregister(command_on_message):
         user = message.author
         conn = self.bot.conn
         table = get_table(self.bot.debug)
-        def db_action():
-            cur = conn.cursor()
-            cur.execute(sql.SQL("""DELETE FROM {} WHERE id = '%s' ;""").format(sql.Identifier(table)), (user.id,))
-            conn.commit()
         if not member_exists(conn, user.id,self.bot.debug):
             return message_data(message.channel, "User not registered. Use $register to register.")
-        dbfunc_run(db_action)
+        cur = conn.cursor()
+        db_sql = (sql.SQL("""DELETE FROM {} WHERE id = '%s' ;""").format(sql.Identifier(table)), (user.id,))
+        dbfunc_run(db_sql, cur)
+        conn.commit()
         insert_member(conn, self.bot, user)
         return message_data(message.channel, "User registration reset")
 
