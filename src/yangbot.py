@@ -10,42 +10,34 @@ from src.member_update import on_member_update
 
 
 class YangBot():
-    def __init__(self, dbconn, client, config):
+    def __init__(self, dbconn, client, config, repeated_messages=4):
         """
         Initialization of all data
         """
+        # Debug
         self.debug = False
+
+        # All necessary data
         self.client = client
         self.conn = dbconn
         self.config = config
-        self.roles = {
-        "Fitness Peeps": 526130516324515842,
-        "IV Dining": 508531374224048135,
-        "Lib Sessions": 518908406057402388,
-        "Dining Peeps": 494572009590882304,
-        "Contributed": 499745117746364417,
-        "Gaucho": 338230169875775499,
-        "Visitor": 499744895532007434,
-        "Prospective": 515666723563896833,
-        "Gauchito": 458155146950475787,
-        "Faculty": 481244587373887488,
-        "Friendo": 338236189738008576,
-        "Contributors": 366139942507905024,
-        "Server Legacy": 462526711607721994,
-        "Yangbot Interns": 507431677954490370,
-        "Yangbot Devs": 498616292455219210,
-        "Demimod": 495835874257534987,
-        "Admins": 322140419448242176,
-        "Club Officers": 270730327469719553,
-        "2021": 557352577814233158,
-        "2023": 557347165547003951,
-        "Timeout": 557351724566708274,
-        "Muted": 500037399494262825
-        }
+
+        # Functions
         self.command_on_message_list = {}
         self.auto_on_message_list = {}
         self.on_member_join_list = {}
         self.on_member_update_list = {}
+
+        self.channels = list(self.client.get_all_channels())
+        self.repeat_n = repeated_messages
+        self.repeated_messages_dict = {(channel.id):[] for channel in self.channels}
+
+        # All Server Role IDs
+        guild = client.get_guild(247264977495392258) # UCSB Server ID
+        roles = {}
+        for r in guild.roles:
+            roles.update({r.name: r.id})
+        self.roles = roles
 
         # Actions in Command on Message
         for action in command_on_message.__subclasses__():
