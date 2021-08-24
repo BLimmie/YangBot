@@ -1,7 +1,4 @@
 import random
-
-import psycopg2
-import psycopg2.extras
 from psycopg2 import sql
 from src.modules.catfact_helper import get_catfact
 from src.modules.db_helper import member_exists, insert_member, get_table, connection_error, dbfunc_run

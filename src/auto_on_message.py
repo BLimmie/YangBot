@@ -127,7 +127,3 @@ class mission_complete(auto_on_message):
     # def test(message):
     #     print(message.author.nick)
     #     return message_data(message.channel,message.author.nick)
-
-# if __name__ == '__main__':
-#     bot = auto_on_message()
-#     bot.run()
