@@ -33,6 +33,7 @@ def dbfunc_run(sql,cur,tries = 2):
             else:
                 conn.rollback()
                 return FAIL
+    return cur
 
 
 def all_members(conn, client, bot):
@@ -105,7 +106,7 @@ def fetch_member(conn, id, debug = False):
     table = get_table(debug)
     cur = conn.cursor()
     db_sql = (sql.SQL("SELECT * FROM {} where id = '%s'").format(sql.Identifier(table)), (id,))
-    dbfunc_run(db_sql,cur)
+    cur = dbfunc_run(db_sql,cur)
     return cur.fetchone()
 
 def fetch_member_roles(conn, id, roles, debug = False):
@@ -122,7 +123,7 @@ def fetch_member_roles(conn, id, roles, debug = False):
     table = get_table(debug)
     cur = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
     db_sql = (sql.SQL("SELECT * FROM {} where id = '%s'").format(sql.Identifier(table)), (id,))
-    dbfunc_run(db_sql,cur)
+    cur = dbfunc_run(db_sql,cur)
     member = cur.fetchone()
     member_roles= []
     for role in roles:
@@ -145,7 +146,7 @@ def fetch_member_nickname(conn, id, debug = False):
     table = get_table(debug)
     cur = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
     db_sql = (sql.SQL("SELECT * FROM {} where id = '%s'").format(sql.Identifier(table)), (id,))
-    dbfunc_run(db_sql,cur)
+    cur = dbfunc_run(db_sql,cur)
     member = cur.fetchone()
     return member["nickname"]
 
