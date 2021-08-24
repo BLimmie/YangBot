@@ -119,7 +119,7 @@ def fetch_member_roles(conn, id, roles, debug = False):
     args:
     conn = database connection. Typically bot.conn
     id = member.id
-    roles = list of all role ids within the server -- get from bot.roles
+    roles = list of all role ids within the server -- get from bot.roles.values()
     debug = debug bool from bot.debug
     """
     # Debug Table or Members Table
@@ -135,6 +135,7 @@ def fetch_member_roles(conn, id, roles, debug = False):
                 return member_roles
             elif str(role) in member["roles"].split(","):
                 member_roles.append(role)
+        print(member_roles)
         return member_roles
     dbfunc_run(db_action)
 
@@ -208,24 +209,24 @@ def refresh_member_in_db(conn, member, bot_roles, debug = False):
                     conn.commit()           
                 dbfunc_run(db_action2)
 
-def remove_role(conn, role_id):
-    def db_action():
-        cur = conn.cursor()
-        cur.execute(sql.SQL("""
-            UPDATE {}
-            SET roles = REPLACE(roles,',%s','')
-        """).format(sql.Identifier(get_table(debug = False))),
-        (int(role_id),))
-        conn.commit()
-    dbfunc_run(db_action)
+# def remove_role(conn, role_id):
+#     def db_action():
+#         cur = conn.cursor()
+#         cur.execute(sql.SQL("""
+#             UPDATE {}
+#             SET roles = REPLACE(roles,',%s','')
+#         """).format(sql.Identifier(get_table(debug = False))),
+#         (int(role_id),))
+#         conn.commit()
+#     dbfunc_run(db_action)
 
-def add_role(conn, role_id):
-    def db_action():
-        cur = conn.cursor()
-        cur.execute(f"""UPDATE '{get_table(debug = False)}'
-                        SET roles = CONCAT(roles, '{role_id}')""")
-        conn.commit()
-    dbfunc_run(db_action)
+# def add_role(conn, role_id):
+#     def db_action():
+#         cur = conn.cursor()
+#         cur.execute(f"""UPDATE '{get_table(debug = False)}'
+#                         SET roles = CONCAT(roles, '{role_id}')""")
+#         conn.commit()
+#     dbfunc_run(db_action)
 
 if __name__ == "__main__":
     import os
@@ -237,7 +238,7 @@ if __name__ == "__main__":
     DATABASE_URL = os.environ['DATABASE_URL']
     conn = psycopg2.connect(DATABASE_URL, sslmode='require')
     print(DATABASE_URL)
-    if args.delete:
-        remove_role(conn, args.id)
-    else:
-        add_role(conn, args.id)
+    # if args.delete:
+    #     remove_role(conn, args.id)
+    # else:
+    #     add_role(conn, args.id)
