@@ -16,7 +16,7 @@ client = discord.Client(prefix = '$', intents=intents)
 @client.event
 async def on_ready():
     global bot
-    bot = YangBot(conn, client, config)
+    bot = YangBot(conn, client, config, repeated_messages=5)
     print("Bot is ready")
 
 @client.event
@@ -26,7 +26,6 @@ async def on_message(message):
 
         # Command on Message
         return_message = await bot.run_command_on_message(message)
-        # print(return_message)
         if return_message is not None:
             channel = return_message.channel
             await channel.send(return_message.message, embed=return_message.embed)
@@ -37,7 +36,6 @@ async def on_message(message):
         if return_message2 is not None:
             channel2 = return_message2.channel
             await channel2.send(return_message2.message)
-        # await bot.run_auto_on_message(message)s
 
 # Member Join
 @client.event
