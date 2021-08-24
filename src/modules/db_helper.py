@@ -20,7 +20,7 @@ def connection_error(e, conn):
         conn.rollback()
         return FAIL
 
-def dbfunc_run(sql,cur,tries = 2):
+def dbfunc_run(sql, cur, conn, tries = 2):
     for i in range(tries):
         try:
             cur.execute(sql)
@@ -66,14 +66,10 @@ def insert_member(conn, bot, member):
     # Debug Table or Members Table
     table = get_table(bot.debug)
     cur = conn.cursor()
-    db_sql = (sql.SQL("""
-        INSERT INTO {} (id, nickname)
-        VALUES (%s, %s) ;
-    """)
-                .format(sql.Identifier(table)),
-                (member.id, member.display_name))
-    dbfunc_run(db_sql,cur)
+    db_sql = f"""INSERT INTO {table} (id, nickname) VALUES ({member.id}, '{member.display_name}')"""
+    dbfunc_run(db_sql, cur, conn)
     conn.commit()
+
     refresh_member_in_db(conn, member, bot.roles)
     return SUCCESS
 
@@ -89,8 +85,9 @@ def member_exists(conn, id, debug = False):
     # Debug Table or Members Table
     table = get_table(debug)
     cur = conn.cursor()
-    db_sql = (sql.SQL("SELECT id FROM {} where id = '%s'").format(sql.Identifier(table)), (id,))
-    dbfunc_run(db_sql,cur)
+    db_sql = f"""SELECT id FROM {table} where id = {id}"""
+
+    dbfunc_run(db_sql, cur, conn)
     return cur.fetchone() is not None
 
 def fetch_member(conn, id, debug = False):
@@ -105,8 +102,8 @@ def fetch_member(conn, id, debug = False):
     # Debug Table or Members Table
     table = get_table(debug)
     cur = conn.cursor()
-    db_sql = (sql.SQL("SELECT * FROM {} where id = '%s'").format(sql.Identifier(table)), (id,))
-    cur = dbfunc_run(db_sql,cur)
+    db_sql = f"""SELECT * FROM {table} where id = {id}"""
+    cur = dbfunc_run(db_sql, cur, conn)
     return cur.fetchone()
 
 def fetch_member_roles(conn, id, roles, debug = False):
@@ -122,8 +119,8 @@ def fetch_member_roles(conn, id, roles, debug = False):
     # Debug Table or Members Table
     table = get_table(debug)
     cur = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
-    db_sql = (sql.SQL("SELECT * FROM {} where id = '%s'").format(sql.Identifier(table)), (id,))
-    cur = dbfunc_run(db_sql,cur)
+    db_sql = f"""SELECT * FROM {table} where id = {id}"""
+    cur = dbfunc_run(db_sql, cur, conn)
     member = cur.fetchone()
     member_roles= []
     for role in roles:
@@ -145,8 +142,8 @@ def fetch_member_nickname(conn, id, debug = False):
     # Debug Table or Members Table
     table = get_table(debug)
     cur = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
-    db_sql = (sql.SQL("SELECT * FROM {} where id = '%s'").format(sql.Identifier(table)), (id,))
-    cur = dbfunc_run(db_sql,cur)
+    db_sql = f"""SELECT * FROM {table} where id = {id}"""
+    cur = dbfunc_run(db_sql, cur, conn)
     member = cur.fetchone()
     return member["nickname"]
 
@@ -157,7 +154,7 @@ def refresh_member_in_db(conn, member, bot_roles, debug = False):
     args:
     conn = database connection. Typically bot.conn
     member = member object to refresh
-    bot_roles = get from bot.roles in roles refactor
+    bot_roles = get from bot.roles (dictionary {name, id})
     debug = debug bool from bot.debug
     """
     # Debug Table or Members Table
@@ -165,14 +162,8 @@ def refresh_member_in_db(conn, member, bot_roles, debug = False):
     
     if member_exists(conn, member.id):
             cur = conn.cursor()
-            db_sql = (sql.SQL("""
-                    UPDATE {}
-                    SET nickname = %s
-                    WHERE id = '%s' ;
-                """).format(sql.Identifier(table)),
-                (member.display_name, member.id)
-            )
-            dbfunc_run(db_sql,cur)
+            db_sql = f"""UPDATE {table} SET nickname = '{member.display_name}' WHERE id = {member.id} ;"""
+            dbfunc_run(db_sql, cur, conn)
             conn.commit()
 
     member_roles = [role.id for role in member.roles]
@@ -181,58 +172,44 @@ def refresh_member_in_db(conn, member, bot_roles, debug = False):
             cur = conn.cursor()
             if int(role) != member_roles[-1]:
                 # Comma Separated Roles            
-                db_sql = (sql.SQL("""
-                        UPDATE {}
-                        SET roles = CONCAT(roles,'%s',',')
-                        WHERE id = '%s' ;
-                    """).format(sql.Identifier(table)),
-                    (int(role), member.id))
-                dbfunc_run(db_sql,cur)
+                db_sql = f"""UPDATE {table} SET roles = CONCAT(roles,{int(role)},',') WHERE id = {member.id} ;"""
+                dbfunc_run(db_sql, cur, conn)
             elif int(role) == member_roles[-1]:
                 # No comma for last value
-                db_sql = (sql.SQL("""
-                        UPDATE {}
-                        SET roles = CONCAT(roles,'%s','')
-                        WHERE id = '%s' ;
-                    """).format(sql.Identifier(table)),
-                    (int(role), member.id))
-                dbfunc_run(db_sql,cur)
+                db_sql = f"""UPDATE {table} SET roles = CONCAT(roles,{int(role)},'') WHERE id = {member.id} ;"""
+                dbfunc_run(db_sql, cur, conn)
             conn.commit()           
 
-def remove_role(conn, role_id):
-    cur = conn.cursor()
-    db_sql = (sql.SQL("""
-        UPDATE {}
-        SET roles = REPLACE(roles,',%s','')
-    """).format(sql.Identifier(get_table(debug = False))),
-    (int(role_id),))
-    dbfunc_run(db_sql,cur)
-    conn.commit()
+# def remove_role(conn, role_id):
+#     cur = conn.cursor()
+#     # db_sql = (sql.SQL("""
+#     #     UPDATE {}
+#     #     SET roles = REPLACE(roles,',%s','')
+#     # """).format(sql.Identifier(get_table(debug = False))),
+#     # (int(role_id),))
+#     db_sql = f"""UPDATE {get_table(debug = False)} SET roles = REPLACE(roles, ',{int(role_id)}','')"""
+#     dbfunc_run(db_sql, cur, conn)
+#     conn.commit()
 
-# I don't know if this function is necessary anymore with the updated table format. 
-def add_role(conn, role_id):
-    try:
-        cur = conn.cursor()
-        cur.execute("""
-            ALTER TABLE Members
-            ADD COLUMN role_%s bool DEFAULT False;
-        """,
-        (int(role_id),))
-        conn.commit()
-    except psycopg2.Error as e:
-        connection_error(e, conn)
+# def add_role(conn, role_id):
+#     cur = conn.cursor()
+#     # cur.execute(f"""UPDATE '{get_table(debug = False)}'
+#     #                 SET roles = CONCAT(roles, '{role_id}')""")
+#     db_sql = f"""UPDATE '{get_table(debug = False)}' SET roles = CONCAT(roles, ',{role_id}')"""
+#     dbfunc_run(db_sql, cur, conn)
+#     conn.commit()
 
 if __name__ == "__main__":
     import os
-    import argparse
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--id')
-    parser.add_argument('--delete', action='store_true')
-    args = parser.parse_args()
+    # import argparse
+    # parser = argparse.ArgumentParser()
+    # parser.add_argument('--id')
+    # parser.add_argument('--delete', action='store_true')
+    # args = parser.parse_args()
     DATABASE_URL = os.environ['DATABASE_URL']
     conn = psycopg2.connect(DATABASE_URL, sslmode='require')
     print(DATABASE_URL)
-    if args.delete:
-        remove_role(conn, args.id)
-    else:
-        add_role(conn, args.id)
+    # if args.delete:
+    #     remove_role(conn, args.id)
+    # else:
+    #     add_role(conn, args.id)

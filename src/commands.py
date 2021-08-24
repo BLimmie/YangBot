@@ -107,7 +107,7 @@ class resetregister(command_on_message):
             return message_data(message.channel, "User not registered. Use $register to register.")
         cur = conn.cursor()
         db_sql = (sql.SQL("""DELETE FROM {} WHERE id = '%s' ;""").format(sql.Identifier(table)), (user.id,))
-        dbfunc_run(db_sql, cur)
+        dbfunc_run(db_sql, cur, conn)
         conn.commit()
         insert_member(conn, self.bot, user)
         return message_data(message.channel, "User registration reset")
