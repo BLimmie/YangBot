@@ -10,6 +10,8 @@ class BotFunction:
         self.roles = roles
         self.role_whitelist = role_whitelist
 
+    def debug_reset(self):
+        pass
 
     async def simple_proc(self, *args, **kwargs):
         return await self.decide_action(*args, **kwargs)

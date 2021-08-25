@@ -98,6 +98,9 @@ class mission_complete(auto_on_message):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
+    def debug_reset(self):
+        self.repeated_messages_dict = {(channel.id):[] for channel in self.bot.channels}
+
     async def action(self, message, *args, **kwargs):
         m_a = message_author(message.content, message.author,self.bot.debug)
         cycle(self.bot.repeated_messages_dict[message.channel.id], m_a, self.bot.repeat_n)
