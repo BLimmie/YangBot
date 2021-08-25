@@ -33,7 +33,7 @@ class update_database_roles(on_member_update):
                     WHERE id = '%s' ;
                 """,
                             (role, user_id))
-                dbfunc_run(db_sql,cur)
+                dbfunc_run(db_sql, cur, conn)
                 conn.commit()
         for role in roles_added:
                 cur = conn.cursor()
@@ -43,7 +43,7 @@ class update_database_roles(on_member_update):
                     WHERE id = '%s' AND roles NOT LIKE CONCAT('%%',%s,'%%') ;
                 """,
                             (role, user_id,role))
-                dbfunc_run(db_sql,cur)
+                dbfunc_run(db_sql, cur, conn)
                 conn.commit()
 
 class update_database_name(on_member_update):
@@ -67,5 +67,5 @@ class update_database_name(on_member_update):
                 """,
                 (after.display_name, after.id)
             )
-            dbfunc_run(db_sql,cur)
+            dbfunc_run(db_sql, cur, conn)
             conn.commit()
