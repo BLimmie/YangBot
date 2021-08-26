@@ -69,7 +69,7 @@ class check_toxicity(auto_on_message):
         else:
             ban_emoji = await message.guild.fetch_emoji(BAN_EMOJI_ID)
             await message.add_reaction(ban_emoji)
-
+            
             def check(reaction, user):
                 return reaction.message.id == message.id and not user.bot and (reaction.emoji == ban_emoji)
 
@@ -85,10 +85,11 @@ class check_toxicity(auto_on_message):
         m = None if send_message is None else ""
 
         toxic_notif_channel = self.bot.client.get_channel(self.bot.config["toxic_notif_channel"])
-        t_message = await toxic_notif_channel.send(embed=send_message)
-        await self.remove_toxicity(t_message, scores, message)
-        return
 
+        if m is not None:
+            await self.remove_toxicity(message, scores, message)
+            return message_data(toxic_notif_channel, embed=send_message)
+        
 
 class mission_complete(auto_on_message):
     """
@@ -102,7 +103,7 @@ class mission_complete(auto_on_message):
         self.repeated_messages_dict = {(channel.id):[] for channel in self.bot.channels}
 
     async def action(self, message, *args, **kwargs):
-        m_a = message_author(message.content, message.author,self.bot.debug)
+        m_a = message_author(message.content, message.author, self.bot.debug)
         cycle(self.bot.repeated_messages_dict[message.channel.id], m_a, self.bot.repeat_n)
         if is_repeat(self.bot.repeated_messages_dict[message.channel.id], self.bot.repeat_n):
             send = self.bot.repeated_messages_dict[message.channel.id][-1].message
@@ -111,7 +112,7 @@ class mission_complete(auto_on_message):
         return None
     
     async def debug_action(self, message, *args, **kwargs):
-        m_a = message_author(message.content, message.author,self.bot.debug)
+        m_a = message_author(message.content, message.author, self.bot.debug)
         cycle(self.bot.repeated_messages_dict[message.channel.id], m_a, self.bot.repeat_n)
         if is_repeat(self.bot.repeated_messages_dict[message.channel.id], self.bot.repeat_n):
             send = self.bot.repeated_messages_dict[message.channel.id][-1].message
