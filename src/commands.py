@@ -39,7 +39,7 @@ class debug(command_on_message):
     async def action(self, message, *args, **kwargs):
         for func_class in BotFunction.__subclasses__():
             for func in func_class.__subclasses__():
-                func.debug_reset()
+                func.debug_reset(self)
         if self.bot.debug is False:
             self.bot.debug = True
             await message.channel.send('Debug mode on')
@@ -106,10 +106,10 @@ class resetregister(command_on_message):
         user = message.author
         conn = self.bot.conn
         table = get_table(self.bot.debug)
-        if not member_exists(conn, user.id,self.bot.debug):
+        if not member_exists(conn, user.id, self.bot.debug):
             return message_data(message.channel, "User not registered. Use $register to register.")
         cur = conn.cursor()
-        db_sql = (sql.SQL("""DELETE FROM {} WHERE id = '%s' ;""").format(sql.Identifier(table)), (user.id,))
+        db_sql = f"""DELETE FROM {table} WHERE id = {user.id}"""
         dbfunc_run(db_sql, cur, conn)
         conn.commit()
         insert_member(conn, self.bot, user)
@@ -190,11 +190,6 @@ class nickname(command_on_message):
         await self.nickname_request(message, user, nickname)
         return
 
-
-async def remove_message(message, command):
-    await command.delete()
-
-
 class send(command_on_message):
     """
     $send [channel_mention] [message]
@@ -204,15 +199,19 @@ class send(command_on_message):
     def __init__(self,*args,**kwargs):
         self.roleslist = ["Club Officers", "Admins", "Yangbot Devs", "Server Legacy"]
         super().__init__(roles = self.roleslist, role_whitelist = True, *args, **kwargs)
+    
+    async def remove_message(message, command):
+        await command.delete()
+        
     async def action(self, message, *args, **kwargs):
         content = message.content
         if len(message.channel_mentions) > 0:
+            await self.remove_message(message)
             return message_data(
                 message.channel_mentions[0],
                 content[content.find('>') + 1:],
                 args=[message]
             )
-
 
 class choose(command_on_message):
     """
