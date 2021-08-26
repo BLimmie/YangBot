@@ -33,7 +33,7 @@ class YangBot():
         self.repeated_messages_dict = {(channel.id):[] for channel in self.channels}
 
         # All Server Role IDs
-        guild = client.get_guild(247264977495392258) # UCSB Server ID
+        guild = client.get_guild(config["server_id"]) # UCSB Server ID
         roles = {}
         for r in guild.roles:
             roles.update({r.name: r.id})
