@@ -1,6 +1,3 @@
-from src.commads import register
-
-
 class integration_test():
   async def __call__(self):
       if self.message and self.check:
