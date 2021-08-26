@@ -38,10 +38,10 @@ class BotFunction:
         if self.roles is None:
             role = True
         elif self.role_whitelist:
-            if any(elem.id in self.roles for elem in member.roles):
+            if any(elem.name in self.roles for elem in member.roles):
                 role = True
         else:  # self.positive_roles = False
-            if not any(elem.id in self.roles for elem in member.roles):
+            if not any(elem.name in self.roles for elem in member.roles):
                 role = True
 
         if role:  # and too_soon = False
@@ -58,8 +58,8 @@ class BotFunction:
     async def debug_action(self, *args, **kwargs):
         return self.action(*args, **kwargs)
 
-    async def decide_action(self, message, *args, **kwargs):
+    async def decide_action(self, *args, **kwargs):
         if self.bot.debug:
             return await self.debug_action(*args, **kwargs)
         else:
-            return await self.action(message, *args, **kwargs)
+            return await self.action(*args, **kwargs)
