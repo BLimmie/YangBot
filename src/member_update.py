@@ -27,22 +27,20 @@ class update_database_roles(on_member_update):
                 insert_member(conn, self.bot, after)
         for role in roles_deleted:
                 cur = conn.cursor()
-                db_sql = ("""
+                db_sql = f"""
                     UPDATE members
-                    SET roles = REPLACE(roles,',%s','')
-                    WHERE id = '%s' ;
-                """,
-                            (role, user_id))
+                    SET roles = REPLACE(roles,',{role}','')
+                    WHERE id = {user_id} ;
+                """
                 dbfunc_run(db_sql, cur, conn)
                 conn.commit()
         for role in roles_added:
                 cur = conn.cursor()
-                db_sql = ("""
+                db_sql = f"""
                     UPDATE members
-                    SET roles = CONCAT(roles,%s,',')
-                    WHERE id = '%s' AND roles NOT LIKE CONCAT('%%',%s,'%%') ;
-                """,
-                            (role, user_id,role))
+                    SET roles = CONCAT(roles,{role},',')
+                    WHERE id = {user_id} AND roles NOT LIKE CONCAT('%%',{role},'%%') ;
+                """
                 dbfunc_run(db_sql, cur, conn)
                 conn.commit()
 
@@ -60,12 +58,10 @@ class update_database_name(on_member_update):
             insert_member(conn, self.bot, after)
         else:
             cur = conn.cursor()
-            db_sql = ("""
+            db_sql = f"""
                     UPDATE members
-                    SET nickname = %s
-                    WHERE id = '%s' ;
-                """,
-                (after.display_name, after.id)
-            )
+                    SET nickname = {after.display_name}
+                    WHERE id = {after.id} ;
+                """
             dbfunc_run(db_sql, cur, conn)
             conn.commit()
