@@ -37,9 +37,15 @@ class debug(command_on_message):
         super().__init__(roles = self.roleslist, role_whitelist = True, *args, **kwargs)
     
     async def action(self, message, *args, **kwargs):
-        for func_class in BotFunction.__subclasses__():
-            for func in func_class.__subclasses__():
-                func.debug_reset(self)
+        for command in self.bot.command_on_message_list.values():
+            command.debug_reset()
+        for auto in self.bot.auto_on_message_list.values():
+            auto.debug_reset()
+        for join in self.bot.on_member_join_list.values():
+            join.debug_reset()
+        for update in self.bot.on_member_update_list.values():
+            update.debug_reset()
+    
         if self.bot.debug is False:
             self.bot.debug = True
             await message.channel.send('Debug mode on')
