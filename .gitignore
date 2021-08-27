@@ -5,3 +5,5 @@ secret*
 *.txt
 test.py
 .vscode
+.idea/
+venv/

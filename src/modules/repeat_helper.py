@@ -1,15 +1,36 @@
 import itertools
 
 class message_author:
+    def __init__(self, message, author, debug):
+        self.message = message
+        self.author = author
+        self.debug = debug
+
+    def __eq__(self, other):
+        if self.debug:
+            return self.message.lower() == other.message.lower()
+        else:
+            return self.message.lower() == other.message.lower() and self.author != other.author
+
+    def __ne__(self, other):
+        if self.debug:
+            return (self.message.lower() != other.message.lower())
+        else:
+            return (self.message.lower() != other.message.lower()) or (self.author == other.author)
+
+
+class message_author_debug:
+    """ignores author ID to allow an individual user to test the function"""
     def __init__(self, message, author):
         self.message = message
         self.author = author
 
     def __eq__(self, other):
-        return self.message.lower() == other.message.lower() and self.author != other.author
+        return self.message.lower() == other.message.lower()
 
     def __ne__(self, other):
-        return (self.message.lower() != other.message.lower()) or (self.author == other.author)
+        return (self.message.lower() != other.message.lower())
+
 
 def is_repeat(message_list, n):
     if len(message_list) != n:

@@ -1,186 +1,89 @@
 import traceback
-from src.tools.funcblocker import funcblocker
+from typing import List
+
+import discord
+
+from src.commands import command_on_message
+from src.auto_on_message import auto_on_message
+from src.member_join import on_member_join
+from src.member_update import on_member_update
 
 
 class YangBot():
     def __init__(self, dbconn, client, config, repeated_messages=4):
         """
-        Initialization of all data and functions of the bot
+        Initialization of all data
         """
-        # Functions
-        self.auto_on_message_list = {}
-        self.command_on_message_list = {}
-        self.react_option = {}
-        self.on_user_change = {}
-        self.on_member_join_list = {}
-        self.on_member_update_list = {}
+        # Debug
+        self.debug = False
 
         # All necessary data
-        self.conn = dbconn
         self.client = client
+        self.conn = dbconn
         self.config = config
+
+        # Functions
+        self.command_on_message_list = {}
+        self.auto_on_message_list = {}
+        self.on_member_join_list = {}
+        self.on_member_update_list = {}
 
         self.channels = list(self.client.get_all_channels())
         self.repeat_n = repeated_messages
         self.repeated_messages_dict = {(channel.id):[] for channel in self.channels}
 
-    async def send_message(self, message_info):
-        """
-        Sends message to channel in message_info
-        """
-        if message_info is None:
-            return
-        if message_info.message is None and message_info.embed is None:
-            return
-        if isinstance(message_info.channel, int):
-            channel = self.client.get_channel(message_info.channel)
-        else:
-            channel = message_info.channel
-        message = await channel.send(message_info.message, embed=message_info.embed)
-        return message
+        # All Server Role IDs
+        guild = client.get_guild(config["server_id"]) # UCSB Server ID
+        roles = {}
+        for r in guild.roles:
+            roles.update({r.name: r.id})
+        self.roles = roles
 
-    def auto_on_message(self, timer=None, roles=None, positive_roles=True, coro=None):
-        """
-        Decorator for automatic on_message function
+        # Actions in Command on Message
+        for action in command_on_message.__subclasses__():
+            self.command_on_message_list[action.__name__] = action(bot = self)
+    
+        # Actions in Auto on Message
+        for action in auto_on_message.__subclasses__():
+            self.auto_on_message_list[action.__name__] = action(bot = self)
 
-        e.g.
+        # Actions on Member Join
+        for action in on_member_join.__subclasses__():
+            self.on_member_join_list[action.__name__] = action(bot = self)
+    
+        # Actions on Member Update
+        for action in on_member_update.__subclasses__():
+            self.on_member_update_list[action.__name__] = action(bot = self)
 
-        @bot.auto_on_message(timer, roles, positive_roles, coro)
-        def test(message):
-            return message_data(0000000000, message.content, args, kwargs)
-
-        procs on every message
-
-        args:
-        timer (timedelta) = time between procs
-        roles (list of string) = role names to check
-        positive_roles (boolean) = True if only proc if user has roles, False if only proc if user has none of the roles
-        coro (coroutine) = coroutine to run after function finishes running
-        secondary_args:
-        func (function) = function to run, returns a message_data
-        """
-        def wrap(func):
-            def wrapper(message):
-                return func(message)
-            self.auto_on_message_list[func.__name__] = funcblocker(
-                wrapper, timer, roles, positive_roles, coro)
-            return wrapper
-        return wrap
-
-    async def run_auto_on_message(self, message):
+    # Run Command on Message
+    async def run_command_on_message(self, message):
+        if message is not None:
+            command = message.content.split()[0][1:]
+            if command in self.command_on_message_list:
+                print(command)
+                return await self.command_on_message_list[command].proc(message, message.created_at, message.author)
+            
+    # Run Auto on Message            
+    async def run_auto_on_message(self, message): 
         if message is not None:
             for key, func in self.auto_on_message_list.items():
                 try:
-                    message_info = func.proc(
-                        message.created_at, message.author, message)
-                    send_message = await self.send_message(message_info)
-                    if func.coro is not None and message_info is not None:
-                        await func.coro(send_message, *message_info.args, **message_info.kwargs)
+                    function = await func.proc(message, message.created_at, message.author)
+                    if function is not None:
+                        return function
                 except Exception:
                     traceback.print_exc()
                     assert False
-
-    def command_on_message(self, timer=None, roles=None, positive_roles=True, coro=None):
-        """
-        Decorator for command_on_message function
-        name of the function is the command YangBot looks for
-
-        e.g.
-
-        @bot.command_on_message(timer, roles, positive_roles, coro)
-        def test(message):
-            return message_data(0000000000, message.content, args, kwargs)
-
-        procs on $test
-
-        args:
-        timer (timedelta) = time between procs
-        roles (list of string) = role names to check
-        positive_roles (boolean) = True if only proc if user has roles, False if only proc if user has none of the roles
-        coro (coroutine) = coroutine to run after function finishes running
-        secondary_args:
-        func (function) = function to run, returns a message_data
-        """
-        def wrap(func):
-            def wrapper(message):
-                return func(message)
-            self.command_on_message_list[func.__name__] = funcblocker(
-                wrapper, timer, roles, positive_roles, coro)
-            return wrapper
-        return wrap
-
-    async def run_command_on_message(self, message):
-        """
-        Precondition: message content starts with '$'
-        """
-        command = message.content.split()[0][1:]
-        if command in self.command_on_message_list:
-            message_info = self.command_on_message_list[command].proc(
-                message.created_at, message.author, message)
-            send_message = await self.send_message(message_info)
-            if self.command_on_message_list[command].coro is not None and message_info is not None:
-                await self.command_on_message_list[command].coro(send_message, *message_info.args, **message_info.kwargs)
-
-    def on_member_join(self, coro=None):
-        """
-        Decorator for on_member_join function
-
-        e.g.
-
-        @bot.on_member_join(coro)
-        def test(user):
-            return message_data(None, None, args, kwargs)
-
-        procs on all member joins
-
-        args:
-        coro (coroutine) = coroutine to run after function finishes running
-        secondary_args:
-        func (function) = function to run, returns a message_data
-        """
-        def wrap(func):
-            def wrapper(user):
-                return func(user)
-            self.on_member_join_list[func.__name__] = funcblocker(
-                wrapper, coro=coro)
-            return wrapper
-        return wrap
-
+    
+    # Run on Member Join
     async def run_on_member_join(self, user):
         for func in self.on_member_join_list.values():
-            message_info = func.simple_proc(user)
-            message = await self.send_message(message_info)
-            if func.coro is not None and message_info is not None:
-                await func.coro(message, *message_info.args, **message_info.kwargs)
-
-    def on_member_update(self, coro=None):
-        """
-        Decorator for on_member_udpate function
-
-        e.g.
-
-        @bot.on_member_update(coro)
-        def test(user):
-            return message_data(None, None, args, kwargs)
-
-        procs on all member updates (see discord.py documentation for what this means)
-
-        args:
-        coro (coroutine) = coroutine to run after function finishes running
-        secondary_args:
-        func (function) = function to run, returns a message_data
-        """
-        def wrap(func):
-            def wrapper(before, after):
-                return func(before, after)
-            self.on_member_update_list[func.__name__] = funcblocker(
-                wrapper, None, None, False, coro)
-            return wrapper
-        return wrap
-
+            return await func.simple_proc(user)
+    
+    # Run on Member Update
     async def run_on_member_update(self, before, after):
         for func in self.on_member_update_list.values():
-            message_info = func.simple_proc(before, after)
-            message = await self.send_message(message_info)
-            if func.coro is not None and message_info is not None:
-                await func.coro(message, *message_info.args, **message_info.kwargs)
+            return await func.simple_proc(before, after)
+
+    def get_roles(self, role_ids: List[str]) -> List[int]:
+        return [self.roles[id] for id in role_ids]
