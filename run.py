@@ -12,7 +12,7 @@ DATABASE_URL = os.environ['DATABASE_URL']
 conn = psycopg2.connect(DATABASE_URL, sslmode='require')
 
 intents = discord.Intents().all()
-client = discord.Client(prefix = '$', intents=intents)
+client = discord.Client(intents=intents)
 @client.event
 async def on_ready():
     global bot
@@ -25,9 +25,11 @@ async def on_message(message):
     if not message.author.bot or message.author.id == 856999058709938177: # TestBot ID
 
         # Command on Message
-        return_message = await bot.run_command_on_message(message)
-        if return_message is not None:
-            await return_message.channel.send(return_message.message, embed=return_message.embed)
+        if message.content.startswith('$'):
+            return_message = await bot.run_command_on_message(message)
+            if return_message is not None:
+                await return_message.channel.send(return_message.message, embed=return_message.embed)
+        
 
         # Auto on Message
         return_message2 = await bot.run_auto_on_message(message)
