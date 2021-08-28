@@ -5,7 +5,7 @@ from src.modules.catfact_helper import get_catfact
 from src.modules.repeat_helper import message_author, is_repeat, cycle, flush, message_author_debug
 from src.tools.botfunction import BotFunction
 from src.tools.message_return import message_data
-from src.tools.discord_helper import generate_embed
+from src.modules.discord_helper import generate_embed
 
 BAN_EMOJI_ID = 338384063691751424
 
