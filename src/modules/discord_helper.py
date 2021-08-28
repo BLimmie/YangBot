@@ -1,3 +1,4 @@
+import discord
 async def add_roles(member, roles):
     """
     Give a member roles
@@ -34,3 +35,10 @@ async def try_send(member, message):
         await member.send(message)
     except:
         print("Unable to send PM")
+
+def generate_embed(embed_dict):
+    # input is a dict
+    embed = discord.Embed(**embed_dict)
+    if 'fields' in embed_dict:
+            for item in embed['fields']:
+                self.embed.add_field(name=item['name'],value=item['value'],inline=item['inline'] if 'inline' in item else False)
