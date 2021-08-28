@@ -5,6 +5,7 @@ from src.modules.catfact_helper import get_catfact
 from src.modules.repeat_helper import message_author, is_repeat, cycle, flush, message_author_debug
 from src.tools.botfunction import BotFunction
 from src.tools.message_return import message_data
+from src.tools.discord_helper import generate_embed
 
 BAN_EMOJI_ID = 338384063691751424
 
@@ -87,7 +88,7 @@ class check_toxicity(auto_on_message):
         toxic_notif_channel = self.bot.client.get_channel(self.bot.config["toxic_notif_channel"])
 
         if m is not None:
-            toxic_notif_message = await toxic_notif_channel.send(embed=discord.Embed(**send_message))
+            toxic_notif_message = await toxic_notif_channel.send(embed=generate_embed(send_message))
             await self.remove_toxicity(toxic_notif_message, scores, message)
         
 
