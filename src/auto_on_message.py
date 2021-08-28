@@ -87,8 +87,8 @@ class check_toxicity(auto_on_message):
         toxic_notif_channel = self.bot.client.get_channel(self.bot.config["toxic_notif_channel"])
 
         if m is not None:
-            await self.remove_toxicity(message, scores, message)
-            return message_data(toxic_notif_channel, embed=send_message)
+            toxic_notif_message = await toxic_notif_channel.send(embed=send_message)
+            await self.remove_toxicity(toxic_notif_message, scores, message)
         
 
 class mission_complete(auto_on_message):
