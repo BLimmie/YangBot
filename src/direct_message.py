@@ -24,8 +24,7 @@ class introduction(direct_message):
         super().__init__(*args,**kwargs)
 
     async def action(self, message):
-        # FIX: CHANNEL ID
-        if (message.channel.id == 876950801795391518 and message.content[0] == '1') or 'try again' in message.content.lower():
+        if (message.channel.id == self.bot.config["introductions_channel"] and message.content[0] == '1') or 'try again' in message.content.lower():
             await message.author.send('Current Students: Please respond to this message with your UCSB email \nProspective Students: Please respond with "Prospective"')
 
 class email(direct_message):
@@ -104,20 +103,18 @@ class role(direct_message):
         if isinstance(message.channel, (discord.DMChannel, discord.GroupChannel)):
             try:
                 # gets member info from server
-                # FIX: GUILD ID
-                # guild = client.get_guild(bot.config["server_id"])
-                guild = client.get_guild(857393796621795353) # ME Server ID
+                guild = client.get_guild(self.bot.config["server_id"])
                 cur = conn.cursor()
                 for user in guild.members:
                     if user == message.author:
                         m = user
-                cur.execute(f"SELECT * FROM {'test'} where id = '{m.id}'")
+                cur.execute(f"SELECT * FROM {'members'} where id = '{m.id}'")
                 member = cur.fetchone()
 
-                # test["code"] in message
+                # members["code"] in message
                 if member[4] in message.content.upper(): 
                     # Gaucho role for UCSB students
-                    if '@ucsb.edu' in member[3]: # checks test["email"]
+                    if '@ucsb.edu' in member[3]: # checks members["email"]
                         member_role = get(m.guild.roles, name='Gaucho')
                         await m.add_roles(member_role)
                         await m.send('Gaucho role added')

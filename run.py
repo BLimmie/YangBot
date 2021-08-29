@@ -29,12 +29,18 @@ async def on_message(message):
             return_message = await bot.run_command_on_message(message)
             if return_message is not None:
                 await return_message.channel.send(return_message.message, embed=return_message.embed)
-        
 
         # Auto on Message
         return_message2 = await bot.run_auto_on_message(message)
         if return_message2 is not None:
             await return_message2.channel.send(return_message2.message, embed = return_message2.embed)
+
+        # Direct Message (DM)- INTRODUCTION (2-factor approval) on DM
+        # return_message3 = await bot.run_direct_message(message)
+        # # print(return_message3)
+        # if return_message3 is not None:
+        #     await return_message3.author.send(return_message3.message)
+        await bot.run_direct_message(message)
 
 # Member Join
 @client.event

@@ -41,4 +41,5 @@ def generate_embed(embed_dict):
     embed = discord.Embed(**embed_dict)
     if 'fields' in embed_dict:
             for item in embed_dict['fields']:
-                self.embed.add_field(name=item['name'],value=item['value'],inline=item['inline'] if 'inline' in item else False)
+                embed.add_field(name=item['name'],value=item['value'],inline=item['inline'] if 'inline' in item else False)
+    return embed

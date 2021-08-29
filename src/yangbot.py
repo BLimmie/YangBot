@@ -7,6 +7,7 @@ from src.commands import command_on_message
 from src.auto_on_message import auto_on_message
 from src.member_join import on_member_join
 from src.member_update import on_member_update
+from src.direct_message import direct_message
 
 
 class YangBot():
@@ -27,6 +28,7 @@ class YangBot():
         self.auto_on_message_list = {}
         self.on_member_join_list = {}
         self.on_member_update_list = {}
+        self.direct_message_list = {}
 
         self.channels = list(self.client.get_all_channels())
         self.repeat_n = repeated_messages
@@ -55,6 +57,11 @@ class YangBot():
         for action in on_member_update.__subclasses__():
             self.on_member_update_list[action.__name__] = action(bot = self)
 
+        
+        # Actions on Direct Message
+        for action in direct_message.__subclasses__():
+            self.direct_message_list[action.__name__] = action(bot = self)
+
     # Run Command on Message
     async def run_command_on_message(self, message):
         if message is not None:
@@ -66,6 +73,18 @@ class YangBot():
     async def run_auto_on_message(self, message): 
         if message is not None:
             for key, func in self.auto_on_message_list.items():
+                try:
+                    function = await func.proc(message, message.created_at, message.author)
+                    if function is not None:
+                        return function
+                except Exception:
+                    traceback.print_exc()
+                    assert False
+
+    # Run on Direct Message
+    async def run_direct_message(self, message):
+        if message is not None:
+            for key, func in self.direct_message_list.items():
                 try:
                     function = await func.proc(message, message.created_at, message.author)
                     if function is not None:
