@@ -38,19 +38,19 @@ class unsubscribe(auto_on_message):
 
 # print(help(unsubscribe))
 
-class private_message(auto_on_message):
-    """
-    Yang will respond to private messages with a notice to not message him privately
-    """
+# class private_message(auto_on_message):
+#     """
+#     Yang will respond to private messages with a notice to not message him privately
+#     """
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+#     def __init__(self, *args, **kwargs):
+#         super().__init__(*args, **kwargs)
 
-    async def action(self, message, *args, **kwargs):
-        if isinstance(message.channel, (discord.DMChannel, discord.GroupChannel)):
-            return message_data(message.channel,
-                                "I do not reply to private messages. If you have any questions, please message one of the mods.")
-        return None
+#     async def action(self, message, *args, **kwargs):
+#         if isinstance(message.channel, (discord.DMChannel, discord.GroupChannel)):
+#             return message_data(message.channel,
+#                                 "I do not reply to private messages. If you have any questions, please message one of the mods.")
+#         return None
 
 
 class check_toxicity(auto_on_message):
