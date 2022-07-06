@@ -2,7 +2,7 @@ import random
 from psycopg2 import sql
 from src.modules.catfact_helper import get_catfact
 from src.modules.db_helper import member_exists, insert_member, get_table, connection_error, dbfunc_run
-from src.modules.discord_helper import change_nickname, kick_member, try_send
+from src.modules.discord_helper import change_nickname, kick_member, try_send, generate_embed
 from src.tools.botfunction import BotFunction
 from src.tools.message_return import message_data
 
@@ -13,6 +13,10 @@ class command_on_message(BotFunction):
         super().__init__(*args, **kwargs)
 
     async def action(self, message):
+        raise NotImplementedError
+
+    @property
+    def helptxt(self):
         raise NotImplementedError
 
 
@@ -27,6 +31,10 @@ class catfact(command_on_message):
 
     async def action(self, message, *args, **kwargs):
         return message_data(message.channel, get_catfact())
+
+    @property
+    def helptxt(self):
+        return "$catfact \nGets random catfact"
   
 class debug(command_on_message):
     """
@@ -55,6 +63,10 @@ class debug(command_on_message):
             self.bot.debug = False
             await message.channel.send('Debug mode off')
 
+    @property
+    def helptxt(self):
+        return "$debug \nActivates debug mode"
+
 class sigkill(command_on_message):
     """
     $debug
@@ -69,6 +81,10 @@ class sigkill(command_on_message):
     async def debug_action(self, message):
       await message.channel.send('Killing bot processes...')
       exit()
+
+    @property
+    def helptxt(self):
+        return "$debug \nKills bot processes when in debug mode"
 
 
 class register(command_on_message):
@@ -102,6 +118,10 @@ class register(command_on_message):
             return message_data(message.channel, "User already registered")
         return message_data(message.channel, "User registered")
 
+    @property
+    def helptxt(self):
+        return "$register \nRegisters a user in the database"
+
 
 class resetregister(command_on_message):
     """
@@ -125,6 +145,10 @@ class resetregister(command_on_message):
         conn.commit()
         insert_member(conn, self.bot, user)
         return message_data(message.channel, "User registration reset")
+
+    @property
+    def helptxt(self):
+        return "$resetregister \nResets the registration in the database in case of bugs"
 
 
 class kickme(command_on_message):
@@ -153,6 +177,10 @@ class kickme(command_on_message):
                                 "You aren't registered in my memory yet. Please register with $register first")
         await message.author.send("See you later!")
         return
+
+    @property
+    def helptxt(self):
+        return "$kickme \nKicks an unregistered user (?)"
 
 
 
@@ -203,10 +231,16 @@ class nickname(command_on_message):
         await self.nickname_request(message, user, nickname)
         return
 
+    @property
+    def helptxt(self):
+        return "$nickname [nickname] \nRequests to change nickname to [nickname]. Requires admin approval."
+
+    
+
 class send(command_on_message):
     """
     $send [channel_mention] [message]
-    
+
     Sends [message] to [channel_mention] and deletes the command to send
     """
 
@@ -226,6 +260,10 @@ class send(command_on_message):
                 content[content.find('>') + 1:],
                 args=[message]
             )
+
+    @property
+    def helptxt(self):
+        return "$send [channel] [message] \nSends [message] to [channel]. Must be a channel ping."
 
 class choose(command_on_message):
     """
@@ -252,6 +290,10 @@ class choose(command_on_message):
                 "color": 53380}
         )
 
+    @property
+    def helptxt(self):
+        return "$choose choice1; choice2[; choice3; ...] \nChooses an option from the provided list."
+
 class help(command_on_message):
     """
     $help [command]
@@ -262,16 +304,25 @@ class help(command_on_message):
         super().__init__(*args, **kwargs)
         self.commands_list = {}
         for cmd in command_on_message.__subclasses__():
-            self.commands_list[cmd.__name__] = cmd.__doc__
+            self.commands_list[cmd.__name__] = cmd.helptxt
 
     async def action(self, message):
         try:
             cmd = message.content[1:].split()[1] # Tries to get the command to search for
-        except KeyError: # If no command argument is given
-            messageToReturn = ""
+        except (KeyError, AttributeError): # If no command argument is given
+            message_to_return = ""
             for cmd in self.commands_list.values():
-                messageToReturn = "```\n"  + cmd +"\n```\n"
+                message_to_return = cmd + "\n\n"
+
         else: # If an argument is given
-            messageToReturn = "```\n" + self.commands_list.get(cmd, "No such command exists") + "\n```"
+            message_to_return = self.commands_list.get(cmd, "No such command exists")
         
-        return message_data(message.channel, messageToReturn)
+        return generate_embed({
+            "title": "Help",
+            "color": 15920957,
+            "description": message_to_return
+            })
+
+    @property
+    def helptxt(self):
+        return "$help [command] \nDisplays description of the provided command. If none is provided, displays description for all commands."
