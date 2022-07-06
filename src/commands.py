@@ -19,6 +19,7 @@ class command_on_message(BotFunction):
 class catfact(command_on_message):
     """
     $catfact
+
     Gets random catfact
     """
     def __init__(self,*args,**kwargs):
@@ -30,6 +31,7 @@ class catfact(command_on_message):
 class debug(command_on_message):
     """
     $debug
+
     activates debug mode 
     """
     def __init__(self,*args,**kwargs):
@@ -56,6 +58,7 @@ class debug(command_on_message):
 class sigkill(command_on_message):
     """
     $debug
+
     kills bot processes when in debug mode
     """
     def __init__(self,*args,**kwargs):
@@ -71,6 +74,7 @@ class sigkill(command_on_message):
 class register(command_on_message):
     """
     $register
+
     Registers a user in the db
     """
 
@@ -102,6 +106,7 @@ class register(command_on_message):
 class resetregister(command_on_message):
     """
     $resetregister
+
     Resets the registration in the db in case of bugs
     """
 
@@ -125,6 +130,7 @@ class resetregister(command_on_message):
 class kickme(command_on_message):
     """
     $kickme
+
     kicks an unregistered user???
     """
 
@@ -153,6 +159,7 @@ class kickme(command_on_message):
 class nickname(command_on_message):
     """
     $nickname [nickname]
+
     Requests to change nickname to [nickname]
     Admins click on emoji react to approve/disapprove request
     """
@@ -199,6 +206,7 @@ class nickname(command_on_message):
 class send(command_on_message):
     """
     $send [channel_mention] [message]
+    
     Sends [message] to [channel_mention] and deletes the command to send
     """
 
@@ -243,3 +251,27 @@ class choose(command_on_message):
                 "description": chosen_opt,
                 "color": 53380}
         )
+
+class help(command_on_message):
+    """
+    $help [command]
+
+    Displays description of provided command. If no command is provided, displays all commands
+    """
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.commands_list = {}
+        for cmd in command_on_message.__subclasses__():
+            self.commands_list[cmd.__name__] = cmd.__doc__
+
+    async def action(self, message):
+        try:
+            cmd = message.content[1:].split()[1] # Tries to get the command to search for
+        except KeyError: # If no command argument is given
+            messageToReturn = ""
+            for cmd in self.commands_list.values():
+                messageToReturn = "```\n"  + cmd +"\n```\n"
+        else: # If an argument is given
+            messageToReturn = "```\n" + self.commands_list.get(cmd, "No such command exists") + "\n```"
+        
+        return message_data(message.channel, messageToReturn)
