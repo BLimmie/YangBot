@@ -4,3 +4,4 @@ asyncio
 discord.py==1.7.3
 requests
 asgiref
+discord-ui
