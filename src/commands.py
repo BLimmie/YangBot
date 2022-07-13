@@ -15,8 +15,8 @@ class command_on_message(BotFunction):
     async def action(self, message):
         raise NotImplementedError
 
-    @property
-    def helptxt(self):
+    @staticmethod
+    def helptxt():
         raise NotImplementedError
 
 
@@ -32,8 +32,8 @@ class catfact(command_on_message):
     async def action(self, message, *args, **kwargs):
         return message_data(message.channel, get_catfact())
 
-    @property
-    def helptxt(self):
+    @staticmethod
+    def helptxt():
         return "$catfact \nGets random catfact"
   
 class debug(command_on_message):
@@ -63,8 +63,8 @@ class debug(command_on_message):
             self.bot.debug = False
             await message.channel.send('Debug mode off')
 
-    @property
-    def helptxt(self):
+    @staticmethod
+    def helptxt():
         return "$debug \nActivates debug mode"
 
 class sigkill(command_on_message):
@@ -82,8 +82,8 @@ class sigkill(command_on_message):
       await message.channel.send('Killing bot processes...')
       exit()
 
-    @property
-    def helptxt(self):
+    @staticmethod
+    def helptxt():
         return "$debug \nKills bot processes when in debug mode"
 
 
@@ -118,8 +118,8 @@ class register(command_on_message):
             return message_data(message.channel, "User already registered")
         return message_data(message.channel, "User registered")
 
-    @property
-    def helptxt(self):
+    @staticmethod
+    def helptxt():
         return "$register \nRegisters a user in the database"
 
 
@@ -146,8 +146,8 @@ class resetregister(command_on_message):
         insert_member(conn, self.bot, user)
         return message_data(message.channel, "User registration reset")
 
-    @property
-    def helptxt(self):
+    @staticmethod
+    def helptxt():
         return "$resetregister \nResets the registration in the database in case of bugs"
 
 
@@ -178,8 +178,8 @@ class kickme(command_on_message):
         await message.author.send("See you later!")
         return
 
-    @property
-    def helptxt(self):
+    @staticmethod
+    def helptxt():
         return "$kickme \nKicks an unregistered user (?)"
 
 
@@ -231,8 +231,8 @@ class nickname(command_on_message):
         await self.nickname_request(message, user, nickname)
         return
 
-    @property
-    def helptxt(self):
+    @staticmethod
+    def helptxt():
         return "$nickname [nickname] \nRequests to change nickname to [nickname]. Requires admin approval."
 
     
@@ -261,8 +261,8 @@ class send(command_on_message):
                 args=[message]
             )
 
-    @property
-    def helptxt(self):
+    @staticmethod
+    def helptxt():
         return "$send [channel] [message] \nSends [message] to [channel]. Must be a channel ping."
 
 class choose(command_on_message):
@@ -290,8 +290,8 @@ class choose(command_on_message):
                 "color": 53380}
         )
 
-    @property
-    def helptxt(self):
+    @staticmethod
+    def helptxt():
         return "$choose choice1; choice2[; choice3; ...] \nChooses an option from the provided list."
 
 class help(command_on_message):
@@ -304,9 +304,7 @@ class help(command_on_message):
         super().__init__(*args, **kwargs)
         self.commands_list = {}
         for cmd in command_on_message.__subclasses__():
-            temp_obj = cmd() # __sublcasses__ returns a list of classes, so an object must be initialized in order to access the helptxt property
-            self.commands_list[cmd.__name__] = temp_obj.helptxt
-            del temp_obj
+            self.commands_list[cmd.__name__] = cmd.helptxt()
 
     async def action(self, message):
         fields = []
@@ -337,6 +335,6 @@ class help(command_on_message):
             "fields": fields
         })
 
-    @property
-    def helptxt(self):
+    @staticmethod
+    def helptxt():
         return "$help [command] \nDisplays description of the provided command. If none is provided, displays description for all commands."
