@@ -4,3 +4,4 @@ asyncio
 git+https://github.com/Rapptz/discord.py.git@dc50736bfc3340d7b999d9f165808f8dcb8f1a60
 requests
 asgiref
+discord-ui
