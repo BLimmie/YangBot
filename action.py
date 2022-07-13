@@ -1,7 +1,11 @@
 from typing import List
 from states import state
 
+<<<<<<< HEAD
 class action:
+=======
+class action():
+>>>>>>> 18943fc (first draft)
     def __init__(self, current_state: state):
        self.current_state = current_state
 
