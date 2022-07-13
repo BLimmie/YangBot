@@ -304,24 +304,38 @@ class help(command_on_message):
         super().__init__(*args, **kwargs)
         self.commands_list = {}
         for cmd in command_on_message.__subclasses__():
-            self.commands_list[cmd.__name__] = cmd.helptxt
+            temp_obj = cmd() # __sublcasses__ returns a list of classes, so an object must be initialized in order to access the helptxt property
+            self.commands_list[cmd.__name__] = temp_obj.helptxt
+            del temp_obj
 
     async def action(self, message):
+        fields = []
         try:
             cmd = message.content[1:].split()[1] # Tries to get the command to search for
-        except (KeyError, AttributeError): # If no command argument is given
-            message_to_return = ""
-            for cmd in self.commands_list.values():
-                message_to_return = cmd + "\n\n"
+        except (IndexError, AttributeError):
+            # If no command is given. AttributeError is also catched in case message.content[1:] doesn't return a string.
+            for name, desc in self.commands_list.items():
+                fields.append({
+                    "name": name,
+                    "value": desc
+                })
 
-        else: # If an argument is given
-            message_to_return = self.commands_list.get(cmd, "No such command exists")
-        
-        return generate_embed({
-            "title": "Help",
+        else: # If a command is given
+            if cmd in self.commands_list:
+                fields.append({
+                    "name": cmd,
+                    "value": self.commands_list[cmd]
+                })
+            else: # If no such command exists
+                fields.append({
+                    "name": "No such command found",
+                    "value": "Did you make a typo?"
+                })
+        return message_data(channel=message.channel, embed={
+            "title": "Command List",
             "color": 15920957,
-            "description": message_to_return
-            })
+            "fields": fields
+        })
 
     @property
     def helptxt(self):
