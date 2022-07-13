@@ -17,6 +17,7 @@ class command_on_message(BotFunction):
 
     @staticmethod
     def helptxt():
+
         raise NotImplementedError
 
 
