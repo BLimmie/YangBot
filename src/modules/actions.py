@@ -2,6 +2,7 @@ from platform import machine
 from typing import List
 from states import state
 
+<<<<<<< HEAD
 '''
 Idea for action:
 
@@ -10,6 +11,9 @@ It will then pass this state onto machine, which will update itself accordingly.
 '''
 
 class action:
+=======
+class action():
+>>>>>>> e8055ad (Created initial state machine files)
     def __init__(self, current_state: state):
        self.current_state = current_state
 
