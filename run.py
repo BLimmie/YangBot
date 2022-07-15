@@ -1,4 +1,5 @@
 import discord
+from discord.ext import commands
 import json
 import os
 import psycopg2
@@ -12,7 +13,7 @@ DATABASE_URL = os.environ['DATABASE_URL']
 conn = psycopg2.connect(DATABASE_URL, sslmode='require')
 
 intents = discord.Intents().all()
-client = discord.Client(intents=intents)
+client = commands.Bot('$', intents=intents)
 @client.event
 async def on_ready():
     global bot
