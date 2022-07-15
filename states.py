@@ -1,6 +1,6 @@
 import discord
 import json
-from src.tools.message_return import message_data
+import discord.ext.commands
 from discord_ui import Button
 from src.modules.discord_helper import generate_embed
 
@@ -17,11 +17,9 @@ class state():
         }
         self.template = json.dumps(dictionary)
 
-    def fill_template(self, **kwargs):
-        filled_temp = json.loads(self.template).format(kwargs)
-        # instead here use generate_embed
+    def fill_template(self, embed_dict):
+        embed = generate_embed(embed_dict)
+        filled_temp = json.loads(self.template).format(embed.__dict__)
         return json.dumps(filled_temp)
 
-    def generate_embed(self, message, **kwargs):
-        return message_data(message.channel, discord.Embed(kwargs))
 
