@@ -7,41 +7,37 @@ from src.tools.message_return import message_data
 from discord_ui import Button, Interaction
 from src.modules.discord_helper import generate_embed
 
+'''
+Our idea for implementation:
+
+Machine: Represents the embed to be interacted with. Machine comes built in with a history, data, and a list of states (not necessary?)
+Action: Represents some execution that happens when machine is interacted with (i.e. a button is pressed). Action is responsibile for determining next state, which can be updated via machine.update_state
+State: Represents the current state of the machine, i.e. a new embed and any related data. Actions manipulate (and create) states, which is passed onto a machine to update.
+
+Key takeaways:
+
+1. Actions are attached to buttons and its method is called whenever an interaction happens (button clicked). It is responsible for generating a new state which will be passed onto the machine.
+2. Machine represents the embed itself. Its sole responsibility is to update itself, track a history, and hold data.
+3. States are blueprints for what the machine should look like. It contains information about the embed and actions. (Should it contain new data too?)
+'''
+
 class machine():
-    def __init__(self, states: List[state], actions: List[action], history, current_state: state):
-        """
-        @param states: list of all possible states
-        @param history: list of user's selected actions
-        """
+    def __init__(self, channel: discord.TextChannel, current_state: state, * , states: List[state] = [], actions: List[action] = [], history: List[action] = []):
+        self.channel = channel
         self.states = deepcopy(states)
         self.actions = deepcopy(actions)
-        if history == None:
-            history = []
-        else:
-            self.history = deepcopy(history)
+        self.history = deepcopy(history)
         self.current_state = current_state
+        self.update_state(current_state)
         
-    async def update_state(self, user_action: action):
+    async def update_state(self, user_action: state):
         """
          1. Call determine_next_state and update self.current_state
          2. Edit embed with new attributes
          3. update history
         """
-        self.current_state = user_action.determine_next_state()
+        # Do stuff to change the current state
         self.history.append(user_action)
-
-        self.embed_dict = action.state_choice.embed.to_dict()
-        
-        for attribute in self.embed_dict:
-            if 'fields' in self.embed_dict:
-                for item in self.embed['fields']:
-                    self.embed.add_field(name=item['name'],value=item['value'],inline=item['inline'] if 'inline' in item else False)
-            
-            elif attribute in vars(self.embed).keys():
-                self.embed.attribute = self.embed_dict[attribute]
-                
-        self.embed = discord.Embed.from_dict(self.embed_dict)
-        await discord.message.edit(embed=self.embed)
 
     async def interaction_check(self, interaction: Interaction, message) -> bool:
         await message.user == message.author
