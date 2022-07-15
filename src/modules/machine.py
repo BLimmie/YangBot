@@ -8,6 +8,12 @@ from discord_ui import Button, Interaction
 from src.modules.discord_helper import generate_embed
 
 '''
+Our idea for Machine:
+
+Machine serves as a gateway to the embed (i.e. it is the machine itself). Machine's responsibility is holding data and updating its own state. It receives states from Action objects.
+'''
+
+'''
 Our idea for implementation:
 
 Machine: Represents the embed to be interacted with. Machine comes built in with a history, data, and a list of states (not necessary?)
@@ -21,7 +27,7 @@ Key takeaways:
 3. States are blueprints for what the machine should look like. It contains information about the embed and actions. (Should it contain new data too?)
 '''
 
-class machine():
+class machine:
     def __init__(self, channel: discord.TextChannel, current_state: state, * , states: List[state] = [], actions: List[action] = [], history: List[action] = []):
         self.channel = channel
         self.states = deepcopy(states)

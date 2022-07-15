@@ -2,7 +2,14 @@ from platform import machine
 from typing import List
 from states import state
 
-class action():
+'''
+Idea for action:
+
+Action represents a button and what will happen upon interaction. It is responsible for manipulating data and creating a new state. 
+It will then pass this state onto machine, which will update itself accordingly.
+'''
+
+class action:
     def __init__(self, current_state: state):
        self.current_state = current_state
 
