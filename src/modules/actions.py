@@ -3,6 +3,9 @@ from typing import List
 from states import state
 
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 6c4a0b7 (Included comments (really multi-line strings) detailing our ideas for implementation. See each file (machines, states, actions) for specific comments on those classes, and machines for a general comment about implementation)
 '''
 Idea for action:
 
@@ -11,9 +14,12 @@ It will then pass this state onto machine, which will update itself accordingly.
 '''
 
 class action:
+<<<<<<< HEAD
 =======
 class action():
 >>>>>>> e8055ad (Created initial state machine files)
+=======
+>>>>>>> 6c4a0b7 (Included comments (really multi-line strings) detailing our ideas for implementation. See each file (machines, states, actions) for specific comments on those classes, and machines for a general comment about implementation)
     def __init__(self, current_state: state):
        self.current_state = current_state
 
