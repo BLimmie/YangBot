@@ -1,8 +1,7 @@
 import discord
 import json
-from src.tools.message_return import message_data
 from discord_ui import Button
-from src.modules.discord_helper import generate_embed
+from discord_helper import generate_embed
 
 '''
 Idea for State:
@@ -29,6 +28,3 @@ class state:
         filled_temp = json.loads(self.template).format(kwargs)
         # instead here use generate_embed
         return json.dumps(filled_temp)
-
-    def generate_embed(self, message, **kwargs):
-        return message_data(message.channel, discord.Embed(kwargs))
