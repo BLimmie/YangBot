@@ -1,9 +1,14 @@
 import json
+<<<<<<< HEAD
 from typing import List
 from copy import deepcopy
 import discord
 from discord_helper import generate_embed
 
+=======
+import discord.ext.commands
+from src.modules.discord_helper import generate_embed
+>>>>>>> a37d118 (Changed 'create' method to send a message, and updated 'update_state' a bit.)
 '''
 Notes:
 
@@ -54,6 +59,7 @@ class state:
         self.buttons = []
         self.data = {}
 
+<<<<<<< HEAD
 
     def __getitem__(self, key):
         return self.embed_info[key] if key in self.embed_info else self.data[key]
@@ -133,3 +139,10 @@ if __name__ == "__main__":
     new_state = state()
     new_state.embed = 'deez'
     print(new_state.embed_info)
+=======
+    def fill_template(self, embed_dict):
+        embed = generate_embed(embed_dict)
+        filled_temp = json.loads(self.template).format(embed.__dict__)
+        return json.dumps(filled_temp)
+
+>>>>>>> a37d118 (Changed 'create' method to send a message, and updated 'update_state' a bit.)

@@ -1,5 +1,10 @@
+from multiprocessing import dummy
 import discord
+<<<<<<< HEAD
 import asyncio
+=======
+import discord_ui
+>>>>>>> a37d118 (Changed 'create' method to send a message, and updated 'update_state' a bit.)
 from discord.ext import commands
 from discord_helper import generate_embed
 from states import state
@@ -7,6 +12,15 @@ from action import action
 from typing import List
 from copy import deepcopy
 import json
+<<<<<<< HEAD
+=======
+
+'''
+Our idea for Machine:
+
+Machine serves as a gateway to the embed (i.e. it is the machine itself). Machine's responsibility is holding data and updating its own state. It receives states from Action objects.
+'''
+>>>>>>> a37d118 (Changed 'create' method to send a message, and updated 'update_state' a bit.)
 
 '''
 Our idea for implementation:
@@ -72,12 +86,17 @@ class machine:
         pass
     
     @classmethod
+<<<<<<< HEAD
     async def create(cls, client: commands.Bot, ui_client: discord_ui.UI, initial_state: state, message: discord.Message, * , channel: discord.TextChannel = None, history: List[action] = []):
+=======
+    async def create(cls, client: commands.Bot, ui_client: discord_ui.UI, message: discord.Message, initial_state: state, * , states: List[state] = [], actions: List[action] = [], history: List[action] = []):
+>>>>>>> a37d118 (Changed 'create' method to send a message, and updated 'update_state' a bit.)
         '''
         Initializes a machine that may only be modified by and interacted with its creator.
         
         ### Parameters
         `client`: The bot itself.
+<<<<<<< HEAD
         `ui_client`: A UI extension allowing parsing of interactions. Must be initialized via `UI(client)` (should every machine initialize its own, or is it better to have one made then passed to all?)
         `initial_state`: A state object that the machine should put itself into upon creation.
         `message`: The message that initialized the machine.
@@ -113,10 +132,45 @@ class machine:
         self._message.edit(
             content = '',
             embed=generate_embed(json.loads(new_state.template)), 
+=======
+        `ui_client`: A UI extension allowing parsing of interactions. Must be initialized as UI(client) (should every machine have its own, or is it better to have one for all?)
+        `message`: The message that initialized the machine.
+        `initial_state`: A state object that the machine should put itself into upon creation.
+        `states` (Optional?): A list of states the machine may enter. Empty by default.
+        `actions` (Optional?): A list of valid actions the user may perform. Empty by default.
+        `history` (Optional): A history of previous actions taken. Empty by default.
+        '''
+        self = cls()
+        self._owner = message.author
+        self._message = await ui_client.send(message.channel, content = 'Initializing...')
+        self.states = deepcopy(states)
+        self.actions = deepcopy(actions)
+        self.history = deepcopy(history)
+        
+        self.current_state = None
+        dummy_object = object() # This is used to bypass the duck test used in interaction_check.
+        dummy_object.author = self._owner
+        await self.update_state(initial_state, dummy_object)
+
+        return self
+
+    async def update_state(self, new_state: state, interaction: discord_ui.ButtonInteraction):
+        """
+        Edits the machine to match the given state.
+        """
+        if not self.interaction_check(interaction.author): return
+
+        # maybe use interaction_check
+        self.current_state = new_state
+        self._message.edit(
+            content = '',
+            embed=generate_embed(json.loads(self.new_state.template)), 
+>>>>>>> a37d118 (Changed 'create' method to send a message, and updated 'update_state' a bit.)
             components=[self.current_state.json.loads(self.new_state.template)["buttons"]]
         )
     
     def interaction_check(self, user: discord.User) -> bool:
+<<<<<<< HEAD
         '''
         Determines if an interactive is valid. Returns `True` if so, otherwise returns `False`.
 
@@ -124,3 +178,17 @@ class machine:
         `user`: A `discord.User` object. `discord.Member` is acceptable too as it subclasses `discord.User`.
         '''
         return user.id == self._owner.id
+=======
+        return user.id == self._owner.id
+
+    def add_state(self, newState: state):
+        if newState not in self.states:
+            self.states.append(newState)
+
+    def add_action(self, newAction: action):
+        if newAction not in self.actions:
+            self.actions.append(newAction)
+
+    def set_initial_state(self, initial_state: state):
+        self.current_state = initial_state
+>>>>>>> a37d118 (Changed 'create' method to send a message, and updated 'update_state' a bit.)
