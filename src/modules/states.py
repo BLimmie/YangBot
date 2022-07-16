@@ -1,7 +1,12 @@
 import json
+<<<<<<< HEAD
 from discord_ui import Button
 from discord_helper import generate_embed
 
+=======
+import discord.ext.commands
+from src.modules.discord_helper import generate_embed
+>>>>>>> a37d118 (Changed 'create' method to send a message, and updated 'update_state' a bit.)
 '''
 Idea for State:
 
@@ -19,7 +24,15 @@ class state:
         }
         self.template = json.dumps(dictionary)
 
+<<<<<<< HEAD
     def fill_template(self, **kwargs):
         filled_temp = json.loads(self.template).format(kwargs)
         # instead here use generate_embed
         return json.dumps(filled_temp)
+=======
+    def fill_template(self, embed_dict):
+        embed = generate_embed(embed_dict)
+        filled_temp = json.loads(self.template).format(embed.__dict__)
+        return json.dumps(filled_temp)
+
+>>>>>>> a37d118 (Changed 'create' method to send a message, and updated 'update_state' a bit.)
