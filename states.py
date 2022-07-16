@@ -4,16 +4,15 @@ import discord.ext.commands
 from discord_ui import Button
 from src.modules.discord_helper import generate_embed
 
-class state():
+class state:
     def __init__(self):
         dictionary = {
             "title": "{title}",
             "subtitle": "{subtitle}",
-            "button1" : Button(label="label1"),
-            "button2" : Button(label2="label1"),
              "fields": [
                 {"name": "name1", "value": "value1"},
-                {"name": "name2", "value": "value2"},]
+                {"name": "name2", "value": "value2"},],
+            "buttons": []
         }
         self.template = json.dumps(dictionary)
 
