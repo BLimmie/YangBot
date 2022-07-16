@@ -1,7 +1,7 @@
 from typing import List
 from states import state
 
-class action():
+class action:
     def __init__(self, current_state: state):
        self.current_state = current_state
 
