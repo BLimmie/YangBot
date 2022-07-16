@@ -1,18 +1,17 @@
+from multiprocessing import dummy
 import discord
-from discord.ext import commands
 import discord_ui
+from discord.ext import commands
+from discord_helper import generate_embed
 from states import state
 from action import action
 from typing import List
 from copy import deepcopy
-<<<<<<< HEAD
-from discord_helper import generate_embed
-=======
-import discord.ext.commands
-from discord_ui import Button, Interaction
-from src.modules.discord_helper import generate_embed
 import json
+<<<<<<< HEAD
 >>>>>>> 31d9088 (changed update_state)
+=======
+>>>>>>> a37d118 (Changed 'create' method to send a message, and updated 'update_state' a bit.)
 
 '''
 Our idea for Machine:
@@ -37,66 +36,67 @@ Key takeaways:
 class machine:
     def __init__(self):
         '''
-        Please use machine.create() to make a new machine, as this will return a blank object.
+        Please use `machine.create()` to make a new machine, as this will return a blank object.
         '''
         pass
     
     @classmethod
-    async def create(cls, client: commands.Bot, message: discord.Message = None, initial_state: state = None, * , states: List[state] = [], actions: List[action] = [], history: List[action] = []):
+    async def create(cls, client: commands.Bot, ui_client: discord_ui.UI, message: discord.Message, initial_state: state, * , states: List[state] = [], actions: List[action] = [], history: List[action] = []):
         '''
         Initializes a machine that may only be modified by interacted with by its creator.
         
         @params
         `client`: The bot itself.
+        `ui_client`: A UI extension allowing parsing of interactions. Must be initialized as UI(client) (should every machine have its own, or is it better to have one for all?)
         `message`: The message that initialized the machine.
         `initial_state`: A state object that the machine should put itself into upon creation.
-        `states`: A list of states the machine may enter (?). Empty by default.
-        `actions`: A list of valid actions the user may perform (?). Empty by default.
-        `history`: A history of previous actions taken. Empty by default.
+        `states` (Optional?): A list of states the machine may enter. Empty by default.
+        `actions` (Optional?): A list of valid actions the user may perform. Empty by default.
+        `history` (Optional): A history of previous actions taken. Empty by default.
         '''
-        self = machine()
+        self = cls()
         self._owner = message.author
-        self._channel = message.channel
+        self._message = await ui_client.send(message.channel, content = 'Initializing...')
         self.states = deepcopy(states)
         self.actions = deepcopy(actions)
         self.history = deepcopy(history)
-<<<<<<< HEAD
-        self.current_state = initial_state
-        await self.update_state(initial_state)
-        return self
         
-    async def update_state(self, user_action: state = None):
-=======
-        self.current_state = current_state
-        self.update_state(current_state)
+        self.current_state = None
+        dummy_object = object() # This is used to bypass the duck test used in interaction_check.
+        dummy_object.author = self._owner
+        await self.update_state(initial_state, dummy_object)
 
+<<<<<<< HEAD
     async def update_state(self, user_action: action, interaction: Interaction):
 >>>>>>> 31d9088 (changed update_state)
-        """
-         1. Call determine_next_state and update self.current_state
-         2. Edit embed with new attributes
-         3. update history
-        """
-        # maybe use interaction_check
-
-        self.current_state = user_action.determine_next_state()
-        self.history.append(user_action)
-
-<<<<<<< HEAD
-    def interaction_check(self, user: discord.User) -> bool:
-        '''
-        Checks if an interaction is valid, i.e. if the provided user is the same as the creator of the state machine.
-        '''
-        return user.id == self._owner.id
 =======
-        interaction.edit(embed=generate_embed(json.loads(self.current_state.template)), 
-        components=[self.current_state.json.loads(self.current_state.template)["buttons"]])
+        return self
+
+    async def update_state(self, new_state: state, interaction: discord_ui.ButtonInteraction):
+>>>>>>> a37d118 (Changed 'create' method to send a message, and updated 'update_state' a bit.)
+        """
+        Edits the machine to match the given state.
+        """
+        if not self.interaction_check(interaction.author): return
+
+        # maybe use interaction_check
+        self.current_state = new_state
+        self._message.edit(
+            content = '',
+            embed=generate_embed(json.loads(self.new_state.template)), 
+            components=[self.current_state.json.loads(self.new_state.template)["buttons"]]
+        )
     
+<<<<<<< HEAD
     client=discord.ext.commands.Bot()    
     @client.listen()
     async def interaction_check(self, interaction: Interaction, message) -> bool:
         await message.user == message.author
 >>>>>>> 31d9088 (changed update_state)
+=======
+    def interaction_check(self, user: discord.User) -> bool:
+        return user.id == self._owner.id
+>>>>>>> a37d118 (Changed 'create' method to send a message, and updated 'update_state' a bit.)
 
     def add_state(self, newState: state):
         if newState not in self.states:
