@@ -1,11 +1,11 @@
 import discord
+from discord.ext import commands
+import discord_ui
 from states import state
 from actions import action
 from typing import List
 from copy import deepcopy
-from src.tools.message_return import message_data
-from discord_ui import Button, Interaction
-from src.modules.discord_helper import generate_embed
+from discord_helper import generate_embed
 
 '''
 Our idea for Machine:
@@ -28,15 +28,36 @@ Key takeaways:
 '''
 
 class machine:
-    def __init__(self, channel: discord.TextChannel, current_state: state, * , states: List[state] = [], actions: List[action] = [], history: List[action] = []):
-        self.channel = channel
+    def __init__(self):
+        '''
+        Please use machine.create() to make a new machine, as this will return a blank object.
+        '''
+        pass
+    
+    @classmethod
+    async def create(cls, client: commands.Bot, message: discord.Message = None, initial_state: state = None, * , states: List[state] = [], actions: List[action] = [], history: List[action] = []):
+        '''
+        Initializes a machine that may only be modified by interacted with by its creator.
+        
+        @params
+        `client`: The bot itself.
+        `message`: The message that initialized the machine.
+        `initial_state`: A state object that the machine should put itself into upon creation.
+        `states`: A list of states the machine may enter (?). Empty by default.
+        `actions`: A list of valid actions the user may perform (?). Empty by default.
+        `history`: A history of previous actions taken. Empty by default.
+        '''
+        self = machine()
+        self._owner = message.author
+        self._channel = message.channel
         self.states = deepcopy(states)
         self.actions = deepcopy(actions)
         self.history = deepcopy(history)
-        self.current_state = current_state
-        self.update_state(current_state)
+        self.current_state = initial_state
+        await self.update_state(initial_state)
+        return self
         
-    async def update_state(self, user_action: state):
+    async def update_state(self, user_action: state = None):
         """
          1. Call determine_next_state and update self.current_state
          2. Edit embed with new attributes
@@ -45,8 +66,11 @@ class machine:
         # Do stuff to change the current state
         self.history.append(user_action)
 
-    async def interaction_check(self, interaction: Interaction, message) -> bool:
-        await message.user == message.author
+    def interaction_check(self, user: discord.User) -> bool:
+        '''
+        Checks if an interaction is valid, i.e. if the provided user is the same as the creator of the state machine.
+        '''
+        return user.id == self._owner.id
 
     def add_state(self, newState: state):
         if newState not in self.states:
