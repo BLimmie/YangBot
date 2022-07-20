@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 from copy import deepcopy
 import discord
 from discord_helper import generate_embed
@@ -24,6 +25,31 @@ class state:
     ## Behavior
 
     This class behaves like a dictionary. If buttons need to be modified or accessed, then please use `state.buttons` directly.
+=======
+from discord_helper import generate_embed
+
+'''
+Idea for State:
+
+State is a blueprint which can be read by Machine to update itself. It does not do much on its own. Action is responsible for generating new states to pass onto machine, while machine is responsible for updating itself depending on the action.
+'''
+
+class state:
+    '''
+    An object representing a state for a machine. Behaves like a dictionary (see Behavior)
+
+    ### Attributes
+
+    `embed_info`: A dictionary describing attributes for a discord.Embed object
+
+    `data`: Any other data relevant for the machine.
+
+    `embed`: A `discord.Embed` object created with `embed_info`.
+    
+    ### Behavior
+
+    This class behaves like a dictionary.
+>>>>>>> c9f1377 (Finalized 'state' object)
 
     For getting values, it will return `embed_info[key]`. If it doesn't exist, then `data[key]` will be returned instead. 
     
@@ -42,6 +68,22 @@ class state:
         self.buttons = []
         self.data = {}
 
+<<<<<<< HEAD
+=======
+    def __getitem__(self, key):
+        return self.embed_info[key] if key in self.embed_info else self.data[key]
+
+    def __setitem__(self, key: str, value) -> None:
+        if key in self.embed_info:
+            self.embed_info[key] = value
+        else:
+            self.data[key] = value
+
+    @classmethod
+    def from_dict(cls, embed_dict: dict, data: dict = {}):
+        '''
+        Creates a state based on the given dictionaries. Performs a shallow copy on both `embed_dict` and `data`.
+>>>>>>> c9f1377 (Finalized 'state' object)
 
     def __getitem__(self, key):
         return self.embed_info[key] if key in self.embed_info else self.data[key]
@@ -77,6 +119,7 @@ class state:
 
         return self
 
+<<<<<<< HEAD
     @classmethod
     def from_state(cls, other_state):
         '''
@@ -121,3 +164,11 @@ if __name__ == "__main__":
     new_state = state()
     new_state.embed = 'deez'
     print(new_state.embed_info)
+=======
+    @property
+    def embed(self):
+        '''
+        A `discord.Embed` object based off the `embed_info` attribute.
+        '''
+        return generate_embed(self.embed_info)
+>>>>>>> c9f1377 (Finalized 'state' object)
