@@ -1,24 +1,7 @@
-import json
-<<<<<<< HEAD
-from typing import List
 from copy import deepcopy
 import discord
 from discord_helper import generate_embed
-
-=======
 import discord.ext.commands
-from src.modules.discord_helper import generate_embed
->>>>>>> a37d118 (Changed 'create' method to send a message, and updated 'update_state' a bit.)
-'''
-Notes:
-
-We can either continue implementation with discord-ui, or transition to discord.py 2.0.
-discord-ui allows us to continue with discord.py version 1.7, however it may be a bit of a hassle to work with.
-discord.py 2.0, on the other hand, seems more friendly, plus has inherent support as opposed to existing as an extension.
-
-I believe discord.py 2.0 will be easier to work with, however it will require us to modernize all the code.
-This could be a simple process requiring a day or so to finish, or can be longer.
-'''
 
 class state:
     '''
@@ -59,7 +42,6 @@ class state:
         self.buttons = []
         self.data = {}
 
-<<<<<<< HEAD
 
     def __getitem__(self, key):
         return self.embed_info[key] if key in self.embed_info else self.data[key]
@@ -139,10 +121,3 @@ if __name__ == "__main__":
     new_state = state()
     new_state.embed = 'deez'
     print(new_state.embed_info)
-=======
-    def fill_template(self, embed_dict):
-        embed = generate_embed(embed_dict)
-        filled_temp = json.loads(self.template).format(embed.__dict__)
-        return json.dumps(filled_temp)
-
->>>>>>> a37d118 (Changed 'create' method to send a message, and updated 'update_state' a bit.)
