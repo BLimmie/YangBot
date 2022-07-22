@@ -1,4 +1,5 @@
 import discord
+from discord.ext import commands
 import json
 import os
 import psycopg2
@@ -12,7 +13,7 @@ DATABASE_URL = os.environ['DATABASE_URL']
 conn = psycopg2.connect(DATABASE_URL, sslmode='require')
 
 intents = discord.Intents().all()
-client = discord.Client(intents=intents)
+client = commands.Bot('$', intents=intents)
 @client.event
 async def on_ready():
     global bot
@@ -23,7 +24,6 @@ async def on_ready():
 async def on_message(message):
     # Bots cannot call commands EXCEPT TestBot
     if not message.author.bot or message.author.id == 856999058709938177: # TestBot ID
-
         # Command on Message
         if message.content.startswith('$'):
             return_message = await bot.run_command_on_message(message)
