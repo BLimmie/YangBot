@@ -38,8 +38,13 @@ async def try_send(member, message):
 
 def generate_embed(embed_dict):
     # input is a dict
-    embed = discord.Embed(**embed_dict)
     if 'fields' in embed_dict:
-            for item in embed_dict['fields']:
-                embed.add_field(name=item['name'],value=item['value'],inline=item['inline'] if 'inline' in item else False)
+        fields = embed_dict['fields']
+        del embed_dict['fields'] # Deletes the pointer, NOT the object.
+    else:
+        fields = []
+    
+    embed = discord.Embed(**embed_dict)
+    for item in fields:
+        embed.add_field(name=item['name'],value=item['value'],inline=item['inline'] if 'inline' in item else False)
     return embed
