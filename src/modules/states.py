@@ -1,31 +1,8 @@
 from typing import List
 from copy import deepcopy
 import discord
+from discord import Button, Embed
 from discord_helper import generate_embed
-import discord.ext.commands
-
-class state:
-    '''
-    An object representing a state for a machine. Behaves like a dictionary (see Behavior).
-
-    ## Attributes
-
-    `embed_info`: A dictionary describing attributes for a `discord.Embed` object
-    `data`: Any other data relevant for the machine.
-    `buttons`: A list of buttons for the state.
-    `embed`: An `Embed` object created with `embed_info`. May be reassigned to another `Embed` object.
-    
-    ## Methods
-
-    See the method docstrings for in-depth documentation.
-
-    `@classmethod from_dict`: Creates a state based on the given dictionaries. Performs a shallow copy on all passed parameters.
-    `@classmethod from_state`: Creates a new state based on another state. Performs a deepcopy on the given state.
-
-    ## Behavior
-
-    This class behaves like a dictionary. If buttons need to be modified or accessed, then please use `state.buttons` directly.
-    '''
 
 class state:
     '''
@@ -60,17 +37,20 @@ class state:
         self.buttons = []
         self.data = {}
 
+
     def __getitem__(self, key):
         return self.embed_info[key] if key in self.embed_info else self.data[key]
+
 
     def __setitem__(self, key: str, value) -> None:
         if key in self.embed_info:
             self.embed_info[key] = value
         else:
             self.data[key] = value
+            
 
     @classmethod
-    def from_dict(cls, embed_dict: dict, data: dict = {}):
+    def from_dict(cls, embed_dict: dict, buttons: List[Button] = [], data: dict = {}):
         '''
         Creates a state based on the given dictionaries. Performs a shallow copy on all passed parameters.
 
@@ -111,7 +91,7 @@ class state:
         return self
 
     @property
-    def embed(self):
+    def embed(self) -> Embed:
         '''
         A `discord.Embed` object based off the `embed_info` attribute. 
         
@@ -120,8 +100,8 @@ class state:
         return generate_embed(self.embed_info)
 
     @embed.setter
-    def embed(self, new_embed: discord.Embed):
-        if not isinstance(new_embed, discord.Embed): raise TypeError("Invalid object type; Expected Embed, got " + new_embed.__class__.__name__)
+    def embed(self, new_embed: Embed):
+        if not isinstance(new_embed, Embed): raise TypeError("Invalid object type; Expected Embed, got " + new_embed.__class__.__name__)
         for key, value in new_embed.to_dict().items():
             if key in self.embed_info:
                 self.embed_info[key] = value
