@@ -1,7 +1,7 @@
 from typing import List
 from copy import deepcopy
-import discord
-from discord import Button, Embed
+from discord import Embed, ButtonStyle
+from discord.ui import Button
 from discord_helper import generate_embed
 
 class state:
@@ -29,34 +29,31 @@ class state:
         Initializes a blank state (i.e. all fields are given default values, mostly empty). Default color is white.
         '''
         self.embed_info = {
-            "title": "",
-            "description": "",
+            "title": None,
+            "description": None,
             "color": 16777215,
             "fields": []
         }
         self.buttons = []
         self.data = {}
 
-
     def __getitem__(self, key):
         return self.embed_info[key] if key in self.embed_info else self.data[key]
 
-
-    def __setitem__(self, key: str, value) -> None:
+    def __setitem__(self, key, value) -> None:
         if key in self.embed_info:
             self.embed_info[key] = value
         else:
             self.data[key] = value
-            
 
     @classmethod
-    def from_dict(cls, embed_dict: dict, buttons: List[Button] = [], data: dict = {}):
+    def from_dict(cls, embed_dict: dict,*, buttons: List[Button] = [], data: dict = {}):
         '''
         Creates a state based on the given dictionaries. Performs a shallow copy on all passed parameters.
 
         ## Parameters
 
-        `embed_dict`: A dictionary with a list of attributes. Every key pair is optional; any missing keys pairs will be given default values. See `discord.Embed`'s attributes for a list of valid keys.
+        `embed_dict`: A dictionary with a list of attributes. All keys are optional; any missing keys will be given default values. See attributes of `discord.Embed` for a list of valid key-value pairs.
         `buttons` (Optional): A list of Button objects. Empty by default.
         `data` (Optional): A dictionary with all relevant data for the machine. Empty by default.
         '''
@@ -67,9 +64,8 @@ class state:
             else:
                 print('Unknown key "' + str(key) + '" with value "' + str(value) + '" given while attempting to generate a state.')
         
-        for key, value in data.items():
-            self.data[key] = value
-
+        self.data = data.copy()
+        self.buttons = buttons.copy()
         return self
 
     @classmethod
@@ -77,17 +73,17 @@ class state:
         '''
         Creates a new state object from another state. Performs a deepcopy.
 
-        Please use this method instead of `deepcopy(state)`, as there may be issues with copying the buttons.
+        Please use this method instead of `deepcopy(state)`; deepcopy will fail to generate new buttons.
 
         ## Parameters
 
-        `state`: The state to copy from. Performs a deepcopy on all the attributes. Note that Buttons will be copied, but will not be provided a new action.
+        `other_state`: The state to copy from. Performs a deepcopy on all the attributes. Note that Buttons will be copied, but will not be provided a new action.
         '''
         self = cls()
         self.embed_info = deepcopy(other_state.embed_info)
         self.data = deepcopy(other_state.data)
-        for button in other_state.buttons:
-            self.buttons.append(Button(label=button.label, color=button.color, emoji=button.emoji, new_line=button.new_line))
+        # Maybe action can be a subclass for button?
+        self.buttons = [Button(style=button.style or ButtonStyle.blurple, label=button.label, url=button.url, emoji=button.emoji, row=button.row) for button in other_state.buttons]
         return self
 
     @property
@@ -95,7 +91,7 @@ class state:
         '''
         A `discord.Embed` object based off the `embed_info` attribute. 
         
-        May be reassigned to another `Embed` object.
+        May be reassigned to another `Embed` object; raises a TypeError if assigned to something other than an Embed object.
         '''
         return generate_embed(self.embed_info)
 
@@ -107,12 +103,12 @@ class state:
                 self.embed_info[key] = value
         
 if __name__ == "__main__":
+    # To test: How to add buttons to message. Seems like it's as simple as modifying `message.components`.
     embed = generate_embed({
             "title": "hey",
             "description": "yo",
             "color": 16777215
         })
-
     new_state = state()
     new_state.embed = 'test'
     print(new_state.embed_info)
