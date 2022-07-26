@@ -5,6 +5,7 @@ from src.modules.db_helper import member_exists, insert_member, get_table, conne
 from src.modules.discord_helper import change_nickname, kick_member, try_send, generate_embed
 from src.tools.botfunction import BotFunction
 from src.tools.message_return import message_data
+from src.modules.state_machines import state, action, machine
 
 
 class command_on_message(BotFunction):
@@ -339,3 +340,21 @@ class help(command_on_message):
     @staticmethod
     def helptxt():
         return "$help [command] \nDisplays description of the provided command. If none is provided, displays description for all commands."
+
+class test_machine(command_on_message):
+    def __init__(self,*args,**kwargs):
+        super().__init__(*args,**kwargs)
+
+    async def action(self, message):
+        first_state = state.from_dict(embed_dict={
+            'title': 'Test',
+            'description': 'Look at me!'
+        }, buttons=[
+            action(label="Click me!")
+        ])
+        test_state = await machine.create(first_state, message)
+        return message_data(channel=message.channel, message='Generating...')
+
+    @staticmethod
+    def helptxt():
+        return '$test_machine \nGenerates a state machine to test with'
