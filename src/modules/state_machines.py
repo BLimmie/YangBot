@@ -20,7 +20,7 @@ class state:
 
     `embed`: A `discord.Embed` object created with `embed_info`.
 
-    `buttons`: A list of `discord.ui.Button` objects.
+    `buttons`: A list of `action` objects.
 
     `data`: Any other data relevant for the machine.
     
@@ -78,7 +78,7 @@ class state:
         return item in self.data
 
     @classmethod
-    def from_dict(cls, embed_dict: dict, *, buttons: List[Button] = [], data: dict = {}):
+    def from_dict(cls, embed_dict: dict, *, buttons: List[action] = [], data: dict = {}):
         '''
         Creates a state based on the given dictionaries. Performs a shallow copy on all passed parameters.
 
@@ -86,7 +86,7 @@ class state:
 
         `embed_dict`: A dictionary with a list of attributes. All keys are optional; any missing keys will be given default values. See attributes of `discord.Embed` for a list of valid key-value pairs.
 
-        `buttons` (Optional): A list of Button objects. Empty by default.
+        `buttons` (Optional): A list of `action` objects. Empty by default.
 
         `data` (Optional): A dictionary with all relevant data for the machine. Empty by default.
         '''
@@ -101,7 +101,7 @@ class state:
         return self
 
     @classmethod
-    def from_state(cls, other_state):
+    def from_state(cls, other_state: state):
         '''
         Creates a new state object from another state. Performs a deepcopy.
 
@@ -115,7 +115,10 @@ class state:
         self.embed_info = deepcopy(other_state.embed_info)
         self.data = deepcopy(other_state.data)
         # Maybe action can be a subclass for button?
-        self.buttons = [Button(style=button.style or ButtonStyle.blurple, label=button.label, url=button.url, emoji=button.emoji, row=button.row) for button in other_state.buttons]
+        self.buttons = [
+            action(button.machine, callback=button._callback, style=button.style or ButtonStyle.blurple, label=button.label, url=button.url, emoji=button.emoji, row=button.row, disabled=button.disabled)
+            for button in other_state.buttons
+        ]
         return self
 
     @property
@@ -179,17 +182,16 @@ class machine:
     async def update_state(self, new_state: state) -> None:
         '''
         Edits the machine to match the given state.
-
-        ### Parameters
-        `new_state`: The state the machine should update itself to be in.
-        `interaction`: The interaction object that prompted a change in state.
         '''
+        view = View()
+        for button in new_state.buttons:
+            view.add_item(button)
 
         self.current_state = new_state
         self._message = await self._message.edit(
             content = None,
             embed=new_state.embed,
-            components=new_state.buttons 
+            view=view 
         )
         self.data = new_state.data # Should be it a simple reassignment? Or should it loop through the dictionary?
     
@@ -235,7 +237,7 @@ class action(Button):
 
     `machine`: The machine tied to this action.
     '''
-    def __init__(self, machine: machine, *, callback: Coroutine = _DefaultCallback , style: ButtonStyle=ButtonStyle.blurple, label: str=None, emoji: Emoji=None, row: int=None, url: str=None, disabled: bool=False):
+    def __init__(self, machine: machine, *, callback: Coroutine=_DefaultCallback , style: ButtonStyle=ButtonStyle.blurple, label: str=None, emoji: Emoji=None, row: int=None, url: str=None, disabled: bool=False):
         super().__init__(style=style, label=label, emoji=emoji, row=row, url=url, disabled=disabled)
         self.machine = machine
         self._callback = callback
