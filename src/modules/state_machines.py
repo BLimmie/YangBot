@@ -8,24 +8,35 @@ from copy import deepcopy
 #                                                              Beginning of Machine
 # ------------------------------------------------------------------------------------------------------------------------------------------------
 class _YangView(View):
-    def __init__(self, buttons, *, timeout: float = 180):
+    def __init__(self, actions, *, timeout: float = None): # Maybe implement the timeout feature, allowing for a coroutine to execute when a timeout is done?
         super().__init__(timeout=timeout)
-        for button in buttons:
+        for button in actions:
             self.add_item(button)
 
 class machine:
+    '''
+    A state machine, represented by an Embed with buttons. See `machine.create()` for more proper documentation.
+
+    Machine may be treated like a dictionary, which will return its respective value from its data attribute (in other words, `mach[key]` is equivalent to `mach.data[key]`). The same holds for setting values.
+    '''
     def __init__(self):
         '''
         Please use `machine.create()` to make a new machine, as this will return a blank object.
         '''
         pass
+
+    def __getitem__(self, key):
+        return self.data[key]
+
+    def __setitem__(self, key, value) -> None:
+        self.data[key] = value
     
     @classmethod
     async def create(cls, initial_state, message: Message, * , channel: TextChannel = None, history: List = []):
         '''
         Initializes a machine that may only be modified by and interacted with its creator.
         
-        ## Parameters
+        ### Parameters
 
         `initial_state`: A state object that the machine should put itself into upon creation.
 
@@ -45,20 +56,20 @@ class machine:
         self.history = history
         self.data = {}
         # Put the machine into its initial state
-        for button in initial_state.buttons:
+        for button in initial_state.actions:
             button.machine = self
         await self.update_state(initial_state)
         return self
 
     async def update_state(self, new_state, interaction: Interaction = None) -> None:
         '''
-        Edits the machine to match the given state.
+        Edits the machine to match the given state. Data is updated via `dict.update()` and is not outright replaced. In other words, the new state should only include updated data, not all data.
 
         This method will close the `Interaction` by editing the machine's embed. As such, this should be the last thing called in all `action` objects.
 
         Calling this method without passing `Interaction` implicitly means that this was not triggered by a user. The only relevant difference is that the `history` attribute will not be updated.
         '''
-        view = _YangView(new_state.buttons) if new_state.buttons else None # Check if the action list is non-empty.
+        view = _YangView(new_state.actions) if new_state.actions else None # Check if the action list is non-empty.
         
         if interaction is None:
             self._message = await self._message.edit(
@@ -74,7 +85,7 @@ class machine:
                 embed=new_state.embed,
                 view=view
             )
-        self.data.update(new_state.data) # Should be it a simple reassignment? Or should it loop through the dictionary?
+        self.data.update(new_state.data)
         self.current_state = new_state
     
     def interaction_check(self, user) -> bool:
@@ -105,7 +116,7 @@ class state:
 
     `embed`: A `discord.Embed` object created with `embed_info`.
 
-    `buttons`: A list of `action` objects.
+    `actions`: A list of `action` objects.
 
     `data`: Any other data relevant for the machine.
     
@@ -135,7 +146,7 @@ class state:
             "color": 16777215,
             "fields": []
         }
-        self.buttons = []
+        self.actions = []
         self.data = {}
 
     def __getitem__(self, key):
@@ -151,7 +162,7 @@ class state:
             raise AttributeError(key + " is not a valid Embed attribute.")
 
     def __setattr__(self, name, value):
-        if name in {*self.__dict__.keys(), "embed_info", "buttons", "data"}:
+        if name in {*self.__dict__.keys(), "embed_info", "actions", "data"}:
             super().__setattr__(name, value)
         else:
             if name in self.embed_info:
@@ -163,7 +174,7 @@ class state:
         return item in self.data
 
     @classmethod
-    def from_dict(cls, embed_dict: dict, *, buttons: List = [], data: dict = {}):
+    def from_dict(cls, embed_dict: dict, *, actions: List = [], data: dict = {}):
         '''
         Creates a state based on the given dictionaries. Performs a shallow copy on all passed parameters.
 
@@ -171,7 +182,7 @@ class state:
 
         `embed_dict`: A dictionary with a list of attributes. All keys are optional; any missing keys will be given default values. See attributes of `discord.Embed` for a list of valid key-value pairs.
 
-        `buttons` (Optional): A list of `action` objects. Empty by default.
+        `actions` (Optional): A list of `action` objects. Empty by default.
 
         `data` (Optional): A dictionary with all relevant data for the machine. Empty by default.
         '''
@@ -182,7 +193,7 @@ class state:
             if key in self.embed_info
         }
         self.data = data.copy()
-        self.buttons = buttons.copy()
+        self.actions = actions.copy()
         return self
 
     @classmethod
@@ -199,9 +210,9 @@ class state:
         self = cls()
         self.embed_info = deepcopy(other_state.embed_info)
         self.data = deepcopy(other_state.data)
-        self.buttons = [
+        self.actions = [
             action(machine if machine is not None else button.machine, callback=button._callback, style=button.style or ButtonStyle.blurple, label=button.label, url=button.url, emoji=button.emoji, row=button.row, disabled=button.disabled)
-            for button in other_state.buttons
+            for button in other_state.actions
         ]
         return self
 

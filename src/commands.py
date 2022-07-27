@@ -340,54 +340,112 @@ class help(command_on_message):
     def helptxt():
         return "$help [command] \nDisplays description of the provided command. If none is provided, displays description for all commands."
 
-class test_machine(command_on_message):
+class machine_dual(command_on_message):
+    # Here is a demonstration of a machine with two states, with no data.
     def __init__(self,*args,**kwargs):
         super().__init__(*args,**kwargs)
 
     async def action(self, message):
+
+        # Let's define the callbacks for each action, along with the state they'll be put into.
+
         async def first_state_action(mach: machine, interaction):
-            await mach.update_state(state.from_dict(
-                embed_dict={
+
+            # First we need to specify the new state object
+
+            new_state = state.from_dict(
+                embed_dict={ # When interacting with the first button, we want to move into the second state.
                     'title': 'Second State',
-                    'description': 'I\'m the second state in this machine! I have changed states ' + str(mach.data['clicked'] + 1) + ' times!'
+                    'description': "I'm the second state in this machine!"
                 },
-                buttons=[
-                    action(mach, callback=second_state_action, label='Go back!')
-                ],
-                data={
-                    'clicked': mach.data['clicked'] + 1
-                }
-            ), interaction)
+                actions=[
+                    action(mach, callback=second_state_action, label='Go back!') # This may seem a bit confusing, but what we're doing is creating the action for the second state, and assigning second_state_action to its callback.
+                ]
+            )
+            await mach.update_state(new_state, interaction) # And we finally update the machine!
+
+        # Similarly with the second state
 
         async def second_state_action(mach: machine, interaction):
-            await mach.update_state(state.from_dict(
+
+            # First create a new state
+
+            new_state = state.from_dict(
                 embed_dict={
                     'title': 'First State',
-                    'description': 'I\'m the first state in this machine! I have changed states ' + str(mach.data['clicked'] + 1) + ' times!'
+                    'description': "I'm the first state in this machine!"
                 },
-                buttons=[
-                    action(mach, callback=first_state_action, label='Go forward!')
-                ],
-                data={
-                    'clicked': mach.data['clicked'] + 1
-                }
-            ), interaction)
+                actions=[
+                    action(mach, callback=first_state_action, label='Go forward!') # Like before, we set the first state's action to be the first_action.
+                ]
+            )
+            await mach.update_state(new_state, interaction) # And then update the machine!
 
-        first_state = state.from_dict(
+        # Now let's create the initial state
+
+        initial_state = state.from_dict( 
             embed_dict={
                 'title': 'First State',
-                'description': 'I\'m the first state in this machine! I have changed states 0 times!'
+                'description': "I'm the very first state in this machine!"
             }, 
-            buttons=[
-                action(callback=first_state_action, label="Go forward!")
-            ],
-            data={
-                'clicked': 0
-            }
+            actions=[
+                action(callback=first_state_action, label="Go forward!") # Since we haven't made our machine yet, it doesn't need to be passed. machine.create() will handle that.
+            ]
         )
-        test_machine = await machine.create(first_state, message)
+        await machine.create(initial_state, message) # And finally, create our machine!
         return None
 
     @staticmethod
     def helptxt():
-        return '$test_machine \nGenerates a state machine to test with'
+        return '$machine_dual \nGenerates a sample dual state machine'
+
+class machine_counter(command_on_message):
+    def __init__(self,*args,**kwargs):
+        super().__init__(*args,**kwargs)
+
+    # Here is a demonstration of a machine using its data! This machine will count up by 1 everytime a button is pressed.
+    async def action(self, message):
+
+        # Let's first define the callback.
+        async def take_action(mach: machine, interaction):
+
+            # Since this machine revolves around counting by increments of 1, let's define our new number.
+            new_number = mach['count'] + 1 
+            # Note that the machine object CAN be treated like a dictionary; mach['count'] is the same as mach.data['count']
+
+            # Now lets create our state object.
+            new_state = state.from_dict(
+                embed_dict={
+                    'title': 'Counter',
+                    'description': 'The counter is currently at ' + str(new_number) 
+                    # Here we'll make use of our new number! 
+                },
+                actions=[
+                    action(mach, callback=take_action, label='+1') # Since all we're doing is updating by 1, we can use recursion!
+                ],
+                data={
+                    'count': new_number
+                }
+            )
+            await mach.update_state(new_state, interaction) # And now we update the machine!
+
+        # Now let's create the initial state
+
+        initial_state = state.from_dict( 
+                embed_dict={
+                    'title': 'Counter',
+                    'description': 'The counter is currently at 0' # Count starts at 0!
+                },
+                actions=[
+                    action(callback=take_action, label='+1') # As before, we don't have a machine yet, so we don't need to specify it!
+                ],
+                data={
+                    'count': 0
+                }
+        )
+        await machine.create(initial_state, message) # And finally, create our machine!
+        return None
+
+    @staticmethod
+    def helptxt():
+        return '$machine_counter \nCreates a machine capable of counting in increments of 1.'
