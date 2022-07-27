@@ -7,61 +7,86 @@ from copy import deepcopy
 # ------------------------------------------------------------------------------------------------------------------------------------------------
 #                                                              Beginning of Machine
 # ------------------------------------------------------------------------------------------------------------------------------------------------
+
 class _YangView(View):
-    def __init__(self, actions, *, timeout: float = None): # Maybe implement the timeout feature, allowing for a coroutine to execute when a timeout is done?
+    def __init__(self, actions: List, *, timeout: float = None): # Maybe implement the timeout feature, allowing for a coroutine to execute when a timeout is done?
+        if not actions: raise ValueError("List of actions cannot be empty when creating a YangView object")
         super().__init__(timeout=timeout)
         for button in actions:
+            if not isinstance(button, action): raise TypeError("Invalid object given when generating YangView: expected 'action', got " + button.__class__.__name__)
             self.add_item(button)
+        self.interaction_check = self.children[0].machine.interaction_check
 
 class machine:
     '''
-    A state machine, represented by an Embed with buttons. See `machine.create()` for more proper documentation.
+    A state machine, represented by an Embed with buttons.
 
     Machine may be treated like a dictionary, which will return its respective value from its data attribute (in other words, `mach[key]` is equivalent to `mach.data[key]`). The same holds for setting values.
+
+    ## Methods
+
+    `async create`: A coroutine that initializes a new machine. Due to the initializer depending on asynchronous methods, please use `machine.create()` instead of `machine()` to create new instances.
+
+    `async update_state`: A coroutine that updates the machine to match the given state, and closes the given interaction.
+
+    `async interaction_check`: A coroutine that defines the criteria for valid interactions. Default one simply checks if the interaction user is the same as the user who created the machine.
+    
+    Note that `interaction_check` is passed an `Interaction` object. If this needs to be replaced, subclass machine and override `interaction_check`.
+
+    ## Attributes
+
+    See the docstring for `machine.create()` for a list of valid initializer parameters.
+
+    `state`: The current state of the machine. May not be reassigned.
+
+    `data`: Any data related to the machine. Note that `mach[key]` is equivalent to `mach.data[key]`. It is not recommended to modify this, as `update_state` will override any existing values.
+
+    `history`: A history of states the machine was in.
+
+    ## Raises
+
+    `TypeError`: 'Button' object given instead of 'action'
+
+    `AttributeError`: Attempting to reassign `machine.state`.
     '''
     def __init__(self):
         '''
         Please use `machine.create()` to make a new machine, as this will return a blank object.
         '''
         pass
-
-    def __getitem__(self, key):
-        return self.data[key]
-
-    def __setitem__(self, key, value) -> None:
-        self.data[key] = value
     
     @classmethod
-    async def create(cls, initial_state, message: Message, * , channel: TextChannel = None, history: List = []):
+    async def create(cls, initial_state, message: Message, * , channel: TextChannel = None, history: List = [], delete_message: bool = False):
         '''
         Initializes a machine that may only be modified by and interacted with its creator.
         
         ### Parameters
 
-        `initial_state`: A state object that the machine should put itself into upon creation.
+        `initial_state`: A state object that the machine should put itself into upon creation. Note that the machine parameter for all `action` objects of the initial state should be unspecified.
 
         `message`: The message that initialized the machine.
 
         `channel` (Optional): The channel that the machine should initialize in. Defaults to `message.channel`.
 
         `history` (Optional): A history of previous states. Empty by default.
+
+        `delete_message` (Optional): Whether the machine should delete its corresponding message when the machine is deleted (garbage collected). Defaults to `False`.
         '''
 
-        # Initialize 'private' variables
         self = cls()
         self._owner = message.author
         self._message = await channel.send('Initializing...') if channel is not None else await message.channel.send('Initializing...')
+        self._delete = delete_message
 
-        # Initialize 'public' variables
         self.history = history
         self.data = {}
-        # Put the machine into its initial state
         for button in initial_state.actions:
             button.machine = self
+
         await self.update_state(initial_state)
         return self
 
-    async def update_state(self, new_state, interaction: Interaction = None) -> None:
+    async def update_state(self, new_state, /, interaction: Interaction = None) -> None:
         '''
         Edits the machine to match the given state. Data is updated via `dict.update()` and is not outright replaced. In other words, the new state should only include updated data, not all data.
 
@@ -78,29 +103,42 @@ class machine:
                 view=view 
             )
         else:
-            self._message = interaction.message
-            self.history.append(self.current_state)
+            self.history.append(self.__current_state)
             await interaction.response.edit_message(
                 content=None,
                 embed=new_state.embed,
                 view=view
             )
+            self._message = interaction.message
         self.data.update(new_state.data)
-        self.current_state = new_state
+        self.__current_state = new_state
     
-    def interaction_check(self, user) -> bool:
+    async def interaction_check(self, interaction: Interaction) -> bool:
         '''
-        Determines if an interactive is valid. Returns `True` if so, otherwise returns `False`.
+        Determines if an Interaction is valid by returning either `True` or `False`.
+
+        By default, this checks if the user who created the interaction is the same as the user who created the machine. If this needs to be changed, subclass machine and override this.
         '''
-        return user.id == self._owner.id
+        return interaction.user.id == self._owner.id
 
     @property
     def state(self):
-        return self.current_state
+        return self.__current_state
 
     @state.setter
     def state(self, new_state):
         raise AttributeError("Can't set attribute, please use update_state")
+
+    def __getitem__(self, key):
+        return self.data[key]
+
+    def __setitem__(self, key, value) -> None:
+        self.data[key] = value
+
+    def __del__(self): # To delete the message, if needed.
+        if self._delete:
+            print('deleting...')
+            self._message.delete()
 
 # ------------------------------------------------------------------------------------------------------------------------------------------------
 #                                                              Beginning of State
@@ -114,7 +152,7 @@ class state:
 
     `embed_info`: A dictionary describing attributes for a `discord.Embed` object
 
-    `embed`: A `discord.Embed` object created with `embed_info`.
+    `embed`: A `discord.Embed` object created with `embed_info`. May be reassigned to another Embed.
 
     `actions`: A list of `action` objects.
 
@@ -138,12 +176,12 @@ class state:
     '''
     def __init__(self):
         '''
-        Initializes a blank state (i.e. all fields are given default values, mostly empty). Default color is white.
+        Initializes a default state, which consists of a basic Embed and empty actions and data. Please use `state.from_dict` (or `from_state`) if you would like the state to be initialized with richer attributes.
         '''
         self.embed_info = {
-            "title": None,
-            "description": None,
-            "color": 16777215,
+            'title': 'Default State',
+            'description': 'Nothing much to see here!',
+            "color": 0xFFFFFF,
             "fields": []
         }
         self.actions = []
@@ -197,7 +235,7 @@ class state:
         return self
 
     @classmethod
-    def from_state(cls, other_state, *, machine: machine = None):
+    def from_state(cls, other_state, /, *, machine: machine = None):
         '''
         Creates a new state object from another state. Performs a deepcopy.
 
@@ -211,7 +249,7 @@ class state:
         self.embed_info = deepcopy(other_state.embed_info)
         self.data = deepcopy(other_state.data)
         self.actions = [
-            action(machine if machine is not None else button.machine, callback=button._callback, style=button.style or ButtonStyle.blurple, label=button.label, url=button.url, emoji=button.emoji, row=button.row, disabled=button.disabled)
+            action(machine or button.machine, callback=button._callback, style=button.style or ButtonStyle.blurple, label=button.label, url=button.url, emoji=button.emoji, row=button.row, disabled=button.disabled)
             for button in other_state.actions
         ]
         return self
@@ -236,11 +274,11 @@ class state:
 #                                                              Beginning of Action
 # ------------------------------------------------------------------------------------------------------------------------------------------------
 
-async def _DefaultCallback(machine, interaction):
-    await machine.update_state(state.from_dict({
+async def _DefaultCallback(mach: machine, interaction: Interaction):
+    await mach.update_state(state.from_dict({
         'title': 'Default State',
         'description': 'Button was pressed by ' + interaction.user.name
-    }))
+    }), interaction)
 
 class action(Button):
     '''
@@ -249,7 +287,7 @@ class action(Button):
     ## Parameters and Attributes
     All of the following parameters (except machine) are keyword-only and optional. Unless otherwise specified, all optional parameters default to `None`. Every parameter (except callback) is also an equivalently named attribute.
 
-    `machine`: The machine object this button is attached to. Note that this parameter is required EXCEPT when this action is part of an initial state. In such a case, `machine.create` will handle this accordingly.
+    `machine`: The machine object this button is attached to. Note that this parameter is required EXCEPT when this action is part of an initial state. In such a case, leave this unspecified; `machine.create` will handle this accordingly.
 
     `callback`: The coroutine that will be invoked when the button is pressed. It will be executed as `callback(machine, interaction)`, where interaction is a `discord.Interaction` object. Defaults to changing to a generic state.
 
@@ -273,5 +311,7 @@ class action(Button):
         self._callback = callback
 
     async def callback(self, interaction):
-        if self.machine.interaction_check(interaction.user):
-            await self._callback(self.machine, interaction)
+        await self._callback(self.machine, interaction)
+
+if __name__ == "__main__":
+    pass

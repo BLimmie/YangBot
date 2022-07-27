@@ -413,24 +413,17 @@ class machine_counter(command_on_message):
             new_number = mach['count'] + 1 
             # Note that the machine object CAN be treated like a dictionary; mach['count'] is the same as mach.data['count']
 
-            # Now lets create our state object.
-            new_state = state.from_dict(
-                embed_dict={
-                    'title': 'Counter',
-                    'description': 'The counter is currently at ' + str(new_number) 
-                    # Here we'll make use of our new number! 
-                },
-                actions=[
-                    action(mach, callback=take_action, label='+1') # Since all we're doing is updating by 1, we can use recursion!
-                ],
-                data={
-                    'count': new_number
-                }
-            )
-            await mach.update_state(new_state, interaction) # And now we update the machine!
+            # Now lets create our state object. Since the new state will be almost identical to the previous one, we can simply copy it directly.
+            new_state = state.from_state(mach.state)
+
+            # We'll now need to edit our new state before passing it. Recall that dotted access will refer to the embed, while keyed access will refer to data.
+            new_state.description = 'The counter is currently at ' + str(new_number)
+            new_state['count'] = new_number
+            
+            # And now we update the machine!
+            await mach.update_state(new_state, interaction)
 
         # Now let's create the initial state
-
         initial_state = state.from_dict( 
                 embed_dict={
                     'title': 'Counter',
@@ -443,7 +436,7 @@ class machine_counter(command_on_message):
                     'count': 0
                 }
         )
-        await machine.create(initial_state, message) # And finally, create our machine!
+        await machine.create(initial_state, message, delete_message=True) # And finally, create our machine!
         return None
 
     @staticmethod
