@@ -18,7 +18,6 @@ class command_on_message(BotFunction):
 
     @staticmethod
     def helptxt():
-
         raise NotImplementedError
 
 
@@ -346,14 +345,48 @@ class test_machine(command_on_message):
         super().__init__(*args,**kwargs)
 
     async def action(self, message):
-        first_state = state.from_dict(embed_dict={
-            'title': 'Test',
-            'description': 'Look at me!'
-        }, buttons=[
-            action(label="Click me!")
-        ])
-        test_state = await machine.create(first_state, message)
-        return message_data(channel=message.channel, message='Generating...')
+        async def first_state_action(mach: machine, interaction):
+            await mach.update_state(state.from_dict(
+                embed_dict={
+                    'title': 'Second State',
+                    'description': 'I\'m the second state in this machine! I have changed states ' + str(mach.data['clicked'] + 1) + ' times!'
+                },
+                buttons=[
+                    action(mach, callback=second_state_action, label='Go back!')
+                ],
+                data={
+                    'clicked': mach.data['clicked'] + 1
+                }
+            ), interaction)
+
+        async def second_state_action(mach: machine, interaction):
+            await mach.update_state(state.from_dict(
+                embed_dict={
+                    'title': 'First State',
+                    'description': 'I\'m the first state in this machine! I have changed states ' + str(mach.data['clicked'] + 1) + ' times!'
+                },
+                buttons=[
+                    action(mach, callback=first_state_action, label='Go forward!')
+                ],
+                data={
+                    'clicked': mach.data['clicked'] + 1
+                }
+            ), interaction)
+
+        first_state = state.from_dict(
+            embed_dict={
+                'title': 'First State',
+                'description': 'I\'m the first state in this machine! I have changed states 0 times!'
+            }, 
+            buttons=[
+                action(callback=first_state_action, label="Go forward!")
+            ],
+            data={
+                'clicked': 0
+            }
+        )
+        test_machine = await machine.create(first_state, message)
+        return None
 
     @staticmethod
     def helptxt():

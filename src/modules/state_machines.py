@@ -1,8 +1,95 @@
-from discord import Message, TextChannel, ButtonStyle, Emoji, Embed
+from discord import Message, TextChannel, ButtonStyle, Emoji, Embed, Interaction
 from discord.ui import View, Button
 from src.modules.discord_helper import generate_embed
 from typing import List, Coroutine
 from copy import deepcopy
+
+# ------------------------------------------------------------------------------------------------------------------------------------------------
+#                                                              Beginning of Machine
+# ------------------------------------------------------------------------------------------------------------------------------------------------
+class _YangView(View):
+    def __init__(self, buttons, *, timeout: float = 180):
+        super().__init__(timeout=timeout)
+        for button in buttons:
+            self.add_item(button)
+
+class machine:
+    def __init__(self):
+        '''
+        Please use `machine.create()` to make a new machine, as this will return a blank object.
+        '''
+        pass
+    
+    @classmethod
+    async def create(cls, initial_state, message: Message, * , channel: TextChannel = None, history: List = []):
+        '''
+        Initializes a machine that may only be modified by and interacted with its creator.
+        
+        ## Parameters
+
+        `initial_state`: A state object that the machine should put itself into upon creation.
+
+        `message`: The message that initialized the machine.
+
+        `channel` (Optional): The channel that the machine should initialize in. Defaults to `message.channel`.
+
+        `history` (Optional): A history of previous states. Empty by default.
+        '''
+
+        # Initialize 'private' variables
+        self = cls()
+        self._owner = message.author
+        self._message = await channel.send('Initializing...') if channel is not None else await message.channel.send('Initializing...')
+
+        # Initialize 'public' variables
+        self.history = history
+        self.data = {}
+        # Put the machine into its initial state
+        for button in initial_state.buttons:
+            button.machine = self
+        await self.update_state(initial_state)
+        return self
+
+    async def update_state(self, new_state, interaction: Interaction = None) -> None:
+        '''
+        Edits the machine to match the given state.
+
+        This method will close the `Interaction` by editing the machine's embed. As such, this should be the last thing called in all `action` objects.
+
+        Calling this method without passing `Interaction` implicitly means that this was not triggered by a user. The only relevant difference is that the `history` attribute will not be updated.
+        '''
+        view = _YangView(new_state.buttons) if new_state.buttons else None # Check if the action list is non-empty.
+        
+        if interaction is None:
+            self._message = await self._message.edit(
+                content=None,
+                embed=new_state.embed,
+                view=view 
+            )
+        else:
+            self._message = interaction.message
+            self.history.append(self.current_state)
+            await interaction.response.edit_message(
+                content=None,
+                embed=new_state.embed,
+                view=view
+            )
+        self.data.update(new_state.data) # Should be it a simple reassignment? Or should it loop through the dictionary?
+        self.current_state = new_state
+    
+    def interaction_check(self, user) -> bool:
+        '''
+        Determines if an interactive is valid. Returns `True` if so, otherwise returns `False`.
+        '''
+        return user.id == self._owner.id
+
+    @property
+    def state(self):
+        return self.current_state
+
+    @state.setter
+    def state(self, new_state):
+        raise AttributeError("Can't set attribute, please use update_state")
 
 # ------------------------------------------------------------------------------------------------------------------------------------------------
 #                                                              Beginning of State
@@ -99,7 +186,7 @@ class state:
         return self
 
     @classmethod
-    def from_state(cls, other_state, *, machine = None):
+    def from_state(cls, other_state, *, machine: machine = None):
         '''
         Creates a new state object from another state. Performs a deepcopy.
 
@@ -133,70 +220,6 @@ class state:
         for key, value in new_embed.to_dict().items():
             if key in self.embed_info:
                 self.embed_info[key] = value
-
-# ------------------------------------------------------------------------------------------------------------------------------------------------
-#                                                              Beginning of Machine
-# ------------------------------------------------------------------------------------------------------------------------------------------------
-
-class machine:
-    def __init__(self):
-        '''
-        Please use `machine.create()` to make a new machine, as this will return a blank object.
-        '''
-        pass
-    
-    @classmethod
-    async def create(cls, initial_state: state, message: Message, * , channel: TextChannel = None, history: List[state] = []):
-        '''
-        Initializes a machine that may only be modified by and interacted with its creator.
-        
-        ## Parameters
-
-        `initial_state`: A state object that the machine should put itself into upon creation.
-
-        `message`: The message that initialized the machine.
-
-        `channel` (Optional): The channel that the machine should initialize in. Defaults to `message.channel`.
-
-        `history` (Optional): A history of previous states. Empty by default.
-        '''
-
-        # Initialize 'private' variables
-        self = cls()
-        self._owner = message.author
-        self._message = await channel.send('Initializing...') if channel is not None else await message.channel.send('Initializing...')
-
-        # Initialize 'public' variables
-        self.history = history
-        # Put the machine into its initial state
-        for button in initial_state.buttons:
-            button.machine = self
-        await self.update_state(initial_state)
-        return self
-
-    async def update_state(self, new_state: state) -> None:
-        '''
-        Edits the machine to match the given state.
-        '''
-        view = View() if new_state.buttons else None # Check if there are buttons.
-        for button in new_state.buttons:
-            view.add_item(button)
-
-        if hasattr(self, 'current_state'):
-            self.history.append(self.current_state)
-        self.current_state = new_state
-        self._message = await self._message.edit(
-            content = None,
-            embed=new_state.embed,
-            view=view 
-        )
-        self.data = new_state.data # Should be it a simple reassignment? Or should it loop through the dictionary?
-    
-    def interaction_check(self, user) -> bool:
-        '''
-        Determines if an interactive is valid. Returns `True` if so, otherwise returns `False`.
-        '''
-        return user.id == self._owner.id
 
 # ------------------------------------------------------------------------------------------------------------------------------------------------
 #                                                              Beginning of Action

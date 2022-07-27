@@ -28,7 +28,8 @@ async def on_message(message):
         if message.content.startswith('$'):
             return_message = await bot.run_command_on_message(message)
             if return_message is not None:
-                await return_message.channel.send(return_message.message, embed=return_message.embed)
+                if return_message.message is not None:
+                    await return_message.channel.send(return_message.message, embed=return_message.embed)
         
 
         # Auto on Message
