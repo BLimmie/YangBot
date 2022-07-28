@@ -149,6 +149,9 @@ class machine:
         if self._delete:
             self._message.delete()
 
+    def __hash__(self) -> int: # Maybe we can use the hash as an identifier, in case ever need this? Maybe useful for machines interacting with each other?
+        return hash((self.data, self.__current_state, self._owner))
+
 # ------------------------------------------------------------------------------------------------------------------------------------------------
 #                                                              Beginning of State
 # ------------------------------------------------------------------------------------------------------------------------------------------------
@@ -284,10 +287,7 @@ class state:
 # ------------------------------------------------------------------------------------------------------------------------------------------------
 
 async def _DefaultCallback(mach: machine, interaction: Interaction):
-    await mach.update_state(state.from_dict({
-        'title': 'Default State',
-        'description': 'Button was pressed by ' + interaction.user.name
-    }), interaction)
+    await mach.update_state(state(), interaction)
 
 class action(Button):
     '''
