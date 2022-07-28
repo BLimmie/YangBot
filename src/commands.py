@@ -5,7 +5,7 @@ from src.modules.db_helper import member_exists, insert_member, get_table, conne
 from src.modules.discord_helper import change_nickname, kick_member, try_send, generate_embed
 from src.tools.botfunction import BotFunction
 from src.tools.message_return import message_data
-from src.modules.state_machines import state, action, machine
+from src.tools.state_machines import state, action, machine
 
 
 class command_on_message(BotFunction):
@@ -392,7 +392,7 @@ class machine_dual(command_on_message):
                 action(callback=first_state_action, label="Go forward!") # Since we haven't made our machine yet, it doesn't need to be passed. machine.create() will handle that.
             ]
         )
-        await machine.create(initial_state, message) # And finally, create our machine!
+        await machine.create(initial_state, message, timeout=10) # And finally, create our machine!
         return None
 
     @staticmethod
@@ -436,7 +436,7 @@ class machine_counter(command_on_message):
                     'count': 0
                 }
         )
-        await machine.create(initial_state, message, delete_message=True) # And finally, create our machine!
+        await machine.create(initial_state, message, timeout=10) # And finally, create our machine!
         return None
 
     @staticmethod

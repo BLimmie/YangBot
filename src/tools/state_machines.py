@@ -9,13 +9,20 @@ from copy import deepcopy
 # ------------------------------------------------------------------------------------------------------------------------------------------------
 
 class _YangView(View):
-    def __init__(self, actions: List, *, timeout: float = None): # Maybe implement the timeout feature, allowing for a coroutine to execute when a timeout is done?
+    def __init__(self, machine, actions: List, *, timeout: float = 180):
         if not actions: raise ValueError("List of actions cannot be empty when creating a YangView object")
         super().__init__(timeout=timeout)
+        self.machine = machine
         for button in actions:
             if not isinstance(button, action): raise TypeError("Invalid object given when generating YangView: expected 'action', got " + button.__class__.__name__)
             self.add_item(button)
-        self.interaction_check = self.children[0].machine.interaction_check
+        self.interaction_check = machine.interaction_check
+
+    async def on_timeout(self) -> None:
+        timed_out_state = state()
+        timed_out_state.embed_info = self.machine.state.embed_info
+        timed_out_state.data = self.machine.state.data
+        await self.machine.update_state(timed_out_state)
 
 class machine:
     '''
@@ -56,7 +63,7 @@ class machine:
         pass
     
     @classmethod
-    async def create(cls, initial_state, message: Message, * , channel: TextChannel = None, history: List = [], delete_message: bool = False):
+    async def create(cls, initial_state, message: Message, * , channel: TextChannel = None, history: List = [], timeout: float = 180, delete_message: bool = False):
         '''
         Initializes a machine that may only be modified by and interacted with its creator.
         
@@ -68,7 +75,9 @@ class machine:
 
         `channel` (Optional): The channel that the machine should initialize in. Defaults to `message.channel`.
 
-        `history` (Optional): A history of previous states. Empty by default.
+        `history` (Optional): A history of previous states. Defaults to an empty list.
+
+        `timeout` (Optional): A float representing how many seconds of inaction the machine should wait before becoming unusable. Defaults to 180 seconds.
 
         `delete_message` (Optional): Whether the machine should delete its corresponding message when the machine is deleted (garbage collected). Defaults to `False`.
         '''
@@ -77,6 +86,7 @@ class machine:
         self._owner = message.author
         self._message = await channel.send('Initializing...') if channel is not None else await message.channel.send('Initializing...')
         self._delete = delete_message
+        self._timeout = timeout # For now, timeout is only used for the built-in methods in View. Machine doesn't do any handling with it.
 
         self.history = history
         self.data = {}
@@ -94,7 +104,7 @@ class machine:
 
         Calling this method without passing `Interaction` implicitly means that this was not triggered by a user. The only relevant difference is that the `history` attribute will not be updated.
         '''
-        view = _YangView(new_state.actions) if new_state.actions else None # Check if the action list is non-empty.
+        view = _YangView(self, new_state.actions, timeout=self._timeout) if new_state.actions else None # Check if the action list is non-empty.
         
         if interaction is None:
             self._message = await self._message.edit(
@@ -127,7 +137,7 @@ class machine:
 
     @state.setter
     def state(self, new_state):
-        raise AttributeError("Can't set attribute, please use update_state")
+        raise AttributeError("Can't set state, please use update_state")
 
     def __getitem__(self, key):
         return self.data[key]
@@ -137,7 +147,6 @@ class machine:
 
     def __del__(self): # To delete the message, if needed.
         if self._delete:
-            print('deleting...')
             self._message.delete()
 
 # ------------------------------------------------------------------------------------------------------------------------------------------------
@@ -285,7 +294,9 @@ class action(Button):
     An object representing a button within discord. Designed to work with the machine class.
 
     ## Parameters and Attributes
-    All of the following parameters (except machine) are keyword-only and optional. Unless otherwise specified, all optional parameters default to `None`. Every parameter (except callback) is also an equivalently named attribute.
+    All of the following parameters (except machine) are keyword-only and optional. Unless otherwise specified, all optional parameters default to `None`. 
+    
+    Every parameter (except callback) is also an equivalently named attribute.
 
     `machine`: The machine object this button is attached to. Note that this parameter is required EXCEPT when this action is part of an initial state. In such a case, leave this unspecified; `machine.create` will handle this accordingly.
 
