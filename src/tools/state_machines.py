@@ -140,12 +140,13 @@ class State:
     An object representing a state for a machine. Behaves like a dictionary for its data, like an object for its embed (see Behavior).
     ## Attributes
       `embed_info`: A dictionary describing attributes for a `discord.Embed` object
-      `embed`: A `discord.Embed` object created with `embed_info`. May be reassigned to another Embed. Note that this is a property tied to `embed_info`; changing this also changes embed_info, and vice versa.
+      `embed`: A `discord.Embed` object created with `embed_info`. If you wish to reassign this, please use `update_embed`.
       `actions`: A list of `action` objects.
       `data`: Any other data relevant for the machine.
     ## Methods
       `@classmethod from_dict`: Creates a state based on the given dictionaries. Performs a shallow copy on all passed parameters.
       `@classmethod from_state`: Creates a new state object from another state. Performs a deepcopy.
+      `update_embed`: Updates `embed_info` based on the given Embed.
     ## Behavior
     This class behaves like a dictionary and object, allowing for keyed and dotted access. 
       `state_obj.key` (dotted access) is equivalent to `state_obj.embed_info[key]`. Setting values behaves similarly.
@@ -153,6 +154,7 @@ class State:
       `item in state_obj` is equivalent to `item in state_obj.data`.
     ## Raises
       `Warning`: Embed_dict passed has a key that isn't in an embed_info
+      `TypeError`: `update_embed` was given a non-Embed object.
     '''
     def __init__(self):
         '''
@@ -232,8 +234,7 @@ class State:
     @property
     def embed(self) -> Embed:
         '''
-        A `discord.Embed` object based off the `embed_info` attribute. 
-        May be reassigned to another `Embed` object; raises a TypeError if assigned to something other than an Embed object.
+        A `discord.Embed` object based off the `embed_info` attribute. Please use `update_embed` if you wish to reassign this state's embed
         '''
         return generate_embed(self.embed_info)
 
@@ -242,10 +243,16 @@ class State:
         warn('Please use the update_embed method to change a state\'s embed')
 
     def update_embed(self, new_embed: Embed):
+        '''
+        Updates `embed_info` based on the given Embed object. Raises a TypeError if given something other than an Embed, and prints a warning for any invalid keys given.
+        '''
         if not isinstance(new_embed, Embed): raise TypeError("Invalid object type; Expected Embed, got " + new_embed.__class__.__name__)
         for key, value in new_embed.to_dict().items():
             if key in self.embed_info:
                 self.embed_info[key] = value
+            else:
+                warn("Invalid embed_dict attribute " + key + " given")
+
 # ------------------------------------------------------------------------------------------------------------------------------------------------
 #                                                              Beginning of Action
 # ------------------------------------------------------------------------------------------------------------------------------------------------
