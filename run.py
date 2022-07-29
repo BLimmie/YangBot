@@ -24,7 +24,6 @@ async def on_ready():
 async def on_message(message):
     # Bots cannot call commands EXCEPT TestBot
     if not message.author.bot or message.author.id == 856999058709938177: # TestBot ID
-
         # Command on Message
         if message.content.startswith('$'):
             return_message = await bot.run_command_on_message(message)

@@ -1,7 +1,11 @@
 psycopg2-binary
 aiohttp
 asyncio
-discord.py==1.7.3
+git+https://github.com/Rapptz/discord.py.git@dc50736bfc3340d7b999d9f165808f8dcb8f1a60
 requests
+<<<<<<< HEAD
 asgiref
 discord-ui
+=======
+asgiref
+>>>>>>> 1a8995c20b3d17a52b608a523d354203b4e65b39

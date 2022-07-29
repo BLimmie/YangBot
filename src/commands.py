@@ -5,6 +5,7 @@ from src.modules.db_helper import member_exists, insert_member, get_table, conne
 from src.modules.discord_helper import change_nickname, kick_member, try_send, generate_embed
 from src.tools.botfunction import BotFunction
 from src.tools.message_return import message_data
+from src.tools.state_machines import State, Action, Machine
 
 
 class command_on_message(BotFunction):
@@ -17,7 +18,6 @@ class command_on_message(BotFunction):
 
     @staticmethod
     def helptxt():
-
         raise NotImplementedError
 
 

@@ -1,6 +1,5 @@
 import discord
 
-
 class message_data:
     def __init__(self, channel=None, message=None, embed=None, args=None, kwargs=None):
         """
@@ -13,9 +12,17 @@ class message_data:
         """
         self.channel = channel
         self.message = message
-        self.embed = discord.Embed(**embed) if embed is not None else None
-        if embed is not None and 'fields' in embed:
-            for item in embed['fields']:
+        if embed is None:
+            self.embed = None
+        else:
+            if 'fields' in embed:
+                fields = embed['fields']
+                del embed['fields'] # Deletes the pointer, NOT the object
+            else:
+                fields = []
+            self.embed = discord.Embed(**embed)
+            for item in fields:
                 self.embed.add_field(name=item['name'],value=item['value'],inline=item['inline'] if 'inline' in item else False)
+
         self.args = args if args is not None else []
         self.kwargs = kwargs if kwargs is not None else {}
