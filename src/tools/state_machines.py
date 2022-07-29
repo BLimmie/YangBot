@@ -10,6 +10,12 @@ from warnings import warn
 # ------------------------------------------------------------------------------------------------------------------------------------------------
 
 class YangView(View):
+    '''
+    A class meant for putting Actions into usable states; discord.py 2.0 requires all buttons be bundled into a 'View' object before passing it onto a message.
+    YangView is simply a subclass that is designed to work with machines. 
+    
+    This class is not intended for use beyond the source code for state machine classes.
+    '''
     def __init__(self, machine, actions: List, *, timeout: float = 180):
         if not actions: raise ValueError("List of actions cannot be empty when creating a YangView object")
         super().__init__(timeout=timeout)
