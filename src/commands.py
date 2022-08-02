@@ -1,8 +1,10 @@
 import random
+from datetime import date
 from psycopg2 import sql
 from src.modules.catfact_helper import get_catfact
 from src.modules.db_helper import member_exists, insert_member, get_table, connection_error, dbfunc_run
 from src.modules.discord_helper import change_nickname, kick_member, try_send, generate_embed
+from src.modules.ucsb_api_helper import get_menus
 from src.tools.botfunction import BotFunction
 from src.tools.message_return import message_data
 from src.tools.state_machines import State, Action, Machine
@@ -339,3 +341,41 @@ class help(command_on_message):
     @staticmethod
     def helptxt():
         return "$help [command] \nDisplays description of the provided command. If none is provided, displays description for all commands."
+
+class menu(command_on_message):
+    def __init__(self, *args, **kwargs):
+        self.commons = ['dlg', 'de', 'portola', 'carrillo', 'ortega'] # 'de' is added in case someone searches for 'de la guerra' instead of 'dlg'
+        super().__init__(*args, **kwargs)
+        # If get_menus is asynchronous, then the menu attribute cannot be added here.
+
+    async def action(self, message):
+        '''
+        Roadmap Idea - Daniel. I've implemented code and pseudo-code for this idea below. This is not final by any means.
+
+        First, check menu. If it is outdated, then update it.
+        Second, check for a parameter in a try-except statement.
+        Third, create a state using the processed information and create a machine.
+        '''
+        if date.today().day != self.menu.day: # If the days fail to align, update the menu.
+            self.menu = await get_menus()
+
+        try:
+            # Tries to get the command to search for. Uses a pseudo-auto-fill (so '$menu port' is the same as '$menu portola')
+            dining_commons = message.content.lower()[1:].split()[1]
+            for commons in self.commons:
+                if commons.startswith(dining_commons):
+                    dining_commons = commons if commons != 'de' else 'dlg' # Reassign 'de' alias to 'dlg'
+                    break
+
+        except (IndexError, AttributeError):
+            # If no argument is specified, then show all
+            dining_commons = None
+
+        initial_state = State() # Replace this bit with setting up a proper state, using 'dining_commons' for information
+
+        await Machine.create(initial_state, message, initial_message='Setting up the menu...') # Will this get garbage collected? Probably not.
+        return None
+
+    @staticmethod
+    def helptxt():
+        return "$menu [dining hall] \nDisplays an interactable Embed showing the menu for each of the dining halls. Specifying the dining hall will show that menu first instead of a generic homepage."

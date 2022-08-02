@@ -1,4 +1,5 @@
 import aiohttp
+from datetime import date
 
 async def get_menus() -> dict:
     '''
@@ -7,6 +8,7 @@ async def get_menus() -> dict:
     This menu will send an HTTP request to UCSB API to grab all the menu information. It will then convert this information into a dictionary and return it.
     I think we should format the dictionary like this:
     {
+        'day' : day attribute of date object
         'DLG': {
             'Main Entrees': [
                 'Chicken',

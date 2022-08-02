@@ -56,12 +56,13 @@ class Machine:
         pass
     
     @classmethod
-    async def create(cls, initial_state, message: Message, * , channel: TextChannel = None, history: List = [], timeout: float = 180, delete_message: bool = False):
+    async def create(cls, initial_state, message: Message, * , initial_message: str = 'Initializing...', channel: TextChannel = None, history: List = [], timeout: float = 180, delete_message: bool = False):
         '''
         Initializes a machine that may only be modified by and interacted with its creator.
         ### Parameters
           `initial_state`: A state object that the machine should put itself into upon creation. Note that the machine parameter for all `action` objects of the initial state should be unspecified.
           `message`: The message that initialized the machine.
+          `initial_message` (Optional): The content of the message to send while the machine prepares itself. Defaults to 'Initializing...'
           `channel` (Optional): The channel that the machine should initialize in. Defaults to `message.channel`.
           `history` (Optional): A history of previous states. Defaults to an empty list.
           `timeout` (Optional): A float representing how many seconds of inaction the machine should wait before becoming unusable. Defaults to 180 seconds.
@@ -70,7 +71,7 @@ class Machine:
 
         self = cls()
         self._owner = message.author
-        self._message = await channel.send('Initializing...') if channel is not None else await message.channel.send('Initializing...')
+        self._message = await channel.send(initial_message) if channel is not None else await message.channel.send(initial_message)
         self._delete = delete_message
         self._timeout = timeout # For now, timeout is only used for the built-in methods in View. Machine doesn't do any handling with it.
 
