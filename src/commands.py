@@ -377,8 +377,81 @@ class menu(command_on_message):
         except (IndexError, AttributeError):
             # If no argument is specified, then show all
             dining_commons = None
+        
+        # First create the variables so we can use them in action, then change later
+        dlg_state, ortega_state, portola_state, carillo_state = None, None, None, None
+        
+        @Action.action(label='De La Guerra')
+        async def go_to_dlg(machine: Machine, interaction):
+            await machine.update_state(dlg_state, interaction)
 
-        initial_state = State() # Replace this bit with setting up a proper state, using 'dining_commons' for information
+        @Action.action(label='Ortega')
+        async def go_to_ortega(machine: Machine, interaction):
+            await machine.update_state(ortega_state, interaction)
+
+        @Action.action(label='Portola')
+        async def go_to_portola(machine: Machine, interaction):
+            await machine.update_state(portola_state, interaction)
+
+        @Action.action(label='Carillo')
+        async def go_to_carillo(machine: Machine, interaction):
+            await machine.update_state(carillo_state, interaction)
+
+        # Is it fine if we just use the same buttons? Or do we need to create a new one each time?
+        dlg_state = State.from_dict(
+            embed_dict={
+                # Put the menu here
+            },
+            actions=[
+                go_to_ortega, go_to_portola, go_to_carillo
+            ]
+        )
+        ortega_state = State.from_dict(
+            embed_dict={
+                # Menu
+            },
+            actions=[
+                go_to_dlg, go_to_portola, go_to_carillo
+            ]
+        )
+        portola_state = State.from_dict(
+            embed_dict={
+                # Menu
+            },
+            actions=[
+                go_to_dlg, go_to_ortega, go_to_carillo
+            ]
+        ) 
+        carillo_state = State.from_dict(
+            embed_dict={
+                # Menu
+            },
+            actions=[
+                go_to_dlg, go_to_ortega, go_to_portola
+            ]
+        )
+        
+
+        match dining_commons:
+            case 'dlg':
+                initial_state = dlg_state
+            case 'ortega':
+                initial_state = ortega_state
+            case 'portola':
+                initial_state = portola_state
+            case 'carillo':
+                initial_state = carillo_state
+            case _:
+                initial_state = State.from_dict(
+                    embed_dict={
+                        'title': 'Home Menu',
+                        'description': 'Please select one of the dining commons below to view its menu',
+                        'color': 0x3dc236
+                    },
+                    actions=[
+                        go_to_dlg, go_to_ortega, go_to_portola, go_to_carillo
+                    ]
+                )
 
         await Machine.create(initial_state, message, message_to_edit=message_to_replace, timeout=120) # Will this get garbage collected? Probably not.
         return None
