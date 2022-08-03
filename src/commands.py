@@ -1,3 +1,4 @@
+from email.message import Message
 import random
 from datetime import date
 from psycopg2 import sql
@@ -345,20 +346,24 @@ class help(command_on_message):
 class menu(command_on_message):
     def __init__(self, *args, **kwargs):
         self.commons = ['dlg', 'de', 'portola', 'carrillo', 'ortega'] # 'de' is added in case someone searches for 'de la guerra' instead of 'dlg'
+        self.day = date.today().day # Maybe we can replac
         super().__init__(*args, **kwargs)
         # If get_menus is asynchronous, then the menu attribute cannot be added here.
 
-    async def action(self, message):
+    async def action(self, message: Message):
         '''
         Roadmap Idea - Daniel. I've implemented code and pseudo-code for this idea below. This is not final by any means.
 
         First, check menu. If it is outdated, then update it.
-        Second, check for a parameter in a try-except statement.
-        Third, create a state using the processed information and create a machine.
+        Second, find the menu of the commons for the user. If none is specified, or if none is found, assume the user wants all
+        Third, create a state using the processed information. If a specific menu is desired, show that menu. If none is specified, show a home page with buttons to all.
+        Fourth, create the machine and all the states.
         '''
-        if date.today().day != self.menu.day: # If the days fail to align, update the menu.
-            self.menu = await get_menus()
-
+        message_to_replace = None
+        if date.today().day != self.day: # If the days fail to align, update the menu. It's also important to note *when* the menu gets updated, as this may fail if only day is checked.
+            self.menu, self.day = await get_menus()
+            message_to_replace = await message.channel.send('Please wait while we update the menus...')
+            
         try:
             # Tries to get the command to search for. Uses a pseudo-auto-fill (so '$menu port' is the same as '$menu portola')
             dining_commons = message.content.lower()[1:].split()[1]
@@ -366,6 +371,8 @@ class menu(command_on_message):
                 if commons.startswith(dining_commons):
                     dining_commons = commons if commons != 'de' else 'dlg' # Reassign 'de' alias to 'dlg'
                     break
+            else: # If the user input cannot be determined, show all
+                dining_commons = None
 
         except (IndexError, AttributeError):
             # If no argument is specified, then show all
@@ -373,7 +380,7 @@ class menu(command_on_message):
 
         initial_state = State() # Replace this bit with setting up a proper state, using 'dining_commons' for information
 
-        await Machine.create(initial_state, message, initial_message='Setting up the menu...') # Will this get garbage collected? Probably not.
+        await Machine.create(initial_state, message, message_to_edit=message_to_replace, timeout=120) # Will this get garbage collected? Probably not.
         return None
 
     @staticmethod
