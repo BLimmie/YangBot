@@ -286,14 +286,19 @@ class Action(Button):
       `row`: The row the button should be placed in, must be between 0 and 4 (inclusive). If this isn't specified, then automatic ordering will be applied.
       `url`: A string representing the url that this button should send to. Note that specifying this changes some functionality (see discord.py docs).
       `disabled`: Whether the button should invoke `callback` whenever pressed. Defaults to `False`.
-    ## Decorators
-    To make development easier, there is an alternative way to construct buttons via the `action` decorator if a callback is already defined. Sample use:
+    ## Methods
+      `clone`: Returns a copy of the button.
+    `action`: A decorator that provides an alternate way to construct Action objects. For example:
     ```
     @Action.action(label='Click me!')
     async def do_something(machine, interaction):
         print('I was pressed!')
     ```
-    This is the same as `do_something = Action(label='Click me!', callback=do_something)`. Note that the variable for the coroutine is reassigned to an Action object.
+    This is the same as 
+    ```
+    do_something = Action(label='Click me!', callback=do_something)
+    ```
+    Note that the variable for the coroutine is reassigned to an Action object.
     '''
     def __init__(self, machine: Machine=None, *, callback: Coroutine=DefaultCallback , style: ButtonStyle=ButtonStyle.blurple, label: str=None, emoji: Emoji=None, row: int=None, url: str=None, disabled: bool=False):
         super().__init__(style=style, label=label, emoji=emoji, row=row, url=url, disabled=disabled)
@@ -318,3 +323,11 @@ class Action(Button):
             return cls(machine, callback=callback, **kwargs)
 
         return wrap
+
+    def clone(self, machine: Machine=None):
+        '''
+        Returns a copy of this Action.
+        ### Parameters
+        `machine`: The machine that the copy should point to. Defaults to the machine of the original button.
+        '''
+        return type(self)(machine=machine or self.machine, callback=self._callback, style=self.style, label=self.label, emoji=self.emoji, row=self.row, url=self.url, disabled=self.disabled)
