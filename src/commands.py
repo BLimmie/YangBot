@@ -9,6 +9,7 @@ from src.modules.ucsb_api_helper import get_menus
 from src.tools.botfunction import BotFunction
 from src.tools.message_return import message_data
 from src.tools.state_machines import State, Action, Machine
+from discord import ButtonStyle
 
 
 class command_on_message(BotFunction):
@@ -346,6 +347,7 @@ class help(command_on_message):
 class menu(command_on_message):
     def __init__(self, *args, **kwargs):
         self.commons = ['dlg', 'de', 'portola', 'carrillo', 'ortega'] # 'de' is added in case someone searches for 'de la guerra' instead of 'dlg'
+        self.mealtimes = ['breakfast', 'lunch', 'dinner']
         self.day = date.today().day # Maybe we can replac
         super().__init__(*args, **kwargs)
         # If get_menus is asynchronous, then the menu attribute cannot be added here.
@@ -366,7 +368,9 @@ class menu(command_on_message):
             
         try:
             # Tries to get the command to search for. Uses a pseudo-auto-fill (so '$menu port' is the same as '$menu portola')
-            dining_commons = message.content.lower()[1:].split()[1]
+            contents = message.content.lower().split()
+            dining_commons = contents[1]
+            option = contents[2] if len(contents) >= 2 else None
             for commons in self.commons:
                 if commons.startswith(dining_commons):
                     dining_commons = commons if commons != 'de' else 'dlg' # Reassign 'de' alias to 'dlg'
@@ -374,12 +378,43 @@ class menu(command_on_message):
             else: # If the user input cannot be determined, show all
                 dining_commons = None
 
-        except (IndexError, AttributeError):
-            # If no argument is specified, then show all
+            if option is not None:
+                for mealtime in self.mealtimes:
+                    if mealtime.startswith(option):
+                        option = mealtime
+                        break
+            
+
+        except IndexError:
+            # If no argument is specified, then go to homepage
             dining_commons = None
+            option = None
         
-        # First create the variables so we can use them in action, then change later
-        dlg_state, ortega_state, portola_state, carillo_state = None, None, None, None
+        # First partially define all the states (i.e. define without all the Actions)
+        homepage = State.from_dict(
+            embed_dict={
+                'title': 'Home Menu',
+                'description': 'Please select one of the dining commons',
+                'color': 0x3dc236
+            },
+            data={
+                'position': 'home'
+            }
+        )
+
+        common_selector = State.from_dict(
+            embed_dict={
+                'title': '{full_commons}',
+                'description': 'Please select a menu',
+                'color': 0x0
+            },
+            data={
+                'position': '{commons}'
+            }
+        )
+        @Action.action(label='Back', style=ButtonStyle.gray)
+        async def back(machine, interaction):
+            pass
         
         @Action.action(label='De La Guerra')
         async def go_to_dlg(machine: Machine, interaction):
@@ -403,7 +438,7 @@ class menu(command_on_message):
                 # Put the menu here
             },
             actions=[
-                go_to_ortega, go_to_portola, go_to_carillo
+                go_to_ortega.copy(), go_to_portola.copy(), go_to_carillo.copy()
             ]
         )
         ortega_state = State.from_dict(
@@ -411,7 +446,7 @@ class menu(command_on_message):
                 # Menu
             },
             actions=[
-                go_to_dlg, go_to_portola, go_to_carillo
+                go_to_dlg.copy(), go_to_portola.copy(), go_to_carillo.copy()
             ]
         )
         portola_state = State.from_dict(
@@ -419,7 +454,7 @@ class menu(command_on_message):
                 # Menu
             },
             actions=[
-                go_to_dlg, go_to_ortega, go_to_carillo
+                go_to_dlg.copy(), go_to_ortega.copy(), go_to_carillo.copy()
             ]
         ) 
         carillo_state = State.from_dict(
@@ -442,20 +477,11 @@ class menu(command_on_message):
             case 'carillo':
                 initial_state = carillo_state
             case _:
-                initial_state = State.from_dict(
-                    embed_dict={
-                        'title': 'Home Menu',
-                        'description': 'Please select one of the dining commons below to view its menu',
-                        'color': 0x3dc236
-                    },
-                    actions=[
-                        go_to_dlg, go_to_ortega, go_to_portola, go_to_carillo
-                    ]
-                )
+                initial_state = homepage
 
         await Machine.create(initial_state, message, message_to_edit=message_to_replace, timeout=120) # Will this get garbage collected? Probably not.
         return None
 
     @staticmethod
     def helptxt():
-        return "$menu [dining hall] \nDisplays an interactable Embed showing the menu for each of the dining halls. Specifying the dining hall will show that menu first instead of a generic homepage."
+        return "$menu [dining commons] [mealtime] \nDisplays an interactable Embed showing the menu for the mealtime of the dining commons."

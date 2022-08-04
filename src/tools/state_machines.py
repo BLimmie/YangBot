@@ -157,6 +157,7 @@ class State:
       `@classmethod from_dict`: Creates a state based on the given dictionaries. Performs a shallow copy on all passed parameters.
       `@classmethod from_state`: Creates a new state object from another state. Performs a deepcopy.
       `update_embed`: Updates `embed_info` based on the given Embed.
+      `format`: Loops through `embed_info` and `data`, and performs `string.format(**kwargs)` on all string objects.
     ## Behavior
     This class behaves like a dictionary and object, allowing for keyed and dotted access. 
       `state_obj.key` (dotted access) is equivalent to `state_obj.embed_info[key]`. Setting values behaves similarly.
@@ -263,6 +264,18 @@ class State:
             else:
                 warn("Invalid embed_dict attribute " + key + " given")
 
+    def format(self, **kwargs):
+        '''
+        Loops through `embed_info` and `data` and performs `string.format(**kwargs)` on all string values. This method only accepts keyworded arguments.
+        '''
+        for key, value in self.embed_info.items():
+            if isinstance(value, str):
+                self.embed_info[key] = value.format(**kwargs)
+
+        for key, value in self.data.items():
+            if isinstance(value, str):
+                self.data[key] = value.format(**kwargs)
+
 # ------------------------------------------------------------------------------------------------------------------------------------------------
 #                                                              Beginning of Action
 # ------------------------------------------------------------------------------------------------------------------------------------------------
@@ -284,9 +297,9 @@ class Action(Button):
       `row`: The row the button should be placed in, must be between 0 and 4 (inclusive). If this isn't specified, then automatic ordering will be applied.
       `url`: A string representing the url that this button should send to. Note that specifying this changes some functionality (see discord.py docs).
       `disabled`: Whether the button should invoke `callback` whenever pressed. Defaults to `False`.
-    There is an additional attribute, `machine`, that refers to the machine that the button is currently attached to. This is not a parameter and should not be modified.
+    There is an additional attribute, `machine`, that refers to the machine that the button was most recently attached to. This is not a parameter and should not be modified.
     ## Methods
-      `clone`: Returns a copy of the button.
+      `copy`: Returns a copy of the button.
     `action`: A decorator that provides an alternate way to construct Action objects. For example:
     ```
     @Action.action(label='Click me!')
@@ -323,7 +336,7 @@ class Action(Button):
 
         return wrap
 
-    def clone(self):
+    def copy(self):
         '''
         Returns a copy of this Action.
         '''
