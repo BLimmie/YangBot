@@ -22,6 +22,7 @@ class YangView(View):
         self.machine = machine
         for button in actions:
             if not isinstance(button, Action): raise TypeError("Invalid object given when generating YangView: expected 'action', got " + button.__class__.__name__)
+            button.machine = machine
             self.add_item(button)
         self.interaction_check = machine.interaction_check
 
@@ -81,8 +82,6 @@ class Machine:
 
         self.history = history
         self.data = {}
-        for button in initial_state.actions:
-            button.machine = self
 
         await self.update_state(initial_state)
         return self
@@ -275,9 +274,8 @@ class Action(Button):
     '''
     An object representing a button within discord. Designed to work with the machine class.
     ## Parameters and Attributes
-    All of the following parameters (except machine) are keyword-only and optional. Unless otherwise specified, all optional parameters default to `None`. 
+    All of the following parameters are keyword-only and optional. Unless otherwise specified, all parameters default to `None`. 
     Every parameter (except callback) is also an equivalently named attribute.
-      `machine`: The machine object this button is attached to. Note that this parameter is required EXCEPT when this action is part of an initial state. In such a case, leave this unspecified; `machine.create` will handle this accordingly.
       `callback`: The coroutine that will be invoked when the button is pressed. It will be executed as `callback(machine, interaction)`, where interaction is a `discord.Interaction` object. Defaults to changing to a generic state.
        It is expected that `callback` will generate a state object and call `update_state` onto its passed machine.
       `style`: The style for the button. Defaults to `ButtonStyle.blurple`.
@@ -286,6 +284,7 @@ class Action(Button):
       `row`: The row the button should be placed in, must be between 0 and 4 (inclusive). If this isn't specified, then automatic ordering will be applied.
       `url`: A string representing the url that this button should send to. Note that specifying this changes some functionality (see discord.py docs).
       `disabled`: Whether the button should invoke `callback` whenever pressed. Defaults to `False`.
+    There is an additional attribute, `machine`, that refers to the machine that the button is currently attached to. This is not a parameter and should not be modified.
     ## Methods
       `clone`: Returns a copy of the button.
     `action`: A decorator that provides an alternate way to construct Action objects. For example:
@@ -300,16 +299,16 @@ class Action(Button):
     ```
     Note that the variable for the coroutine is reassigned to an Action object.
     '''
-    def __init__(self, machine: Machine=None, *, callback: Coroutine=DefaultCallback , style: ButtonStyle=ButtonStyle.blurple, label: str=None, emoji: Emoji=None, row: int=None, url: str=None, disabled: bool=False):
+    def __init__(self, *, callback: Coroutine=DefaultCallback , style: ButtonStyle=ButtonStyle.blurple, label: str=None, emoji: Emoji=None, row: int=None, url: str=None, disabled: bool=False):
         super().__init__(style=style, label=label, emoji=emoji, row=row, url=url, disabled=disabled)
-        self.machine = machine
+        self.machine = None
         self._callback = callback
 
     async def callback(self, interaction):
         await self._callback(self.machine, interaction)
 
     @classmethod
-    def action(cls, machine: Machine=None, **kwargs):
+    def action(cls, **kwargs):
         '''
         A decorator used to be able to construct Action objects more easily. Sample use:
         ```
@@ -320,14 +319,12 @@ class Action(Button):
         This is equivalent to `do_something = Action(label='Click me!', callback=do_something)`. Note that the variable for the coroutine is reassigned to an Action object.
         '''
         def wrap(callback):
-            return cls(machine, callback=callback, **kwargs)
+            return cls(callback=callback, **kwargs)
 
         return wrap
 
-    def clone(self, machine: Machine=None):
+    def clone(self):
         '''
         Returns a copy of this Action.
-        ### Parameters
-        `machine`: The machine that the copy should point to. Defaults to the machine of the original button.
         '''
-        return type(self)(machine=machine or self.machine, callback=self._callback, style=self.style, label=self.label, emoji=self.emoji, row=self.row, url=self.url, disabled=self.disabled)
+        return type(self)(callback=self._callback, style=self.style, label=self.label, emoji=self.emoji, row=self.row, url=self.url, disabled=self.disabled)
