@@ -1,5 +1,6 @@
 from cProfile import label
 from email.message import Message
+from pydoc import describe
 import random
 from datetime import date
 from psycopg2 import sql
@@ -11,6 +12,7 @@ from src.tools.botfunction import BotFunction
 from src.tools.message_return import message_data
 from src.tools.state_machines import State, Action, Machine
 from discord import ButtonStyle
+from typing import List
 
 
 class command_on_message(BotFunction):
@@ -399,10 +401,12 @@ class menu(command_on_message):
                 'color': 0x3dc236
             },
             data={
-                'position': 'home'
+                'position': 'home',
+                'mealtime': None
             },
             actions=[
-                back, go_to_dlg, go_to_ortega, go_to_portola, go_to_carrillo
+                go_to_dlg, go_to_ortega, go_to_portola, go_to_carrillo,
+                back
             ]
         )
 
@@ -413,19 +417,20 @@ class menu(command_on_message):
                 'color': 0x9e7402
             },
             data={
-                'position': '{commons}'
+                'position': '{commons}',
+                'mealtime': None
             }
         )
 
         meal = State.from_dict(
             embed_dict={
                 'title': '{full_mealtime}',
-                'description': '{description}',
+                'description': None,
                 'fields': [],
                 'color': '{color}'
             },
             data={
-                'position': '{mealtime}'
+                'mealtime': '{mealtime}'
             }
         )
 
@@ -434,50 +439,91 @@ class menu(command_on_message):
         ortega_state = State.from_state(menu_selector).format(full_commons='Ortega', commons='ortega')
         portola_state = State.from_state(menu_selector).format(full_commons='Portola', commons='portola')
         carrillo_state = State.from_state(menu_selector).format(full_commons='Carrillo', commons='carrillo')
-        dlg_state.actions = ortega_state.actions = portola_state.actions = carrillo_state.actions = [back, breakfast, lunch, dinner, home]   
+        dlg_state.actions = ortega_state.actions = portola_state.actions = carrillo_state.actions = [
+            breakfast, lunch, dinner,
+            back, home
+        ]   
 
         # Next, define all the buttons.
-        @Action.action(label='Back', style=ButtonStyle.gray)
-        async def back(machine, interaction):
+        @Action.action(label='Back', style=ButtonStyle.gray, row=1)
+        async def back(machine: Machine, interaction):
             if len(machine.history) < 2: return # It only makes sense to go back when there is at least two states present.
             new_state = machine.history[-2]
             del machine.history[-1], machine.history[-2] # Remove the two most recent states, as update_state will add new_state again
             await machine.update_state(new_state, interaction)
 
-        @Action.action(label='Home', style=ButtonStyle.green)
+        @Action.action(label='Home', style=ButtonStyle.green, row=1)
         async def home(machine: Machine, interaction):
             await machine.update_state(homepage, interaction)
-        
-        # Then define the Breakfast, lunch, and dinner buttons
-        @Action.action(label='Breakfast')
-        async def breakfast(machine, interaction):
-            working_menu = self.menu[machine['position']]['breakfast'] # This first goes to the current commons, then grabs breakfast.
 
-            # Now how should we process this?
-
-        @Action.action(label='Breakfast')
-        async def lunch(machine, interaction):
-            working_menu = self.menu[machine['position']]['lunch']
-
-        @Action.action(label='Breakfast')
-        async def dinner(machine, interaction):
-            working_menu = self.menu[machine['position']]['dinner']
-
-        @Action.action(label='De La Guerra')
+        @Action.action(label='De La Guerra', row=0)
         async def go_to_dlg(machine: Machine, interaction):
             await machine.update_state(dlg_state, interaction)
 
-        @Action.action(label='Ortega')
+        @Action.action(label='Ortega', row=0)
         async def go_to_ortega(machine: Machine, interaction):
             await machine.update_state(ortega_state, interaction)
 
-        @Action.action(label='Portola')
+        @Action.action(label='Portola', row=0)
         async def go_to_portola(machine: Machine, interaction):
             await machine.update_state(portola_state, interaction)
 
-        @Action.action(label='Carrillo')
+        @Action.action(label='Carrillo', row=0)
         async def go_to_carrillo(machine: Machine, interaction):
-            await machine.update_state(carrillo_state, interaction)        
+            await machine.update_state(carrillo_state, interaction)   
+
+        # Then define the Breakfast, lunch, and dinner buttons. A helper function is used to help convert lists to strings
+        def process_menu(menu: List) -> str:
+            final_string = ''
+            for item in menu[:-1]: # Skips the last element
+                final_string += "·" + item + "\n"
+            return final_string + "·" + menu[-1]
+
+        def convert_to_proper(commons: str) -> str:
+            match commons:
+                case 'dlg':
+                    return 'De La Guerra'
+                case _:
+                    return commons.capitalize()
+
+        @Action.action(label='Breakfast', row=0)
+        async def breakfast(machine: Machine, interaction):
+            working_menu = self.menu[machine['position']]['breakfast'] # This first goes to the current commons, then grabs breakfast.
+            new_state = State.from_state(meal).format(full_mealtime=convert_to_proper(machine['position']) + ' Breakfast', color=0xf2e96b, mealtime='breakfast')
+            fields = []
+            for key, value in working_menu.items():
+                fields.append({
+                    'name': key,
+                    'value': process_menu(value)
+                })
+            new_state.fields = fields
+            await machine.update_state(new_state, interaction)
+
+        @Action.action(label='Lunch', row=0)
+        async def lunch(machine, interaction):
+            working_menu = self.menu[machine['position']]['lunch']
+            new_state = State.from_state(meal).format(full_mealtime=convert_to_proper(machine['position']) + ' Lunch', color=0xf2e96b, mealtime='lunch')
+            fields = []
+            for key, value in working_menu.items():
+                fields.append({
+                    'name': key,
+                    'value': process_menu(value)
+                })
+            new_state.fields = fields
+            await machine.update_state(new_state, interaction)
+
+        @Action.action(label='Dinner', row=0)
+        async def dinner(machine, interaction):
+            working_menu = self.menu[machine['position']]['dinner']  
+            new_state = State.from_state(meal).format(full_mealtime=convert_to_proper(machine['position']) + ' Breakfast', color=0xf2e96b, mealtime='dinner')
+            fields = []
+            for key, value in working_menu.items():
+                fields.append({
+                    'name': key,
+                    'value': process_menu(value)
+                })
+            new_state.fields = fields
+            await machine.update_state(new_state, interaction)   
 
         match dining_commons:
             case 'dlg':
@@ -491,7 +537,7 @@ class menu(command_on_message):
             case _:
                 initial_state = homepage
 
-        await Machine.create(initial_state, message, message_to_edit=message_to_replace, timeout=120) # Will this get garbage collected? Probably not.
+        await Machine.create(initial_state, message, message_to_edit=message_to_replace, timeout=120)
         return None
 
     @staticmethod
