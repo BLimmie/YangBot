@@ -1,3 +1,4 @@
+from cProfile import label
 from email.message import Message
 import random
 from datetime import date
@@ -357,9 +358,9 @@ class menu(command_on_message):
         Roadmap Idea - Daniel. I've implemented code and pseudo-code for this idea below. This is not final by any means.
 
         First, check menu. If it is outdated, then update it.
-        Second, find the menu of the commons for the user. If none is specified, or if none is found, assume the user wants all
-        Third, create a state using the processed information. If a specific menu is desired, show that menu. If none is specified, show a home page with buttons to all.
-        Fourth, create the machine and all the states.
+        Second, parse the user's message. Check for a commons first, then a mealtime. Assign the outputs to variables (None if user doesn't provide anything)
+        Third, create base states and homepage. Then fill in everything.
+        Fourth, using the user's information, put the machine into the right state.
         '''
         message_to_replace = None
         if date.today().day != self.day: # If the days fail to align, update the menu. It's also important to note *when* the menu gets updated, as this may fail if only day is checked.
@@ -370,7 +371,7 @@ class menu(command_on_message):
             # Tries to get the command to search for. Uses a pseudo-auto-fill (so '$menu port' is the same as '$menu portola')
             contents = message.content.lower().split()
             dining_commons = contents[1]
-            option = contents[2] if len(contents) >= 2 else None
+            option = contents[-1] if len(contents) >= 2 else None
             for commons in self.commons:
                 if commons.startswith(dining_commons):
                     dining_commons = commons if commons != 'de' else 'dlg' # Reassign 'de' alias to 'dlg'
@@ -390,7 +391,7 @@ class menu(command_on_message):
             dining_commons = None
             option = None
         
-        # First partially define all the states (i.e. define without all the Actions)
+        # First define homepage and base states. Actions aren't included in the base states due to from_state performing a deepcopy.
         homepage = State.from_dict(
             embed_dict={
                 'title': 'Home Menu',
@@ -399,23 +400,69 @@ class menu(command_on_message):
             },
             data={
                 'position': 'home'
-            }
+            },
+            actions=[
+                back, go_to_dlg, go_to_ortega, go_to_portola, go_to_carrillo
+            ]
         )
 
-        common_selector = State.from_dict(
+        menu_selector = State.from_dict(
             embed_dict={
                 'title': '{full_commons}',
                 'description': 'Please select a menu',
-                'color': 0x0
+                'color': 0x9e7402
             },
             data={
                 'position': '{commons}'
             }
         )
+
+        meal = State.from_dict(
+            embed_dict={
+                'title': '{full_mealtime}',
+                'description': '{description}',
+                'fields': [],
+                'color': '{color}'
+            },
+            data={
+                'position': '{mealtime}'
+            }
+        )
+
+        # Now define the states for the commons, and set their buttons.
+        dlg_state = State.from_state(menu_selector).format(full_commons='De La Guerra', commons='dlg')
+        ortega_state = State.from_state(menu_selector).format(full_commons='Ortega', commons='ortega')
+        portola_state = State.from_state(menu_selector).format(full_commons='Portola', commons='portola')
+        carrillo_state = State.from_state(menu_selector).format(full_commons='Carrillo', commons='carrillo')
+        dlg_state.actions = ortega_state.actions = portola_state.actions = carrillo_state.actions = [back, breakfast, lunch, dinner, home]   
+
+        # Next, define all the buttons.
         @Action.action(label='Back', style=ButtonStyle.gray)
         async def back(machine, interaction):
-            pass
+            if len(machine.history) < 2: return # It only makes sense to go back when there is at least two states present.
+            new_state = machine.history[-2]
+            del machine.history[-1], machine.history[-2] # Remove the two most recent states, as update_state will add new_state again
+            await machine.update_state(new_state, interaction)
+
+        @Action.action(label='Home', style=ButtonStyle.green)
+        async def home(machine: Machine, interaction):
+            await machine.update_state(homepage, interaction)
         
+        # Then define the Breakfast, lunch, and dinner buttons
+        @Action.action(label='Breakfast')
+        async def breakfast(machine, interaction):
+            working_menu = self.menu[machine['position']]['breakfast'] # This first goes to the current commons, then grabs breakfast.
+
+            # Now how should we process this?
+
+        @Action.action(label='Breakfast')
+        async def lunch(machine, interaction):
+            working_menu = self.menu[machine['position']]['lunch']
+
+        @Action.action(label='Breakfast')
+        async def dinner(machine, interaction):
+            working_menu = self.menu[machine['position']]['dinner']
+
         @Action.action(label='De La Guerra')
         async def go_to_dlg(machine: Machine, interaction):
             await machine.update_state(dlg_state, interaction)
@@ -428,44 +475,9 @@ class menu(command_on_message):
         async def go_to_portola(machine: Machine, interaction):
             await machine.update_state(portola_state, interaction)
 
-        @Action.action(label='Carillo')
-        async def go_to_carillo(machine: Machine, interaction):
-            await machine.update_state(carillo_state, interaction)
-
-        # Is it fine if we just use the same buttons? Or do we need to create a new one each time?
-        dlg_state = State.from_dict(
-            embed_dict={
-                # Put the menu here
-            },
-            actions=[
-                go_to_ortega.copy(), go_to_portola.copy(), go_to_carillo.copy()
-            ]
-        )
-        ortega_state = State.from_dict(
-            embed_dict={
-                # Menu
-            },
-            actions=[
-                go_to_dlg.copy(), go_to_portola.copy(), go_to_carillo.copy()
-            ]
-        )
-        portola_state = State.from_dict(
-            embed_dict={
-                # Menu
-            },
-            actions=[
-                go_to_dlg.copy(), go_to_ortega.copy(), go_to_carillo.copy()
-            ]
-        ) 
-        carillo_state = State.from_dict(
-            embed_dict={
-                # Menu
-            },
-            actions=[
-                go_to_dlg, go_to_ortega, go_to_portola
-            ]
-        )
-        
+        @Action.action(label='Carrillo')
+        async def go_to_carrillo(machine: Machine, interaction):
+            await machine.update_state(carrillo_state, interaction)        
 
         match dining_commons:
             case 'dlg':
@@ -474,8 +486,8 @@ class menu(command_on_message):
                 initial_state = ortega_state
             case 'portola':
                 initial_state = portola_state
-            case 'carillo':
-                initial_state = carillo_state
+            case 'carrillo':
+                initial_state = carrillo_state
             case _:
                 initial_state = homepage
 

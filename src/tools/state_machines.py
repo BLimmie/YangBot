@@ -226,18 +226,15 @@ class State:
         return self
 
     @classmethod
-    def from_state(cls, other_state, *, machine: Machine = None):
+    def from_state(cls, other_state):
         '''
         Creates a new state object from another state. Performs a deepcopy.
-        ### Parameters
-          `other_state`: The state to copy from.
-          `machine` (Optional): The machine that each `action` should be assigned to. Defaults to the machine attribute of each `action`.
         '''
         self = cls()
         self.embed_info = deepcopy(other_state.embed_info)
         self.data = deepcopy(other_state.data)
         self.actions = [
-            Action(machine or button.machine, callback=button._callback, style=button.style or ButtonStyle.blurple, label=button.label, url=button.url, emoji=button.emoji, row=button.row, disabled=button.disabled)
+            Action(button.machine, callback=button._callback, style=button.style or ButtonStyle.blurple, label=button.label, url=button.url, emoji=button.emoji, row=button.row, disabled=button.disabled)
             for button in other_state.actions
         ]
         return self
@@ -267,6 +264,8 @@ class State:
     def format(self, **kwargs):
         '''
         Loops through `embed_info` and `data` and performs `string.format(**kwargs)` on all string values. This method only accepts keyworded arguments.
+
+        This returns the current state to allow for fluent-style chaining.
         '''
         for key, value in self.embed_info.items():
             if isinstance(value, str):
@@ -275,6 +274,8 @@ class State:
         for key, value in self.data.items():
             if isinstance(value, str):
                 self.data[key] = value.format(**kwargs)
+
+        return self
 
 # ------------------------------------------------------------------------------------------------------------------------------------------------
 #                                                              Beginning of Action

@@ -110,7 +110,7 @@ async def get_menus() -> Tuple[dict, date]:
                 ]
             }
         },
-        'carillo': {
+        'carrillo': {
             'breakfast': {
                 'Main Entres': [
                     'Eggs'
