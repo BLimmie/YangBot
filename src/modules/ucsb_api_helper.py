@@ -88,7 +88,7 @@ async def get_menus() -> Tuple[dict, date]:
                 ]
             }
         },
-        'portolla': {
+        'portola': {
             'breakfast': {
                 'Main Entres': [
                     'Eggs'

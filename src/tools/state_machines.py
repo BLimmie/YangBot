@@ -1,7 +1,7 @@
 from discord import Message, TextChannel, ButtonStyle, Emoji, Embed, Interaction
 from discord.ui import View, Button
 from src.modules.discord_helper import generate_embed
-from typing import List, Coroutine
+from typing import List, Coroutine, Optional
 from copy import deepcopy
 from warnings import warn
 
@@ -26,11 +26,12 @@ class YangView(View):
             self.add_item(button)
         self.interaction_check = machine.interaction_check
 
-    async def on_timeout(self) -> None:
-        timed_out_state = State()
-        timed_out_state.embed_info = self.machine.state.embed_info
-        timed_out_state.data = self.machine.state.data
-        await self.machine.update_state(timed_out_state)
+    async def on_timeout(self) -> None: 
+        timed_out_state = State.from_dict(
+            embed_dict = self.machine.state.embed_info,
+            data = self.machine.state.data
+        )
+        await self.machine.update_state(timed_out_state, append_history=False)
 
 class Machine:
     '''
@@ -42,22 +43,23 @@ class Machine:
       `async interaction_check`: A coroutine that defines the criteria for valid interactions. Default one simply checks if the interaction user is the same as the user who created the machine.
     Note that `interaction_check` is passed an `Interaction` object. If this needs to be replaced, subclass machine and override `interaction_check`.
     ## Attributes
-    See the docstring for `machine.create()` for a list of valid initializer parameters.
+    See the docstring for `Machine.create()` for a list of valid initializer parameters.
       `state`: The current state of the machine. May not be reassigned.
       `data`: Any data related to the machine. Note that `mach[key]` is equivalent to `mach.data[key]`. It is not recommended to modify this, as `update_state` will override any existing values.
       `history`: A history of states the machine was in.
+      `owner`: The user that initialized the machine.
     ## Raises
       `TypeError`: 'Button' object given instead of 'action'
       `AttributeError`: Attempting to reassign `machine.state`.
     '''
     def __init__(self):
         '''
-        Please use `machine.create()` to make a new machine, as this will return a blank object.
+        Please use `Machine.create()` to make a new machine, as this will return a blank object.
         '''
         pass
     
     @classmethod
-    async def create(cls, initial_state, message: Message, * , message_to_edit: Message = None, initial_message: str = 'Initializing...', channel: TextChannel = None, history: List = [], timeout: float = 180, delete_message: bool = False):
+    async def create(cls, initial_state, message: Message, * , message_to_edit: Message | None = None, initial_message: str = 'Initializing...', channel: TextChannel | None = None, history: List = [], timeout: float = 180, delete_message: bool = False):
         '''
         Initializes a machine that may only be modified by and interacted with its creator.
         ### Parameters
@@ -69,31 +71,35 @@ class Machine:
           `history` (Optional): A history of previous states. Defaults to an empty list.
           `timeout` (Optional): A float representing how many seconds of inaction the machine should wait before becoming unusable. Defaults to 180 seconds.
           `delete_message` (Optional): Whether the machine should delete its corresponding message when the machine is deleted (garbage collected). Defaults to `False`.
+        ### Rasies
+        `ValueError`: `message_to_edit` is given alongside `initial_message` and `channel`.
         '''
-
+        if message_to_edit and channel: # initial_message is never falsy so checking it is redundant.
+            raise ValueError("message_to_edit parameter is mutually exclusive with initial_message and channel parameters")
         self = cls()
-        self._owner = message.author
+        self.owner = message.author
         if message_to_edit is not None:
             self._message = message_to_edit
         else:
             self._message = await channel.send(initial_message) if channel is not None else await message.channel.send(initial_message)
         self._delete = delete_message
         self._timeout = timeout # For now, timeout is only used for the built-in methods in View. Machine doesn't do any handling with it.
+        self._recent_view = None
 
         self.history = history
         self.data = {}
 
-        await self.update_state(initial_state)
-        return self
+        return await self.update_state(initial_state, append_history=False)
 
-    async def update_state(self, new_state, interaction: Interaction = None) -> None:
+    async def update_state(self, new_state, interaction: Interaction | None = None, *, append_history: bool = True):
         '''
-        Edits the machine to match the given state. Data is updated via `dict.update()` and is not outright replaced. In other words, the new state should only include updated data, not all data.
+        Edits the machine to match the given state. Data is updated via `dict.update()` and is not outright replaced. In other words, the new state should only include updated data, not all data. The current machine is also returned to allow for fluent-style chaining.
 
-        This method will close the `Interaction` by editing the machine's embed. As such, this should be the last thing called in all `action` objects.
+        This method will close the `Interaction` by editing the machine's embed. As such, this should be the last thing called in all `Action` objects. Passing an Interaction object is not required to use this method though.
 
-        Calling this method without passing `Interaction` implicitly means that this was not triggered by a user. The only relevant difference is that the `history` attribute will not be updated.
+        By default, this method will always add the most recent state to the machine's history. If this needs to be avoided, pass `append_history=False` into this method.
         '''
+        if self._recent_view is not None: self._recent_view.stop()
         view = YangView(self, new_state.actions, timeout=self._timeout) if new_state.actions else None # Check if the action list is non-empty.
         
         if interaction is None:
@@ -103,7 +109,6 @@ class Machine:
                 view=view 
             )
         else:
-            self.history.append(self._current_state)
             await interaction.response.edit_message(
                 content=None,
                 embed=new_state.embed,
@@ -111,14 +116,19 @@ class Machine:
             )
             self._message = interaction.message
         self.data.update(new_state.data)
+        if append_history:
+            self.history.append(self._current_state)
+        print(new_state.embed_info)
         self._current_state = new_state
+        self._recent_view = view
+        return self
     
     async def interaction_check(self, interaction: Interaction) -> bool:
         '''
         Determines if an Interaction is valid by returning either `True` or `False`.
         By default, this checks if the user who created the interaction is the same as the user who created the machine. If this needs to be changed, subclass machine and override this.
         '''
-        return interaction.user.id == self._owner.id
+        return interaction.user.id == self.owner.id
 
     @property
     def state(self):
@@ -139,7 +149,7 @@ class Machine:
             self._message.delete()
 
     def __hash__(self) -> int: # Maybe we can use the hash as an identifier, in case ever need this? Maybe useful for machines interacting with each other?
-        return hash((self.data, self._current_state, self._owner))
+        return hash((self.data, self._current_state, self.owner.id))
 
 # ------------------------------------------------------------------------------------------------------------------------------------------------
 #                                                              Beginning of State
@@ -234,7 +244,7 @@ class State:
         self.embed_info = deepcopy(other_state.embed_info)
         self.data = deepcopy(other_state.data)
         self.actions = [
-            Action(button.machine, callback=button._callback, style=button.style or ButtonStyle.blurple, label=button.label, url=button.url, emoji=button.emoji, row=button.row, disabled=button.disabled)
+            button.copy()
             for button in other_state.actions
         ]
         return self
@@ -265,11 +275,19 @@ class State:
         '''
         Loops through `embed_info` and `data` and performs `string.format(**kwargs)` on all string values. This method only accepts keyworded arguments.
 
+        If 'color' is present in kwargs, then it will be converted to an int.
+
         This returns the current state to allow for fluent-style chaining.
         '''
+        if 'color' in kwargs:
+            self.embed_info['color'] = int(kwargs['color'])
+
         for key, value in self.embed_info.items():
             if isinstance(value, str):
-                self.embed_info[key] = value.format(**kwargs)
+                if key == 'color':
+                    continue
+                else:
+                    self.embed_info[key] = value.format(**kwargs)
 
         for key, value in self.data.items():
             if isinstance(value, str):
@@ -313,7 +331,7 @@ class Action(Button):
     ```
     Note that the variable for the coroutine is reassigned to an Action object.
     '''
-    def __init__(self, *, callback: Coroutine=DefaultCallback , style: ButtonStyle=ButtonStyle.blurple, label: str=None, emoji: Emoji=None, row: int=None, url: str=None, disabled: bool=False):
+    def __init__(self, *, callback: Coroutine=DefaultCallback , style: ButtonStyle=ButtonStyle.blurple, label: str | None=None, emoji: Emoji | None=None, row: int | None=None, url: str | None=None, disabled: bool=False):
         super().__init__(style=style, label=label, emoji=emoji, row=row, url=url, disabled=disabled)
         self.machine = None
         self._callback = callback
@@ -337,8 +355,18 @@ class Action(Button):
 
         return wrap
 
-    def copy(self):
+    def copy(self, *, callback: Coroutine | None=None , style: ButtonStyle | None=None, label: str | None=None, emoji: Emoji | None=None, row: int | None=None, url: str | None=None, disabled: bool=False):
         '''
         Returns a copy of this Action.
+
+        Specifying any parameters will set the copy's parameter to whatever is given. For example, specifying label cause this method to use the given string instead of the original button's label.
         '''
-        return type(self)(callback=self._callback, style=self.style, label=self.label, emoji=self.emoji, row=self.row, url=self.url, disabled=self.disabled)
+        return type(self)(
+            callback=callback or self._callback,
+            style=style or self.style,
+            label=label or self.label,
+            emoji=emoji or self.emoji,
+            row=row or self.row,
+            url=url or self.url,
+            disabled=disabled or self.disabled
+        )
