@@ -14,7 +14,7 @@ class YangView(View):
     A class meant for putting Actions into usable states; discord.py 2.0 requires all buttons be bundled into a 'View' object before passing it onto a message.
     YangView is simply a subclass that is designed to work with machines. 
     
-    This class is not intended for use beyond the source code for state machine classes.
+    This class is not intended for outside use beyond the methods within the state machine classes.
     '''
     def __init__(self, machine, actions: List, *, timeout: float = 180):
         if not actions: raise ValueError("List of actions cannot be empty when creating a YangView object")
@@ -177,6 +177,8 @@ class State:
       `Warning`: Embed_dict passed has a key that isn't in an embed_info
       `TypeError`: `update_embed` was given a non-Embed object.
     '''
+    _valid_embed_keys = {'title', 'description', 'color', 'fields'} # Add more memebers here as embed_info grows
+
     def __init__(self):
         '''
         Initializes a default state, which consists of a basic Embed and empty actions and data. Please use `state.from_dict` (or `from_state`) if you would like the state to be initialized with richer attributes.
@@ -184,8 +186,8 @@ class State:
         self.embed_info = {
             'title': 'Default State',
             'description': 'Nothing much to see here!',
-            "color": 0xFFFFFF,
-            "fields": []
+            'color': 0xFFFFFF,
+            'fields': []
         }
         self.actions = []
         self.data = {}
@@ -197,19 +199,16 @@ class State:
         self.data[key] = value
 
     def __getattr__(self, key):
-        if key in self.embed_info:
+        try:
             return self.embed_info[key]
-        else:
+        except KeyError:
             raise AttributeError(key + " is not a valid Embed attribute.")
 
     def __setattr__(self, name, value):
-        if name in {*self.__dict__.keys(), "embed_info", "actions", "data"}:
-            super().__setattr__(name, value)
+        if name in self._valid_embed_keys:
+            self.embed_info[name] = value
         else:
-            if name in self.embed_info:
-                self.embed_info[name] = value
-            else:
-                raise AttributeError(name + " is not a valid Embed attribute.")
+            super().__setattr__(name, value)
     
     def __contains__(self, item):
         return item in self.data
@@ -226,7 +225,7 @@ class State:
         self = cls()
 
         for key, item in embed_dict.items():
-            if key not in self.embed_info:
+            if key not in self._valid_embed_keys:
                 warn("Invalid embed_dict attribute " + key + " given")
             else:
                 self.embed_info[key] = item
@@ -249,6 +248,25 @@ class State:
         ]
         return self
 
+    @classmethod
+    def make_template(cls, *, title: str='{title}', description: str='{description}', color: int = '{color}', fields: List=[], actions: List=[], **kwargs):
+        '''
+        Generates a template state, one designed to work with `State.format()`. This is useful for making a base state that other states will be derived from (e.g all the titles will be the same/follow the same format).
+        
+        If some information needs to be included in the template, then pass it as a keyword argument. All specified embed keyword args will be passed to `embed_info`, actions will be passed to `actions`, and everything else will be passed to `data`.
+        '''
+        self = cls()
+        self.embed_info = {
+            'title': title,
+            'description': description,
+            'color': color,
+            'fields': fields
+        }
+        self.actions = actions
+        for key, value in kwargs.items():
+            self[key] = value
+        return self
+
     @property
     def embed(self) -> Embed:
         '''
@@ -266,7 +284,7 @@ class State:
         '''
         if not isinstance(new_embed, Embed): raise TypeError("Invalid object type; Expected Embed, got " + new_embed.__class__.__name__)
         for key, value in new_embed.to_dict().items():
-            if key in self.embed_info:
+            if key in self._valid_embed_keys:
                 self.embed_info[key] = value
             else:
                 warn("Invalid embed_dict attribute " + key + " given")
@@ -275,7 +293,7 @@ class State:
         '''
         Loops through `embed_info` and `data` and performs `string.format(**kwargs)` on all string values. This method only accepts keyworded arguments.
 
-        If 'color' is present in kwargs, then it will be converted to an int.
+        Note that even though 'color' is supposed to be an `int`, it may be assigned to `'{color}'` (string) in embed_dict. This method will automatically convert it to an `int`.
 
         This returns the current state to allow for fluent-style chaining.
         '''
@@ -319,17 +337,7 @@ class Action(Button):
     There is an additional attribute, `machine`, that refers to the machine that the button was most recently attached to. This is not a parameter and should not be modified.
     ## Methods
       `copy`: Returns a copy of the button.
-    `action`: A decorator that provides an alternate way to construct Action objects. For example:
-    ```
-    @Action.action(label='Click me!')
-    async def do_something(machine, interaction):
-        print('I was pressed!')
-    ```
-    This is the same as 
-    ```
-    do_something = Action(label='Click me!', callback=do_something)
-    ```
-    Note that the variable for the coroutine is reassigned to an Action object.
+    `action`: A decorator that provides an alternate way to construct Action objects.
     '''
     def __init__(self, *, callback: Coroutine=DefaultCallback , style: ButtonStyle=ButtonStyle.blurple, label: str | None=None, emoji: Emoji | None=None, row: int | None=None, url: str | None=None, disabled: bool=False):
         super().__init__(style=style, label=label, emoji=emoji, row=row, url=url, disabled=disabled)
@@ -359,9 +367,9 @@ class Action(Button):
         '''
         Returns a copy of this Action.
 
-        Specifying any parameters will set the copy's parameter to whatever is given. For example, specifying label cause this method to use the given string instead of the original button's label.
+        Specifying any parameters will set the copy's parameter to whatever is given. For example, specifying label cause this method to use the given string instead of the original action's label.
         '''
-        return type(self)(
+        return self.__class__( # This is used instead of Action() to allow support for inheritance
             callback=callback or self._callback,
             style=style or self.style,
             label=label or self.label,
