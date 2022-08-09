@@ -350,7 +350,7 @@ class help(command_on_message):
 class menu(command_on_message):
     def __init__(self, *args, **kwargs):
         self.commons = ['dlg', 'de', 'portola', 'carrillo', 'ortega'] # 'de' is added in case someone searches for 'de la guerra' instead of 'dlg'
-        self.mealtimes = ['breakfast', 'lunch', 'dinner']
+        self.mealtimes = ['breakfast', 'lunch', 'dinner', 'brunch']
         self.day = date.today().day # Maybe we can replac
         super().__init__(*args, **kwargs)
         # If get_menus is asynchronous, then the menu attribute cannot be added here.
@@ -373,7 +373,7 @@ class menu(command_on_message):
             # Tries to get the command to search for. Uses a pseudo-auto-fill (so '$menu port' is the same as '$menu portola')
             contents = message.content.lower().split()
             dining_commons = contents[1]
-            option = contents[-1] if len(contents) >= 2 else None
+            option = contents[-1] if len(contents) > 2 else None
             for commons in self.commons:
                 if commons.startswith(dining_commons):
                     dining_commons = commons if commons != 'de' else 'dlg' # Reassign 'de' alias to 'dlg'
@@ -386,13 +386,14 @@ class menu(command_on_message):
                     if mealtime.startswith(option):
                         option = mealtime
                         break
+                else:
+                    option = None
 
         except IndexError:
             # If no argument is specified, then go to homepage
             dining_commons = None
             option = None
         
-        # First define homepage and base states. Actions will be added later after they are defined.
         homepage = State.from_dict(
             embed_dict={
                 'title': 'Home Menu',
@@ -405,28 +406,18 @@ class menu(command_on_message):
             }
         )
 
-        menu_selector = State.from_dict(
-            embed_dict={
-                'title': '{full_commons}',
-                'description': 'Please select a menu',
-                'color': 0x9e7402
-            },
-            data={
-                'position': '{commons}',
-                'mealtime': None
-            }
+        menu_selector = State.make_template(
+            title='{full_commons}',
+            description='Please select a menu',
+            color=0x9e7402,
+            position='{commons}',
+            mealtime=None
         )
 
-        meal = State.from_dict(
-            embed_dict={
-                'title': '{full_mealtime}',
-                'description': None,
-                'fields': [],
-                'color': '{color}'
-            },
-            data={
-                'mealtime': '{mealtime}'
-            }
+        meal = State.make_template(
+            title='{full_mealtime}',
+            description=None,
+            mealtime= '{mealtime}'
         )
 
         # Next, define all the actions
@@ -486,45 +477,44 @@ class menu(command_on_message):
         async def breakfast(machine: Machine, interaction):
             working_menu = self.menu[machine['position']]['breakfast'] # This first goes to the current commons, then grabs breakfast.
             new_state = State.from_state(meal).format(full_mealtime=convert_to_proper(machine['position']) + ' Breakfast', color=0xf2e96b, mealtime='breakfast')
-            fields = []
-            for key, value in working_menu.items():
-                fields.append({
-                    'name': key,
-                    'value': process_menu(value)
-                })
-            new_state.fields = fields
+            new_state.fields = [
+                {
+                    'name': station,
+                    'value': process_menu(food)
+                }
+                for station, food in working_menu.items()
+            ]
             await machine.update_state(new_state, interaction)
 
         @Action.action(label='Lunch', row=0)
         async def lunch(machine, interaction):
             working_menu = self.menu[machine['position']]['lunch']
             new_state = State.from_state(meal).format(full_mealtime=convert_to_proper(machine['position']) + ' Lunch', color=0xACBF6D, mealtime='lunch')
-            fields = []
-            for key, value in working_menu.items():
-                fields.append({
-                    'name': key,
-                    'value': process_menu(value)
-                })
-            new_state.fields = fields
+            new_state.fields = [
+                {
+                    'name': station,
+                    'value': process_menu(food)
+                }
+                for station, food in working_menu.items()
+            ]
             await machine.update_state(new_state, interaction)
 
         @Action.action(label='Dinner', row=0)
         async def dinner(machine, interaction):
             working_menu = self.menu[machine['position']]['dinner']  
             new_state = State.from_state(meal).format(full_mealtime=convert_to_proper(machine['position']) + ' Dinner', color=0x773738, mealtime='dinner')
-            fields = []
-            for key, value in working_menu.items():
-                fields.append({
-                    'name': key,
-                    'value': process_menu(value)
-                })
-            new_state.fields = fields
+            new_state.fields = [
+                {
+                    'name': station,
+                    'value': process_menu(food)
+                }
+                for station, food in working_menu.items()
+            ]
             await machine.update_state(new_state, interaction)   
 
         # Add the Action buttons to the states now that they've all been defined
         homepage.actions = [
-                go_to_dlg, go_to_ortega, go_to_portola, go_to_carrillo,
-                back
+                go_to_dlg, go_to_ortega, go_to_portola, go_to_carrillo
         ]
         menu_selector.actions = [
             breakfast, lunch, dinner,
@@ -532,22 +522,28 @@ class menu(command_on_message):
         ]
         meal.actions = [back.copy(row=0), home.copy(row=0)]
         # And finally, determine the initial state.
-        '''
-        match dining_commons:
-            case 'dlg':
-                initial_state = dlg_state
-            case 'ortega':
-                initial_state = ortega_state
-            case 'portola':
-                initial_state = portola_state
-            case 'carrillo':
-                initial_state = carrillo_state
-            case _:
-                initial_state = homepage
-        '''
-        
-        initial_state = homepage
-        await Machine.create(initial_state, message, message_to_edit=message_to_replace, timeout=10)
+        if option:
+            match option:
+                case 'breakfast' | 'brunch':
+                    color=0xf2e96b
+                case 'lunch':
+                    color=0xACBF6D
+                case 'dinner':
+                    color=0x773738
+            initial_state = State.from_state(meal).format(full_mealtime=convert_to_proper(dining_commons) + ' ' + option.capitalize(), color=color, mealtime=option)
+            initial_state.fields = [
+                {
+                    'name': station,
+                    'value': process_menu(food)
+                }
+                for station, food in self.menu[dining_commons][option].items()
+            ]
+        elif dining_commons:
+            initial_state = State.from_state(menu_selector).format(full_commons=convert_to_proper(dining_commons), commons=dining_commons)
+        else:
+            initial_state = homepage
+
+        await Machine.create(initial_state, message, initial_message='Typing...', message_to_edit=message_to_replace, timeout=10)
         return None
 
     @staticmethod

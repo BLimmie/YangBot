@@ -46,10 +46,10 @@ class Machine:
     See the docstring for `Machine.create()` for a list of valid initializer parameters.
       `state`: The current state of the machine. May not be reassigned.
       `data`: Any data related to the machine. Note that `mach[key]` is equivalent to `mach.data[key]`. It is not recommended to modify this, as `update_state` will override any existing values.
-      `history`: A history of states the machine was in.
-      `owner`: The user that initialized the machine.
+      `history`: A history of states the machine was in. If this attribute is set to `None`, then a history will not be tracked.
+      `owner`: The user that initialized the machine. This attribute will not be updated alongside the user object, so it may unexpectedly become obsolete.
     ## Raises
-      `TypeError`: 'Button' object given instead of 'action'
+      `TypeError`: 'Button' object given instead of 'Action'
       `AttributeError`: Attempting to reassign `machine.state`.
     '''
     def __init__(self):
@@ -59,7 +59,7 @@ class Machine:
         pass
     
     @classmethod
-    async def create(cls, initial_state, message: Message, * , message_to_edit: Message | None = None, initial_message: str = 'Initializing...', channel: TextChannel | None = None, history: List = [], timeout: float = 180, delete_message: bool = False):
+    async def create(cls, initial_state, message: Message, * , message_to_edit: Message | None = None, initial_message: str = 'Initializing...', channel: TextChannel | None = None, history: List | None = [], timeout: float = 180, delete_message: bool = False):
         '''
         Initializes a machine that may only be modified by and interacted with its creator.
         ### Parameters
@@ -68,7 +68,7 @@ class Machine:
           `message_to_edit` (Optional): Whether the machine should edit an existing message instead of creating a new one. Sends a new message by default. This parameter is also mutually exclusive with the following two parameters.
           `initial_message` (Optional): The content of the message to send while the machine prepares itself. Defaults to 'Initializing...'
           `channel` (Optional): The channel that the machine should initialize in. Defaults to `message.channel`.
-          `history` (Optional): A history of previous states. Defaults to an empty list.
+          `history` (Optional): A history of previous states. Defaults to an empty list. If you would not like a history to be kept, pass `None` to this parameter.
           `timeout` (Optional): A float representing how many seconds of inaction the machine should wait before becoming unusable. Defaults to 180 seconds.
           `delete_message` (Optional): Whether the machine should delete its corresponding message when the machine is deleted (garbage collected). Defaults to `False`.
         ### Rasies
@@ -91,13 +91,14 @@ class Machine:
 
         return await self.update_state(initial_state, append_history=False)
 
-    async def update_state(self, new_state, interaction: Interaction | None = None, *, append_history: bool = True):
+    async def update_state(self, new_state, interaction: Interaction | None = None, *, append_history: bool = True, replace_data: bool = False):
         '''
-        Edits the machine to match the given state. Data is updated via `dict.update()` and is not outright replaced. In other words, the new state should only include updated data, not all data. The current machine is also returned to allow for fluent-style chaining.
-
-        This method will close the `Interaction` by editing the machine's embed. As such, this should be the last thing called in all `Action` objects. Passing an Interaction object is not required to use this method though.
-
-        By default, this method will always add the most recent state to the machine's history. If this needs to be avoided, pass `append_history=False` into this method.
+        Edits the machine to match the given state. The current machine is returned to allow for fluent-style chaining. 
+        ### Parameters
+          `new_state`: The state to update to. The machine will update its own attributes based on the attributes of `new_state`.
+          `interaction` (Optional): An Interaction object, usually provided by an Action's callback. This method will close the `Interaction` by editing the machine's embed. As such, this should be the last thing called in all `Action` objects. Passing an Interaction object is not required to use this method though.
+          `append_history` (Optional): By default, this method will always add the most recent state to the machine's history. If this needs to be avoided, set this parameter to `False`.
+          `replace_data` (Optional): Data is updated via `dict.update()` and is not outright replaced. If you would like to replace the data dictionary outright, set this to `True`. 
         '''
         if self._recent_view is not None: self._recent_view.stop()
         view = YangView(self, new_state.actions, timeout=self._timeout) if new_state.actions else None # Check if the action list is non-empty.
@@ -115,10 +116,13 @@ class Machine:
                 view=view
             )
             self._message = interaction.message
-        self.data.update(new_state.data)
-        if append_history:
+        if replace_data:
+            self.data = new_state.data
+        else:
+            self.data.update(new_state.data)
+        if append_history and self.history is not None:
             self.history.append(self._current_state)
-        print(new_state.embed_info)
+
         self._current_state = new_state
         self._recent_view = view
         return self
