@@ -351,48 +351,22 @@ class menu(command_on_message):
     def __init__(self, *args, **kwargs):
         self.commons = ['dlg', 'de', 'portola', 'carrillo', 'ortega'] # 'de' is added in case someone searches for 'de la guerra' instead of 'dlg'
         self.mealtimes = ['breakfast', 'lunch', 'dinner', 'brunch']
-        self.day = date.today().day # Maybe we can replac
+        self.day = 0 # Force a menu update due to get_menu being asynchronous.
         super().__init__(*args, **kwargs)
-        # If get_menus is asynchronous, then the menu attribute cannot be added here.
 
     async def action(self, message: Message):
         '''
         Roadmap Idea - Daniel. I've implemented code and pseudo-code for this idea below. This is not final by any means.
 
         First, check menu. If it is outdated, then update it.
-        Second, parse the user's message. Check for a commons first, then a mealtime. Assign the outputs to variables (None if user doesn't provide anything)
-        Third, create base states and homepage. Then fill in everything.
-        Fourth, using the user's information, put the machine into the right state.
+        Second, create some base states and all the actions.
+        Third, parse the user's information
+        Fourth, using the parsed information, put the machine into the right initial state.
         '''
         message_to_replace = None
         #if date.today().day != self.day: # If the days fail to align, update the menu. It's also important to note *when* the menu gets updated, as this may fail if only day is checked.
         self.menu, self.day = await get_menus()
         #    message_to_replace = await message.channel.send('Please wait while we update the menus...')
-            
-        try:
-            # Tries to get the command to search for. Uses a pseudo-auto-fill (so '$menu port' is the same as '$menu portola')
-            contents = message.content.lower().split()
-            dining_commons = contents[1]
-            option = contents[-1] if len(contents) > 2 else None
-            for commons in self.commons:
-                if commons.startswith(dining_commons):
-                    dining_commons = commons if commons != 'de' else 'dlg' # Reassign 'de' alias to 'dlg'
-                    break
-            else: # If the user input cannot be determined, show all
-                dining_commons = None
-
-            if option is not None:
-                for mealtime in self.mealtimes:
-                    if mealtime.startswith(option):
-                        option = mealtime
-                        break
-                else:
-                    option = None
-
-        except IndexError:
-            # If no argument is specified, then go to homepage
-            dining_commons = None
-            option = None
         
         homepage = State.from_dict(
             embed_dict={
@@ -521,7 +495,34 @@ class menu(command_on_message):
             back, home
         ]
         meal.actions = [back.copy(row=0), home.copy(row=0)]
-        # And finally, determine the initial state.
+
+        # And finally, parse the user's information and determine an initial state
+        try:
+            # Tries to get the command to search for. Uses a pseudo-auto-fill (so '$menu port' is the same as '$menu portola')
+            contents = message.content.lower().split()
+            dining_commons = contents[1]
+            option = contents[-1] if len(contents) > 2 else None
+            for commons in self.commons:
+                if commons.startswith(dining_commons):
+                    dining_commons = commons if commons != 'de' else 'dlg' # Reassign 'de' alias to 'dlg'
+                    break
+            else: # If the user input cannot be determined, show homepage
+                dining_commons = None
+                option = None
+
+            if option and dining_commons: # It only makes sense to have option when dining_commons is valid
+                for mealtime in self.mealtimes:
+                    if mealtime.startswith(option):
+                        option = mealtime
+                        break
+                else:
+                    option = None
+
+        except IndexError:
+            # If no argument is specified, then go to homepage
+            dining_commons = None
+            option = None
+
         if option:
             match option:
                 case 'breakfast' | 'brunch':

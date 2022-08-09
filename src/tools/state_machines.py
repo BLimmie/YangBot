@@ -47,7 +47,8 @@ class Machine:
       `state`: The current state of the machine. May not be reassigned.
       `data`: Any data related to the machine. Note that `mach[key]` is equivalent to `mach.data[key]`. It is not recommended to modify this, as `update_state` will override any existing values.
       `history`: A history of states the machine was in. If this attribute is set to `None`, then a history will not be tracked.
-      `owner`: The user that initialized the machine. This attribute will not be updated alongside the user object, so it may unexpectedly become obsolete.
+      `owner`: The user that initialized the machine. This attribute will not be updated alongside the user object, so some attributes from it may unexpectedly become obsolete. 
+      It is recommended to perform `guild.get_member(machine.owner.id)` if you need an up-to-date user.
     ## Raises
       `TypeError`: 'Button' object given instead of 'Action'
       `AttributeError`: Attempting to reassign `machine.state`.
@@ -63,12 +64,12 @@ class Machine:
         '''
         Initializes a machine that may only be modified by and interacted with its creator.
         ### Parameters
-          `initial_state`: A state object that the machine should put itself into upon creation. Note that the machine parameter for all `action` objects of the initial state should be unspecified.
+          `initial_state`: A state object that the machine should put itself into upon creation.
           `message`: The message that initialized the machine.
           `message_to_edit` (Optional): Whether the machine should edit an existing message instead of creating a new one. Sends a new message by default. This parameter is also mutually exclusive with the following two parameters.
           `initial_message` (Optional): The content of the message to send while the machine prepares itself. Defaults to 'Initializing...'
           `channel` (Optional): The channel that the machine should initialize in. Defaults to `message.channel`.
-          `history` (Optional): A history of previous states. Defaults to an empty list. If you would not like a history to be kept, pass `None` to this parameter.
+          `history` (Optional): A history of previous states. Defaults to an empty list. Pass `None` to this parameter if you don't want the machine to track its history.
           `timeout` (Optional): A float representing how many seconds of inaction the machine should wait before becoming unusable. Defaults to 180 seconds.
           `delete_message` (Optional): Whether the machine should delete its corresponding message when the machine is deleted (garbage collected). Defaults to `False`.
         ### Rasies
@@ -77,7 +78,6 @@ class Machine:
         if message_to_edit and channel: # initial_message is never falsy so checking it is redundant.
             raise ValueError("message_to_edit parameter is mutually exclusive with initial_message and channel parameters")
         self = cls()
-        self.owner = message.author
         if message_to_edit is not None:
             self._message = message_to_edit
         else:
@@ -87,6 +87,7 @@ class Machine:
         self._recent_view = None
 
         self.history = history
+        self.owner = message.author
         self.data = {}
 
         return await self.update_state(initial_state, append_history=False)
@@ -97,8 +98,8 @@ class Machine:
         ### Parameters
           `new_state`: The state to update to. The machine will update its own attributes based on the attributes of `new_state`.
           `interaction` (Optional): An Interaction object, usually provided by an Action's callback. This method will close the `Interaction` by editing the machine's embed. As such, this should be the last thing called in all `Action` objects. Passing an Interaction object is not required to use this method though.
-          `append_history` (Optional): By default, this method will always add the most recent state to the machine's history. If this needs to be avoided, set this parameter to `False`.
-          `replace_data` (Optional): Data is updated via `dict.update()` and is not outright replaced. If you would like to replace the data dictionary outright, set this to `True`. 
+          `append_history` (Optional): By default, this method will always add the most recent state to the machine's history (if the history attribute is not `None`). If this needs to be avoided, set this parameter to `False`.
+          `replace_data` (Optional): Data is updated via `dict.update()` and is not outright replaced. If you would like to replace the machine's data dictionary outright (set it to a new dictionary), set this to `True`. 
         '''
         if self._recent_view is not None: self._recent_view.stop()
         view = YangView(self, new_state.actions, timeout=self._timeout) if new_state.actions else None # Check if the action list is non-empty.
@@ -170,22 +171,26 @@ class State:
     ## Methods
       `@classmethod from_dict`: Creates a state based on the given dictionaries. Performs a shallow copy on all passed parameters.
       `@classmethod from_state`: Creates a new state object from another state. Performs a deepcopy.
+      `@classmethod make_template`: Generates a template state, one designed to work with `State.format()`. This is useful for making a base state that other states will be derived from.
       `update_embed`: Updates `embed_info` based on the given Embed.
-      `format`: Loops through `embed_info` and `data`, and performs `string.format(**kwargs)` on all string objects.
+      `format`: Loops through `embed_info` and `data`, and performs `string.format(**kwargs)` on all string values.
     ## Behavior
-    This class behaves like a dictionary and object, allowing for keyed and dotted access. 
-      `state_obj.key` (dotted access) is equivalent to `state_obj.embed_info[key]`. Setting values behaves similarly.
-      `state_obj[key]` (keyed access) is equivalent to `state_obj.data[key]`. Setting values behaves similarly.
-      `item in state_obj` is equivalent to `item in state_obj.data`.
+    This class has behavior allowing for convenient setting and retrieval. The following statements are equivalent.
+    ```
+    state.key == state.embed_info[key]
+    state[key] == state.data[key]
+    item in state == item in state.data
+    ```
+    These may be used for both getting and setting.
     ## Raises
       `Warning`: Embed_dict passed has a key that isn't in an embed_info
       `TypeError`: `update_embed` was given a non-Embed object.
     '''
-    _valid_embed_keys = {'title', 'description', 'color', 'fields'} # Add more memebers here as embed_info grows
+    _VALID_EMBED_KEYS = {'title', 'description', 'color', 'fields'} # Add more memebers here as embed_info grows
 
     def __init__(self):
         '''
-        Initializes a default state, which consists of a basic Embed and empty actions and data. Please use `state.from_dict` (or `from_state`) if you would like the state to be initialized with richer attributes.
+        Initializes a default state, which consists of a basic Embed and empty actions and data. Please use one of State's classmethods to initialize a richer state.
         '''
         self.embed_info = {
             'title': 'Default State',
@@ -206,10 +211,10 @@ class State:
         try:
             return self.embed_info[key]
         except KeyError:
-            raise AttributeError(key + " is not a valid Embed attribute.")
+            raise AttributeError("Invalid embed_info key given: " + key)
 
     def __setattr__(self, name, value):
-        if name in self._valid_embed_keys:
+        if name in self._VALID_EMBED_KEYS:
             self.embed_info[name] = value
         else:
             super().__setattr__(name, value)
@@ -229,7 +234,7 @@ class State:
         self = cls()
 
         for key, item in embed_dict.items():
-            if key not in self._valid_embed_keys:
+            if key not in self._VALID_EMBED_KEYS:
                 warn("Invalid embed_dict attribute " + key + " given")
             else:
                 self.embed_info[key] = item
@@ -241,7 +246,7 @@ class State:
     @classmethod
     def from_state(cls, other_state):
         '''
-        Creates a new state object from another state. Performs a deepcopy.
+        Creates a new state object from another state. Performs a deepcopy on everything except Action objets.
         '''
         self = cls()
         self.embed_info = deepcopy(other_state.embed_info)
@@ -288,7 +293,7 @@ class State:
         '''
         if not isinstance(new_embed, Embed): raise TypeError("Invalid object type; Expected Embed, got " + new_embed.__class__.__name__)
         for key, value in new_embed.to_dict().items():
-            if key in self._valid_embed_keys:
+            if key in self._VALID_EMBED_KEYS:
                 self.embed_info[key] = value
             else:
                 warn("Invalid embed_dict attribute " + key + " given")
