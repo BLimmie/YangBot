@@ -394,49 +394,10 @@ class menu(command_on_message):
             mealtime= '{mealtime}'
         )
 
-        # Next, define all the actions
-        @Action.action(label='Back', style=ButtonStyle.gray, row=1)
-        async def back(machine: Machine, interaction: Interaction):
-            if len(machine.history) < 1: return await interaction.response.send_message("There's nothing to go back to!", ephemeral=True) # It only makes sense to go back when there is at least two states present.
-            new_state = machine.history.pop(-1)
-            await machine.update_state(new_state, interaction, append_history=False)
-
-        @Action.action(label='Home', style=ButtonStyle.green, row=1)
-        async def home(machine: Machine, interaction):
-            await machine.update_state(homepage, interaction)
-
-        @Action.action(label='De La Guerra', row=0)
-        async def go_to_dlg(machine: Machine, interaction):
-            await machine.update_state(
-                State.from_state(menu_selector).format(full_commons='De La Guerra', commons='dlg'),
-                interaction
-            )
-
-        @Action.action(label='Ortega', row=0)
-        async def go_to_ortega(machine: Machine, interaction):
-            await machine.update_state(
-                State.from_state(menu_selector).format(full_commons='Ortega', commons='ortega'),
-                interaction
-            )
-
-        @Action.action(label='Portola', row=0)
-        async def go_to_portola(machine: Machine, interaction):
-            await machine.update_state(
-                State.from_state(menu_selector).format(full_commons='Portola', commons='portola'),
-                interaction
-            )
-
-        @Action.action(label='Carrillo', row=0)
-        async def go_to_carrillo(machine: Machine, interaction):
-            await machine.update_state(
-                State.from_state(menu_selector).format(full_commons='Carrillo', commons='carrillo'),
-                interaction
-        )   
-
-        # Then define the Breakfast, lunch, and dinner buttons, along with some helper functions to process menu and convert to proper names.
+        # Next, define the base actions and some helper functions
         def process_menu(menu: List) -> str:
             final_string = ''
-            for item in menu[:-1]: # Skips the last element
+            for item in menu[:-1]:
                 final_string += "·" + item + "\n"
             return final_string + "·" + menu[-1]
 
@@ -447,36 +408,34 @@ class menu(command_on_message):
                 case _:
                     return commons.capitalize()
 
-        @Action.action(label='Breakfast', row=0)
-        async def breakfast(machine: Machine, interaction):
-            working_menu = self.menu[machine['position']]['breakfast'] # This first goes to the current commons, then grabs breakfast.
-            new_state = State.from_state(meal).format(full_mealtime=convert_to_proper(machine['position']) + ' Breakfast', color=0xf2e96b, mealtime='breakfast')
-            new_state.fields = [
-                {
-                    'name': station,
-                    'value': process_menu(food)
-                }
-                for station, food in working_menu.items()
-            ]
-            await machine.update_state(new_state, interaction)
+        def convert_to_improper(commons: str) -> str:
+            match commons:
+                case 'De La Guerra':
+                    return 'dlg'
+                case _:
+                    return commons.lower()
 
-        @Action.action(label='Lunch', row=0)
-        async def lunch(machine, interaction):
-            working_menu = self.menu[machine['position']]['lunch']
-            new_state = State.from_state(meal).format(full_mealtime=convert_to_proper(machine['position']) + ' Lunch', color=0xACBF6D, mealtime='lunch')
-            new_state.fields = [
-                {
-                    'name': station,
-                    'value': process_menu(food)
-                }
-                for station, food in working_menu.items()
-            ]
-            await machine.update_state(new_state, interaction)
+        @Action.new(label='Back', style=ButtonStyle.gray, row=1)
+        async def back(machine: Machine, interaction: Interaction):
+            if len(machine.history) < 1: return await interaction.response.send_message("There's nothing to go back to!", ephemeral=True) # It only makes sense to go back when there is at least two states present.
+            new_state = machine.history.pop(-1)
+            await machine.update_state(new_state, interaction, append_history=False)
 
-        @Action.action(label='Dinner', row=0)
-        async def dinner(machine, interaction):
-            working_menu = self.menu[machine['position']]['dinner']  
-            new_state = State.from_state(meal).format(full_mealtime=convert_to_proper(machine['position']) + ' Dinner', color=0x773738, mealtime='dinner')
+        @Action.new(label='Home', style=ButtonStyle.green, row=1)
+        async def home(machine: Machine, interaction):
+            await machine.update_state(homepage, interaction)
+
+        @Action.new(label='Commons', row=0)
+        async def go_to_commons(machine: Machine, interaction, action: Action):
+            await machine.update_state(
+                State.from_state(menu_selector).format(full_commons=action.label, commons=convert_to_improper(action.label)),
+                interaction
+            )
+
+        @Action.new(label='Mealtime', row=0)
+        async def go_to_meal(machine: Machine, interaction, action: Action):
+            working_menu = self.menu[machine['position']][action.label.lower()] # This first goes to the current commons, then grabs the meal.
+            new_state = State.from_state(meal).format(full_mealtime=convert_to_proper(machine['position']) + ' ' + action.label, color=0xf2e96b, mealtime=action.label.lower())
             new_state.fields = [
                 {
                     'name': station,
@@ -484,14 +443,14 @@ class menu(command_on_message):
                 }
                 for station, food in working_menu.items()
             ]
-            await machine.update_state(new_state, interaction)   
+            await machine.update_state(new_state, interaction)  
 
         # Add the Action buttons to the states now that they've all been defined
         homepage.actions = [
-                go_to_dlg, go_to_ortega, go_to_portola, go_to_carrillo
+                go_to_commons.copy(label='De La Guerra'), go_to_commons.copy(label='Ortega'), go_to_commons.copy(label='Portola'), go_to_commons.copy(label='Carrillo')
         ]
         menu_selector.actions = [
-            breakfast, lunch, dinner,
+            go_to_meal.copy(label='Breakfast'), go_to_meal.copy(label='Lunch'), go_to_meal.copy(label='Dinner'), # Update this to be more dynamic
             back, home
         ]
         meal.actions = [back.copy(row=0), home.copy(row=0)]
@@ -525,8 +484,10 @@ class menu(command_on_message):
 
         if option:
             match option:
-                case 'breakfast' | 'brunch':
-                    color=0xf2e96b
+                case 'breakfast':
+                    color=0xF2E96B
+                case 'brunch':
+                    color=0xDEA24E
                 case 'lunch':
                     color=0xACBF6D
                 case 'dinner':

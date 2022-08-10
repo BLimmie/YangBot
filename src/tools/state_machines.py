@@ -1,9 +1,10 @@
 from discord import Message, TextChannel, ButtonStyle, Emoji, Embed, Interaction
 from discord.ui import View, Button
 from src.modules.discord_helper import generate_embed
-from typing import List, Coroutine, Optional
+from typing import List, Coroutine
 from copy import deepcopy
 from warnings import warn
+from inspect import signature
 
 # ------------------------------------------------------------------------------------------------------------------------------------------------
 #                                                              Beginning of Machine
@@ -335,8 +336,8 @@ class Action(Button):
     ## Parameters and Attributes
     All of the following parameters are keyword-only and optional. Unless otherwise specified, all parameters default to `None`. 
     Every parameter (except callback) is also an equivalently named attribute.
-      `callback`: The coroutine that will be invoked when the button is pressed. It will be executed as `callback(machine, interaction)`, where interaction is a `discord.Interaction` object. Defaults to changing to a generic state.
-       It is expected that `callback` will generate a state object and call `update_state` onto its passed machine.
+      `callback`: The coroutine that will be invoked when an Action object is interacted with. Defaults to changing to a generic state. 
+       Please see the callback section for further details on this parameter.
       `style`: The style for the button. Defaults to `ButtonStyle.blurple`.
       `label`: The label (text) of the button.
       `emoji`: A `discord.Emoji` object, representing the emoji of the button.
@@ -345,8 +346,18 @@ class Action(Button):
       `disabled`: Whether the button should invoke `callback` whenever pressed. Defaults to `False`.
     There is an additional attribute, `machine`, that refers to the machine that the button was most recently attached to. This is not a parameter and should not be modified.
     ## Methods
-      `copy`: Returns a copy of the button.
-    `action`: A decorator that provides an alternate way to construct Action objects.
+      `copy`: Returns a shallow copy of the button.
+      `new`: A decorator that provides an alternate way to construct Action objects. See its docstring for more details.
+    ## Callback
+    Callback should be defined like so, where machine is the `Machine` this Action is attached to, and interaction is a `discord.Interaction` object.
+    ```python
+    async def callback(machine, interaction)
+        # Do stuff...
+        await machine.update_state(...)
+    ```
+    A third parameter may be included, which corresponds to the Action object that invoked callback. Including this is not required and is completely optional.
+    
+    As the sample code suggests, it is expected that `callback` will generate a state object and call `update_state` onto its passed machine.
     '''
     def __init__(self, *, callback: Coroutine=DefaultCallback , style: ButtonStyle=ButtonStyle.blurple, label: str | None=None, emoji: Emoji | None=None, row: int | None=None, url: str | None=None, disabled: bool=False):
         super().__init__(style=style, label=label, emoji=emoji, row=row, url=url, disabled=disabled)
@@ -354,14 +365,17 @@ class Action(Button):
         self._callback = callback
 
     async def callback(self, interaction):
-        await self._callback(self.machine, interaction)
+        if len(signature(self._callback).parameters) == 2:
+            await self._callback(self.machine, interaction)
+        else:
+            await self._callback(self.machine, interaction, self)
 
     @classmethod
-    def action(cls, **kwargs):
+    def new(cls, **kwargs):
         '''
         A decorator used to be able to construct Action objects more easily. Sample use:
-        ```
-        @Action.action(label='Click me!')
+        ```python
+        @Action.new(label='Click me!')
         async def do_something(machine, interaction):
             print('I was pressed!')
         ```
