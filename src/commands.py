@@ -396,12 +396,18 @@ class menu(command_on_message):
 
         # Next, define the base actions and some helper functions
         def process_menu(menu: List) -> str:
+            '''
+            Turn a list of food into a usable string.
+            '''
             final_string = ''
             for item in menu[:-1]:
                 final_string += "·" + item + "\n"
             return final_string + "·" + menu[-1]
 
         def convert_to_proper(commons: str) -> str:
+            '''
+            Convert short-hand code to full name.
+            '''
             match commons:
                 case 'dlg':
                     return 'De La Guerra'
@@ -409,11 +415,44 @@ class menu(command_on_message):
                     return commons.capitalize()
 
         def convert_to_improper(commons: str) -> str:
+            '''
+            Convert full name to short-hand code.
+            '''
             match commons:
                 case 'De La Guerra':
                     return 'dlg'
                 case _:
                     return commons.lower()
+
+        def determine_common_state(available_meals: dict, *, proper_commons: str | None = None, improper_commons: str | None = None) -> State:
+            '''
+            Generates a menu_selector for a commons with the correct buttons. If the commons is closed, then it will return a state saying so.
+            '''
+            proper_commons = proper_commons or convert_to_proper(improper_commons)
+            improper_commons = improper_commons or convert_to_improper(proper_commons)
+
+            if available_meals:
+                common_state = State.from_state(menu_selector).format(full_commons=proper_commons, commons=improper_commons)
+                common_state.actions = [
+                    go_to_meal.copy(label=mealtime.capitalize())
+                    for mealtime in available_meals
+                ] + [back, home]
+                return common_state
+            else:
+                return State.from_dict(
+                    embed_dict={
+                        'title': proper_commons,
+                        'description': 'This dining hall is closed for today.',
+                        'color': 0x545454
+                    },
+                    actions=[
+                        back.copy(row=0), home.copy(row=0)
+                    ],
+                    data={
+                        'position': improper_commons,
+                        'mealtime': None
+                    }
+                )
 
         @Action.new(label='Back', style=ButtonStyle.gray, row=1)
         async def back(machine: Machine, interaction: Interaction):
@@ -424,13 +463,6 @@ class menu(command_on_message):
         @Action.new(label='Home', style=ButtonStyle.green, row=1)
         async def home(machine: Machine, interaction):
             await machine.update_state(homepage, interaction)
-
-        @Action.new(label='Commons', row=0)
-        async def go_to_commons(machine: Machine, interaction, action: Action):
-            await machine.update_state(
-                State.from_state(menu_selector).format(full_commons=action.label, commons=convert_to_improper(action.label)),
-                interaction
-            )
 
         @Action.new(label='Mealtime', row=0)
         async def go_to_meal(machine: Machine, interaction, action: Action):
@@ -445,13 +477,15 @@ class menu(command_on_message):
             ]
             await machine.update_state(new_state, interaction)  
 
-        # Add the Action buttons to the states now that they've all been defined
+        @Action.new(label='Commons', row=0)
+        async def go_to_commons(machine: Machine, interaction, action: Action):
+            commons = action.label
+            available_meals = self.menu[convert_to_improper(commons)]
+            await machine.update_state(determine_common_state(available_meals, proper_commons=commons), interaction)
+
+        # Add the Action buttons to the states now that they've all been defined (except for menu_selector, which creates its buttons dynamically)
         homepage.actions = [
                 go_to_commons.copy(label='De La Guerra'), go_to_commons.copy(label='Ortega'), go_to_commons.copy(label='Portola'), go_to_commons.copy(label='Carrillo')
-        ]
-        menu_selector.actions = [
-            go_to_meal.copy(label='Breakfast'), go_to_meal.copy(label='Lunch'), go_to_meal.copy(label='Dinner'), # Update this to be more dynamic
-            back, home
         ]
         meal.actions = [back.copy(row=0), home.copy(row=0)]
 
@@ -482,7 +516,9 @@ class menu(command_on_message):
             dining_commons = None
             option = None
 
-        if option:
+        if not dining_commons: # If the inputs failed to parse, go to homepage
+            initial_state = homepage
+        elif option in self.menu[dining_commons]: # Check if option exists in the menu
             match option:
                 case 'breakfast':
                     color=0xF2E96B
@@ -493,17 +529,24 @@ class menu(command_on_message):
                 case 'dinner':
                     color=0x773738
             initial_state = State.from_state(meal).format(full_mealtime=convert_to_proper(dining_commons) + ' ' + option.capitalize(), color=color, mealtime=option)
-            initial_state.fields = [
-                {
-                    'name': station,
-                    'value': process_menu(food)
+            initial_state.fields = [{
+                'name': station,
+                'value': process_menu(food)
                 }
                 for station, food in self.menu[dining_commons][option].items()
             ]
-        elif dining_commons:
-            initial_state = State.from_state(menu_selector).format(full_commons=convert_to_proper(dining_commons), commons=dining_commons)
-        else:
-            initial_state = homepage
+        else: # If it doesn't, attempt to reassign breakfast and lunch to brunch. Finally, since dining_commons is valid, go to its page.
+            if option in ('breakfast', 'lunch') and ('brunch' in self.menu[dining_commons]): # Reassign "breakfast" and "lunch" to "brunch" if neither of the former are being served
+                initial_state = State.from_state(meal).format(full_mealtime=convert_to_proper(dining_commons) + ' Brunch', color=0xDEA24E, mealtime='brunch')
+                initial_state.fields = [
+                    {
+                        'name': station,
+                        'value': process_menu(food)
+                    }
+                    for station, food in self.menu[dining_commons]['brunch'].items()
+                ]
+            else:
+                initial_state = determine_common_state(self.menu[dining_commons], improper_commons=dining_commons)
 
         await Machine.create(initial_state, message, initial_message='Typing...', message_to_edit=message_to_replace, timeout=10)
         return None
