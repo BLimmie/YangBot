@@ -7,7 +7,7 @@ from psycopg2 import sql
 from src.modules.catfact_helper import get_catfact
 from src.modules.db_helper import member_exists, insert_member, get_table, connection_error, dbfunc_run
 from src.modules.discord_helper import change_nickname, kick_member, try_send, generate_embed
-from src.modules.ucsb_api_helper import get_menus
+from src.modules.ucsb_api_helper import get_allmenusaio
 from src.tools.botfunction import BotFunction
 from src.tools.message_return import message_data
 from src.tools.state_machines import State, Action, Machine
@@ -349,12 +349,13 @@ class help(command_on_message):
 
 class menu(command_on_message):
     def __init__(self, *args, **kwargs):
-        self.commons = ['dlg', 'de', 'portola', 'carrillo', 'ortega'] # 'de' is added in case someone searches for 'de la guerra' instead of 'dlg'
+        self.commons = ['dlg', 'de-la-guerra', 'portola', 'carrillo', 'ortega'] # 'de' is added in case someone searches for 'de la guerra' instead of 'dlg'
         self.mealtimes = ['breakfast', 'lunch', 'dinner', 'brunch']
         self.day = 0 # Force a menu update due to get_menu being asynchronous.
+        self.updating_menus = False
         super().__init__(*args, **kwargs)
 
-    async def action(self, message: Message):
+    async def action(self, message):
         '''
         Roadmap Idea - Daniel. I've implemented code and pseudo-code for this idea below. This is not final by any means.
 
@@ -363,10 +364,16 @@ class menu(command_on_message):
         Third, parse the user's information
         Fourth, using the parsed information, put the machine into the right initial state.
         '''
+        # To prevent multiple calls to API, cancel early with a "try again". Is it possible to wait for a value to be changed though?
+        if self.updating_menus: return message_data(channel=message.channel, message="Please try again momentarily, as the menu is currently being updated.")
+
         message_to_replace = None
-        #if date.today().day != self.day: # If the days fail to align, update the menu. It's also important to note *when* the menu gets updated, as this may fail if only day is checked.
-        self.menu, self.day = await get_menus()
-        #    message_to_replace = await message.channel.send('Please wait while we update the menus...')
+        current_date = date.today()
+        if current_date.day != self.day: # If the days fail to align, update the menu.
+            message_to_replace = await message.channel.send('Fetching the menus...')
+            self.updating_menus = True
+            self.menu, self.day = await get_allmenusaio(current_date.isoformat()), current_date.day
+            self.updating_menus = False
         
         homepage = State.from_dict(
             embed_dict={
@@ -391,6 +398,7 @@ class menu(command_on_message):
         meal = State.make_template(
             title='{full_mealtime}',
             description=None,
+            color='#color',
             mealtime= '{mealtime}'
         )
 
@@ -399,17 +407,18 @@ class menu(command_on_message):
             '''
             Turn a list of food into a usable string.
             '''
-            final_string = ''
-            for item in menu[:-1]:
-                final_string += "·" + item + "\n"
-            return final_string + "·" + menu[-1]
+            # final_string = ''
+            # for item in menu[:-1]:
+            #     final_string += "**·** " + item + "\n"
+            # return final_string + "**·** " + menu[-1]
+            return "\n".join(["**·** " + x for x in menu])
 
         def convert_to_proper(commons: str) -> str:
             '''
             Convert short-hand code to full name.
             '''
             match commons:
-                case 'dlg':
+                case 'de-la-guerra':
                     return 'De La Guerra'
                 case _:
                     return commons.capitalize()
@@ -420,7 +429,7 @@ class menu(command_on_message):
             '''
             match commons:
                 case 'De La Guerra':
-                    return 'dlg'
+                    return 'de-la-guerra'
                 case _:
                     return commons.lower()
 
@@ -480,12 +489,26 @@ class menu(command_on_message):
         @Action.new(label='Commons', row=0)
         async def go_to_commons(machine: Machine, interaction, action: Action):
             commons = action.label
-            available_meals = self.menu[convert_to_improper(commons)]
+            available_meals = self.menu.get(convert_to_improper(commons), {})
             await machine.update_state(determine_common_state(available_meals, proper_commons=commons), interaction)
 
         # Add the Action buttons to the states now that they've all been defined (except for menu_selector, which creates its buttons dynamically)
         homepage.actions = [
+<<<<<<< HEAD
+<<<<<<< HEAD
                 go_to_commons.copy(label='De La Guerra'), go_to_commons.copy(label='Ortega'), go_to_commons.copy(label='Portola'), go_to_commons.copy(label='Carrillo')
+=======
+                go_to_commons.copy(label='De La Guerra', style=ButtonStyle.blurple if 'de-la-guerra' in self.menu else ButtonStyle.gray), 
+                go_to_commons.copy(label='Ortega', style=ButtonStyle.blurple if 'ortega' in self.menu else ButtonStyle.gray), 
+                go_to_commons.copy(label='Portola', style=ButtonStyle.blurple if 'portola' in self.menu else ButtonStyle.gray), 
+                go_to_commons.copy(label='Carrillo', style=ButtonStyle.blurple if 'carrillo' in self.menu else ButtonStyle.gray)
+>>>>>>> 3e1d4b9 (Removed API key and fixed bug with DLG)
+=======
+                go_to_commons.copy(label='De La Guerra', style=ButtonStyle.blurple if 'dlg' in self.menu else ButtonStyle.gray), 
+                go_to_commons.copy(label='Ortega', style=ButtonStyle.blurple if 'ortega' in self.menu else ButtonStyle.gray), 
+                go_to_commons.copy(label='Portola', style=ButtonStyle.blurple if 'portola' in self.menu else ButtonStyle.gray), 
+                go_to_commons.copy(label='Carrillo', style=ButtonStyle.blurple if 'carrillo' in self.menu else ButtonStyle.gray)
+>>>>>>> f1519e7 (Finishing style touches)
         ]
         meal.actions = [back.copy(row=0), home.copy(row=0)]
 
@@ -497,7 +520,7 @@ class menu(command_on_message):
             option = contents[-1] if len(contents) > 2 else None
             for commons in self.commons:
                 if commons.startswith(dining_commons):
-                    dining_commons = commons if commons != 'de' else 'dlg' # Reassign 'de' alias to 'dlg'
+                    dining_commons = commons if commons != 'dlg' else 'de-la-guerra' # Reassign 'dlg' alias
                     break
             else: # If the user input cannot be determined, show homepage
                 dining_commons = None
@@ -518,7 +541,7 @@ class menu(command_on_message):
 
         if not dining_commons: # If the inputs failed to parse, go to homepage
             initial_state = homepage
-        elif option in self.menu[dining_commons]: # Check if option exists in the menu
+        elif option in self.menu.get(dining_commons, {}): # Check if option exists in the menu
             match option:
                 case 'breakfast':
                     color=0xF2E96B
@@ -536,7 +559,7 @@ class menu(command_on_message):
                 for station, food in self.menu[dining_commons][option].items()
             ]
         else: # If it doesn't, attempt to reassign breakfast and lunch to brunch. Finally, since dining_commons is valid, go to its page.
-            if option in ('breakfast', 'lunch') and ('brunch' in self.menu[dining_commons]): # Reassign "breakfast" and "lunch" to "brunch" if neither of the former are being served
+            if option in ('breakfast', 'lunch') and ('brunch' in self.menu.get(dining_commons, {})): # Reassign "breakfast" and "lunch" to "brunch" if neither of the former are being served
                 initial_state = State.from_state(meal).format(full_mealtime=convert_to_proper(dining_commons) + ' Brunch', color=0xDEA24E, mealtime='brunch')
                 initial_state.fields = [
                     {
@@ -546,9 +569,9 @@ class menu(command_on_message):
                     for station, food in self.menu[dining_commons]['brunch'].items()
                 ]
             else:
-                initial_state = determine_common_state(self.menu[dining_commons], improper_commons=dining_commons)
+                initial_state = determine_common_state(self.menu.get(dining_commons, {}), improper_commons=dining_commons)
 
-        await Machine.create(initial_state, message, initial_message='Typing...', message_to_edit=message_to_replace, timeout=10)
+        await Machine.create(initial_state, message, initial_message='Typing...', message_to_edit=message_to_replace, timeout=20)
         return None
 
     @staticmethod
