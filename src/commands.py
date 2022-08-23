@@ -355,7 +355,7 @@ class menu(command_on_message):
         self.updating_menus = False
         super().__init__(*args, **kwargs)
 
-    async def action(self, message):
+    async def action(self, message: Message):
         '''
         Roadmap Idea - Daniel. I've implemented code and pseudo-code for this idea below. This is not final by any means.
 
@@ -398,7 +398,6 @@ class menu(command_on_message):
         meal = State.make_template(
             title='{full_mealtime}',
             description=None,
-            color='#color',
             mealtime= '{mealtime}'
         )
 
@@ -494,21 +493,10 @@ class menu(command_on_message):
 
         # Add the Action buttons to the states now that they've all been defined (except for menu_selector, which creates its buttons dynamically)
         homepage.actions = [
-<<<<<<< HEAD
-<<<<<<< HEAD
-                go_to_commons.copy(label='De La Guerra'), go_to_commons.copy(label='Ortega'), go_to_commons.copy(label='Portola'), go_to_commons.copy(label='Carrillo')
-=======
                 go_to_commons.copy(label='De La Guerra', style=ButtonStyle.blurple if 'de-la-guerra' in self.menu else ButtonStyle.gray), 
                 go_to_commons.copy(label='Ortega', style=ButtonStyle.blurple if 'ortega' in self.menu else ButtonStyle.gray), 
                 go_to_commons.copy(label='Portola', style=ButtonStyle.blurple if 'portola' in self.menu else ButtonStyle.gray), 
                 go_to_commons.copy(label='Carrillo', style=ButtonStyle.blurple if 'carrillo' in self.menu else ButtonStyle.gray)
->>>>>>> 3e1d4b9 (Removed API key and fixed bug with DLG)
-=======
-                go_to_commons.copy(label='De La Guerra', style=ButtonStyle.blurple if 'dlg' in self.menu else ButtonStyle.gray), 
-                go_to_commons.copy(label='Ortega', style=ButtonStyle.blurple if 'ortega' in self.menu else ButtonStyle.gray), 
-                go_to_commons.copy(label='Portola', style=ButtonStyle.blurple if 'portola' in self.menu else ButtonStyle.gray), 
-                go_to_commons.copy(label='Carrillo', style=ButtonStyle.blurple if 'carrillo' in self.menu else ButtonStyle.gray)
->>>>>>> f1519e7 (Finishing style touches)
         ]
         meal.actions = [back.copy(row=0), home.copy(row=0)]
 
