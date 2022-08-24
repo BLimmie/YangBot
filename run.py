@@ -13,7 +13,9 @@ DATABASE_URL = os.environ['DATABASE_URL']
 conn = psycopg2.connect(DATABASE_URL, sslmode='require')
 
 intents = discord.Intents().all()
-client = commands.Bot('$', intents=intents)
+activity = discord.CustomActivity("$help")
+client = commands.Bot('$', intents=intents, activity=activity)
+
 @client.event
 async def on_ready():
     global bot
