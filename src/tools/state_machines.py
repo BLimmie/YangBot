@@ -1,4 +1,4 @@
-from discord import Message, TextChannel, ButtonStyle, Emoji, Embed, Interaction
+from discord import Message, TextChannel, ButtonStyle, Emoji, Embed, Interaction, InteractionResponded
 from discord.ui import View, Button
 from discord.ext.commands import Context
 from src.modules.discord_helper import generate_embed
@@ -22,7 +22,7 @@ class _MachineView(View):
     def __init__(self, machine, actions: List, *, timeout: float = 180):
         if not actions: raise ValueError("List of actions cannot be empty when creating a MachineView object")
         super().__init__(timeout=timeout)
-        self.machine = machine
+        self.machine: Machine = machine
         for button in actions:
             if not isinstance(button, Action): raise TypeError("Invalid object given: expected 'Action', got " + button.__class__.__name__)
             button.machine = machine
@@ -72,7 +72,9 @@ class Machine:
         ### Parameters\n
           `initial_state`: A state object that the machine should put itself into upon creation.
           `message_or_interaction`: The message/interaction that initialized the machine. Context objects are also supported.
-          `initial_message` (Optional): The content of the message to send while the machine prepares itself. Defaults to 'Initializing...'. This parameter is ignored if `message_to_edit` is given.
+           If an Interaction is passed to this parameter, then this method will attempt to close it (unless `message_to_edit` is given). Any related exceptions will be catched and ignored.
+          `initial_message` (Optional): The content of the message to send while the machine prepares itself. Defaults to 'Initializing...'. 
+           This parameter is ignored if `message_to_edit` is given.
           `message_to_edit` (Optional): The message that the machine should attach itself to. Sends a new message by default. Mutually exclusive with `channel`.
           `channel` (Optional): The channel that the machine should initialize in. Defaults to `message.channel`. Mutually exclusive with `message_to_edit`.
           `history` (Optional): A history of previous states. Defaults to an empty list. Pass `None` to this parameter if you don't want the machine to track its history.
@@ -81,18 +83,29 @@ class Machine:
         ### Rasies\n
         `ValueError`: `message_to_edit` is given alongside `channel`.
         '''
-        if message_to_edit and channel:
-            raise ValueError("message_to_edit parameter is mutually exclusive with channel")
+        if message_to_edit and channel: raise ValueError("message_to_edit parameter is mutually exclusive with channel")
+
         self = cls()
         if message_to_edit is not None:
             self._message = message_to_edit
         else:
-            self._message = await channel.send(initial_message) if channel is not None else await message_or_interaction.channel.send(initial_message)
+            if channel is not None:
+                self._message = await channel.send(initial_message) 
+            elif isinstance(message_or_interaction, (Message, Context)):
+                self._message = await message_or_interaction.channel.send(initial_message)
+            else:
+                try:
+                    await message_or_interaction.response.send_message(initial_message)
+                except InteractionResponded:
+                    pass
+                finally:
+                    self._message = await message_or_interaction.original_message()
+
         self._delete = delete_message
         self._timeout = timeout # For now, timeout is only used for the built-in methods in View. Machine doesn't do any handling with it.
         self._recent_view = None
 
-        self.history = history
+        self.history: List | None = [] if history is not None else None
         self.owner = message_or_interaction.author if isinstance(message_or_interaction, (Message, Context)) else message_or_interaction.user
         self.data = {}
 
@@ -123,7 +136,7 @@ class Machine:
                 embed=new_state.embed,
                 view=view
             )
-            self._message = interaction.message
+            self._message = await interaction.original_message()
         if replace_data:
             self.data = new_state.data
         else:
@@ -363,7 +376,7 @@ class State:
         Raises a TypeError if any argument isn't an Action.\n
         '''
         for action in args:
-            if not isinstance(action, Action): raise TypeError("Invalid object type: expected 'Action', got " + action.__class__.__name__)
+            if not isinstance(action, Action): raise TypeError("Invalid object type: Expected 'Action', got " + action.__class__.__name__)
             self.actions.append(action)
 
         return self
@@ -374,7 +387,7 @@ class State:
         Raises a TypeError if any given argument isn't an Action. Raises a ValueError if the given Action is not present.\n
         '''
         for action in args:
-            if not isinstance(action, Action): raise TypeError("Invalid object type: expected 'Action', got " + action.__class__.__name__)
+            if not isinstance(action, Action): raise TypeError("Invalid object type: Expected 'Action', got " + action.__class__.__name__)
             self.actions.remove(action)
 
         return self
@@ -440,7 +453,7 @@ class Action(Button):
     '''
     def __init__(self, *, callback: Coroutine=DefaultCallback , style: ButtonStyle=ButtonStyle.blurple, label: str | None=None, emoji: Emoji | None=None, row: int | None=None, url: str | None=None, disabled: bool=False):
         super().__init__(style=style, label=label, emoji=emoji, row=row, url=url, disabled=disabled)
-        self.machine = None
+        self.machine: Machine | None = None
         self._callback = callback
         self._two_args = len(signature(self._callback).parameters) == 2
 
