@@ -7,45 +7,35 @@ class machine_dual(command_on_message):
 
     # Here is a demonstration of a machine with two states, with no data.
     async def action(self, message):
-        # Let's define the callbacks for each action, along with the state they'll be put into.
-        async def first_state_action(machine: Machine, interaction):
-            # First we need to specify the new state object
-            new_state = State.from_dict(
-                embed_dict={ # When interacting with the first button, we want to move into the second state.
-                    'title': 'Second State',
-                    'description': "I'm the second state in this machine!"
-                },
-                actions=[
-                    Action(machine, callback=second_state_action, label='Go back!') # This may seem a bit confusing, but what we're doing is creating the action for the second state, and assigning second_state_action to its callback.
-                ]
-            )
-            await machine.update_state(new_state, interaction) # And we finally update the machine!
-
-        # Similarly with the second state
-        async def second_state_action(machine: Machine, interaction):
-            # First create a new state
-            new_state = State.from_dict(
+        # First, let's define our two states. Since our actions haven't been defined yet, we'll add them later.
+        first_state = State.from_dict(
                 embed_dict={
                     'title': 'First State',
                     'description': "I'm the first state in this machine!"
-                },
-                actions=[
-                    Action(machine, callback=first_state_action, label='Go forward!') # Like before, we set the first state's action to be the first_action.
-                ]
-            )
-            await machine.update_state(new_state, interaction) # And then update the machine!
-
-        # Now let's create the initial state
-        initial_state = State.from_dict( 
-            embed_dict={
-                'title': 'First State',
-                'description': "I'm the very first state in this machine!"
-            }, 
-            actions=[
-                Action(callback=first_state_action, label="Go forward!") # Since we haven't made our machine yet, it doesn't need to be passed. machine.create() will handle that.
-            ]
+                }
         )
-        await Machine.create(initial_state, message, timeout=10) # And finally, create our machine!
+        second_state = State.from_dict(
+            embed_dict={
+                    'title': 'Second State',
+                    'description': "I'm the second state in this machine!"
+                },
+        )
+        
+        # Now, let's define our actions. Due to ease of use, we'll use the .new decorator
+        @Action.new(label='Go Forward!')
+        async def go_to_first_state(machine: Machine, interaction):
+            await machine.update_state(first_state, interaction)
+
+        @Action.new(label='Go Back!')
+        async def go_to_second_state(machine: Machine, interaction):
+            await machine.update_state(second_state, interaction)
+
+        # Now let's add actions to our states.
+
+        first_state.add_action(go_to_second_state)
+        second_state.add_action(go_to_first_state)
+        
+        await Machine.create(first_state, message, timeout=10) # And finally, create our machine!
         return None
 
     @staticmethod
@@ -58,33 +48,29 @@ class machine_counter(command_on_message):
 
     # Here is a demonstration of a machine using its data! This machine will count up by 1 everytime a button is pressed.
     async def action(self, message):
-        # Let's first define the callback.
+        # Let's first create our base state. We want this to be formatted as a template since other states will derive from this.
+        base_state = State.make_template(
+            title='Counter',
+            description='The counter is currently at {number}',
+            count='#count' # Assigning a key to '#key' will tell State.format that this key should not be assigned to a string. In our case, we want count to be an int.
+        )
+
+        @Action.new(label='+1')
         async def take_action(machine: Machine, interaction):
             # Since this machine revolves around counting by increments of 1, let's define our new number.
             new_number = machine['count'] + 1 
             # Note that the machine object CAN be treated like a dictionary; machine['count'] is the same as machine.data['count']
 
-            # Now lets create our state object. Since the new state will be almost identical to the previous one, we can simply copy it directly.
-            new_state = State.from_state(machine.state)
-            # We'll now need to edit our new state before passing it. Recall that dotted access will refer to the embed, while keyed access will refer to data.
-            new_state.description = 'The counter is currently at ' + str(new_number)
+            # Now lets create our state object, using from_state and format.
+            new_state = State.from_state(base_state).format(number=str(new_number), count=new_number)
+            # Since format won't accept strings
             new_state['count'] = new_number
             # And now we update the machine!
             await machine.update_state(new_state, interaction)
 
-        # Now let's create the initial state
-        initial_state = State.from_dict( 
-                embed_dict={
-                    'title': 'Counter',
-                    'description': 'The counter is currently at 0' # Count starts at 0!
-                },
-                actions=[
-                    Action(callback=take_action, label='+1') # As before, we don't have a machine yet, so we don't need to specify it!
-                ],
-                data={
-                    'count': 0
-                }
-        )
+        # Now let's add the action and create the initial state
+        base_state.add_action(take_action)
+        initial_state = State.from_state(base_state).format(number='0', count=0)
         await Machine.create(initial_state, message, timeout=10) # And finally, create our machine!
         return None
 
@@ -98,61 +84,52 @@ class machine_dual_counter(command_on_message):
 
     # Here is a combined demonstration of the two examples above; a machine with two states that also uses a counter.
     async def action(self, message):
-        # Let's first define our two coroutines for action
-        async def first_action(machine: Machine, interaction):
+        # Let's first define our base state.
+        base_state = State.make_template(
+            title='{order} State', # {order} refers to either 'First' or 'Second'. {lower_order} is a lowercase version of this.
+            description='You are in the {lower_order} state! This machine has changed states {times}!', # Times refers to the number of times this machine has changed states.
+            count='#count'
+        )
+
+        # Now let's define our actions
+        @Action.new(label='Go Forward!')
+        async def go_to_first_state(machine: Machine, interaction):
             # First calculating our new number
             current_count = machine['count'] + 1
             # Since '1 times' is incorrect, let's add a small checker that can change it to '1 time'.
             correct_string = str(current_count) + ' times!' if current_count != 1 else str(current_count) + ' time!'
 
-            # And now let's create our new state. Note that our action moves into the second state.
-            new_state = State.from_dict(
-                embed_info = {
-                    'title': 'Second State',
-                    'description': 'You are in the second state! This machine has changed states ' + correct_string
-                },
-                actions = [
-                    Action(machine, callback=second_action, label='Go back!')
-                ],
-                data = {
-                    'count': current_count
-                }
-            )
+            # And now let's create our new state.
+            new_state = State.from_state(base_state).format(
+                order='First', 
+                lower_order='first', 
+                times=correct_string,
+                count = current_count
+            ).add_action(go_to_second_state) # We want to add the second action since no actions are included in the base state.
             # Now let's update the machine
             await machine.update_state(new_state, interaction)
 
         # Now let's make our second action. It will be almost identical so no additional comments is needed.
-        async def second_action(machine: Machine, interaction):
+        async def go_to_second_state(machine: Machine, interaction):
             current_count = machine['count'] + 1
             correct_string = str(current_count) + ' times!' if current_count != 1 else str(current_count) + ' time!'
 
-            new_state = State.from_dict(
-                embed_info = {
-                    'title': 'First State',
-                    'description': 'You are in the first state! This machine has changed states ' + correct_string
-                },
-                actions = [
-                    Action(machine, callback=first_action, label='Go forward!')
-                ],
-                data = {
-                    'count': current_count
-                }
-            )
+            new_state = State.from_state(base_state).format(
+                order='Second', 
+                lower_order='second', 
+                times=correct_string,
+                count = current_count
+            ).add_action(go_to_first_state)
+
             await machine.update_state(new_state, interaction)
 
-        # Now let's create our machine! First we need our initial state
-        initial_state = State.from_dict(
-            embed_info = {
-                'title': 'First State',
-                'description': 'You are in the first state! This machine has changed states 0 times!'
-            },
-            actions = [
-                Action(callback=first_action, label='Go forward!')
-            ],
-            data = {
-                'count': 0
-            }
-        )
+        # Now let's create our machine! Note that our initial state will be the first state with a count of 0
+        initial_state = State.from_state(base_state).format(
+                order='First', 
+                lower_order='first', 
+                times='0 times',
+                count=0
+            ).add_action(go_to_second_state)
         # And then make the machine
         await Machine.create(initial_state, message, timeout=10)
         return None
