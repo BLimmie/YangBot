@@ -351,11 +351,21 @@ class menu(command_on_message):
     def __init__(self, *args, **kwargs):
         self.commons = ['dlg', 'de-la-guerra', 'portola', 'carrillo', 'ortega'] # 'de' is added in case someone searches for 'de la guerra' instead of 'dlg'
         self.mealtimes = ['breakfast', 'lunch', 'dinner', 'brunch']
-        self.day = 0 # Force a menu update due to get_menu being asynchronous.
+        self.date = date.fromisoformat('2000-01-01') # Force a menu update due to get_menu being asynchronous.
         self.updating_menus = False
+        self._menu: dict = None
         super().__init__(*args, **kwargs)
 
-    async def action(self, message: Message):
+    @property
+    def menu(self):
+        if self._menu is None: raise AttributeError("Menu has not been initialized")
+        return self._menu
+
+    @menu.setter
+    def menu(self, new_menu):
+        self._menu = new_menu
+
+    async def action(self, message):
         '''
         Roadmap Idea - Daniel. I've implemented code and pseudo-code for this idea below. This is not final by any means.
 
@@ -364,15 +374,16 @@ class menu(command_on_message):
         Third, parse the user's information
         Fourth, using the parsed information, put the machine into the right initial state.
         '''
-        # To prevent multiple calls to API, cancel early with a "try again". Is it possible to wait for a value to be changed though?
+        # To prevent multiple calls to API, cancel early with a "try again". Maybe we can also pause the coroutine and resume it when the call is finished too?
+        # Although I'm not sure how to implement that. Maybe there exists some sort of 'asyncio.resume(coro)' and 'asyncio.pause(self)'
         if self.updating_menus: return message_data(channel=message.channel, message="Please try again momentarily, as the menu is currently being updated.")
 
         message_to_replace = None
         current_date = date.today()
-        if current_date.day != self.day: # If the days fail to align, update the menu.
-            message_to_replace = await message.channel.send('Fetching the menus...')
+        if current_date != self.date:
             self.updating_menus = True
-            self.menu, self.day = await get_allmenusaio(current_date.isoformat()), current_date.day
+            message_to_replace = await message.channel.send('Fetching the menus...')
+            self.menu, self.date = await get_allmenusaio(current_date.isoformat()), current_date
             self.updating_menus = False
         
         homepage = State.from_dict(
@@ -401,15 +412,10 @@ class menu(command_on_message):
             mealtime= '{mealtime}'
         )
 
-        # Next, define the base actions and some helper functions
         def process_menu(menu: List) -> str:
             '''
             Turn a list of food into a usable string.
             '''
-            # final_string = ''
-            # for item in menu[:-1]:
-            #     final_string += "**·** " + item + "\n"
-            # return final_string + "**·** " + menu[-1]
             return "\n".join(["**·** " + x for x in menu])
 
         def convert_to_proper(commons: str) -> str:
@@ -464,7 +470,8 @@ class menu(command_on_message):
 
         @Action.new(label='Back', style=ButtonStyle.gray, row=1)
         async def back(machine: Machine, interaction: Interaction):
-            if len(machine.history) < 1: return await interaction.response.send_message("There's nothing to go back to!", ephemeral=True) # It only makes sense to go back when there is at least two states present.
+            # It only makes sense to go back when at least two states have been made.
+            if len(machine.history) < 1: return await interaction.response.send_message("There's nothing to go back to!", ephemeral=True) 
             new_state = machine.history.pop(-1)
             await machine.update_state(new_state, interaction, append_history=False)
 
@@ -510,7 +517,7 @@ class menu(command_on_message):
                 if commons.startswith(dining_commons):
                     dining_commons = commons if commons != 'dlg' else 'de-la-guerra' # Reassign 'dlg' alias
                     break
-            else: # If the user input cannot be determined, show homepage
+            else:
                 dining_commons = None
                 option = None
 
