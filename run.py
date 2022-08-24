@@ -13,13 +13,12 @@ DATABASE_URL = os.environ['DATABASE_URL']
 conn = psycopg2.connect(DATABASE_URL, sslmode='require')
 
 intents = discord.Intents().all()
-client = commands.Bot('$', intents=intents, activity=discord.CustomActivity('$help'))
+client = commands.Bot('$', intents=intents, activity=discord.Activity(name='$help', type=discord.ActivityType.listening))
 
 @client.event
 async def on_ready():
     global bot
     bot = YangBot(conn, client, config, repeated_messages=5)
-    await client.change_presence(activity=discord.CustomActivity('$help'))
     print("Bot is ready")
 
 @client.event
