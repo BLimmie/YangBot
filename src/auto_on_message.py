@@ -1,5 +1,5 @@
 import discord
-
+import markovify
 import src.modules.toxicity_helper as toxicity_helper
 from src.modules.catfact_helper import get_catfact
 from src.modules.repeat_helper import message_author, is_repeat, cycle, flush, message_author_debug
@@ -132,3 +132,15 @@ class mission_complete(auto_on_message):
     # def test(message):
     #     print(message.author.nick)
     #     return message_data(message.channel,message.author.nick)
+
+class discord_simulator(auto_on_message):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.BLACKLIST = {1012148524772757605, 372646213096308736, 360265385599303680, 421899094357704704, 498634483910574082, 338237628275097601, 531336865886765057, 839029866128867360, 840809134508474398, 468164570385481729, 991482069265944606, 338238702583021579, 247264977495392258, 495860586244997130, 755204568727420948, 757393586605260921, 676518056872247296, 338237514697408513}
+        self.simulator_channel = 1012148524772757605
+
+    async def action(self, message: discord.Message):
+        if isinstance(self.simulator_channel, int):
+            self.simulator_channel = message.guild.get_channel(self.simulator_channel)
+            assert self.simulator_channel is not None, 'Failed to get discord-simulator channel'
+        if message.channel.id in self.BLACKLIST: return None
