@@ -139,10 +139,15 @@ class discord_simulator(auto_on_message):
         self.BLACKLIST = {1012148524772757605, 372646213096308736, 360265385599303680, 421899094357704704, 498634483910574082, 338237628275097601, 531336865886765057, 839029866128867360, 840809134508474398, 468164570385481729, 991482069265944606, 338238702583021579, 247264977495392258, 495860586244997130, 755204568727420948, 757393586605260921, 676518056872247296, 338237514697408513}
         self.simulator_channel = 1012148524772757605
 <<<<<<< HEAD
+<<<<<<< HEAD
         self.markov_string = ''
         self.counter = 0
 =======
 >>>>>>> 971471d (Updated requirements, and added sanity checks.)
+=======
+        self.markov_list = []
+        self.channel_dict = {}
+>>>>>>> 6755f2f (Refactored menu command to pause and update. Discord simulator is in early stages; finished some processing logic, pre-chain generation.)
 
     async def action(self, message: discord.Message):
         if isinstance(self.simulator_channel, int):
@@ -151,6 +156,7 @@ class discord_simulator(auto_on_message):
 <<<<<<< HEAD
         if message.channel.id in self.BLACKLIST or not message.content: return None # Terminate early if message is from blacklisted channel, or if it's empty.
 
+<<<<<<< HEAD
         text = message.content
         if not text.endswith('.'): text += '.' # Markovify separates sentences based on periods.
         self.counter += text.count('.')
@@ -165,3 +171,39 @@ class discord_simulator(auto_on_message):
 =======
         if message.channel.id in self.BLACKLIST: return None
 >>>>>>> 971471d (Updated requirements, and added sanity checks.)
+=======
+        # Raw sentences are never added to the Markov chain directly. Instead, the following flowchart happens
+        # 1. Strip the message of any leading/trailing whitespace, and periods
+        # 2. Check if the previous message came from the same author. If it didn't, add the string to markov_list and reset all values.
+        # 3. If it came from the same author, add it to temp_string
+        # 4. Check the word count for temp_string. If it exceeds 10, add the string and reset all values
+        # This is done to ensure that all sentences contain enough words for processing, and that the sentences remain somewhat sensical.
+        content = message.content.replace('.', '').strip()
+        channel = message.channel.id
+        if channel not in self.channel_dict:
+            self.channel_dict[channel] = {
+                'temp_string': '',
+                'prev_author': 0
+            }
+        working_dict = self.channel_dict[channel]
+        
+        if message.author.id == working_dict['prev_author']: 
+            working_dict['temp_string'] += ' ' + content
+        else:
+            if working_dict['temp_string']: # don't want to add blank strings
+                self.markov_list.append(working_dict['temp_string'])
+            self.channel_dict[channel] = {
+                'temp_string': '',
+                'prev_author': message.author.id
+            }
+
+        if working_dict['temp_string'].count(' ') + 1 >= 10:
+            self.markov_list.append(working_dict['temp_string'])
+            self.channel_dict[channel] = {
+                'temp_string': '',
+                'prev_author': message.author.id
+            }
+
+        if len(self.markov_list) >= 100:
+            pass
+>>>>>>> 6755f2f (Refactored menu command to pause and update. Discord simulator is in early stages; finished some processing logic, pre-chain generation.)

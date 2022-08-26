@@ -13,6 +13,7 @@ from src.tools.message_return import message_data
 from src.tools.state_machines import State, Action, Machine
 from discord import ButtonStyle, Interaction
 from typing import List
+import asyncio
 
 
 class command_on_message(BotFunction):
@@ -377,11 +378,13 @@ class menu(command_on_message):
         Third, parse the user's information
         Fourth, using the parsed information, put the machine into the right initial state.
         '''
-        # To prevent multiple calls to API, cancel early with a "try again". Maybe we can also pause the coroutine and resume it when the call is finished too?
-        # Although I'm not sure how to implement that. Maybe there exists some sort of 'asyncio.resume(coro)' and 'asyncio.pause(self)'
-        if self.updating_menus: return message_data(channel=message.channel, message="Please try again momentarily, as the menu is currently being updated.")
-
+        # If the menus are currently being updated, pause execution
         message_to_replace = None
+        if self.updating_menus:
+            message_to_replace = await message.channel.send('Fetching the menus...')
+            while self.updating_menus:
+                await asyncio.sleep(1)
+
         current_date = date.today()
         if current_date != self.date:
             self.updating_menus = True
