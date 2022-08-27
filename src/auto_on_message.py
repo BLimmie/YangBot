@@ -137,6 +137,8 @@ class discord_simulator(auto_on_message):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.BLACKLIST = {1012148524772757605, 372646213096308736, 360265385599303680, 421899094357704704, 498634483910574082, 338237628275097601, 531336865886765057, 839029866128867360, 840809134508474398, 468164570385481729, 991482069265944606, 338238702583021579, 247264977495392258, 495860586244997130, 755204568727420948, 757393586605260921, 676518056872247296, 338237514697408513}
+        self.MIN_WORDS = 3 # The absolute minimum word length every sentence should be. This is only checked when a message is 'interrupted' (i.e. subsequent messages aren't from the same author).
+        self.IDEAL_WORDS = 10 # The ideal minimum word length every sentence should be. This is checked on 'temp_string' everytime action is called. Once 'temp_string' meets (or exceeds) this length, then it is added to the Markov Chain.
         self.simulator_channel = 1012148524772757605
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -174,9 +176,9 @@ class discord_simulator(auto_on_message):
 =======
         # Raw sentences are never added to the Markov chain directly. Instead, the following flowchart happens
         # 1. Strip the message of any leading/trailing whitespace, and periods
-        # 2. Check if the previous message came from the same author. If it didn't, add the string to markov_list and reset all values.
-        # 3. If it came from the same author, add it to temp_string
-        # 4. Check the word count for temp_string. If it exceeds 10, add the string and reset all values
+        # 2. Check if the previous message came from the same author. If it came from the same author, add it to temp_string
+        # 3. If it came from a different author, reset temp_value, and add the string to markov_list if it is at least 3 words.
+        # 4. Check the word count for temp_string. If it exceeds 10, add the string and reset temp_string
         # This is done to ensure that all sentences contain enough words for processing, and that the sentences remain somewhat sensical.
         content = message.content.replace('.', '').strip()
         channel = message.channel.id
@@ -190,14 +192,14 @@ class discord_simulator(auto_on_message):
         if message.author.id == working_dict['prev_author']: 
             working_dict['temp_string'] += ' ' + content
         else:
-            if working_dict['temp_string']: # don't want to add blank strings
+            if working_dict['temp_string'].count(' ') >= self.MIN_WORDS - 1: # total spaces = total words - 1
                 self.markov_list.append(working_dict['temp_string'])
             self.channel_dict[channel] = working_dict = {
                 'temp_string': content,
                 'prev_author': message.author.id
             }
 
-        if working_dict['temp_string'].count(' ') >= 9: # Words in a sentence = # of spaces + 1. Checking if there's at least 10 words.
+        if working_dict['temp_string'].count(' ') >= self.IDEAL_WORDS - 1:
             self.markov_list.append(working_dict['temp_string'])
             self.channel_dict[channel] = {
                 'temp_string': '',
