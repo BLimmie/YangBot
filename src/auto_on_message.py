@@ -192,12 +192,12 @@ class discord_simulator(auto_on_message):
         else:
             if working_dict['temp_string']: # don't want to add blank strings
                 self.markov_list.append(working_dict['temp_string'])
-            self.channel_dict[channel] = {
-                'temp_string': '',
+            self.channel_dict[channel] = working_dict = {
+                'temp_string': content,
                 'prev_author': message.author.id
             }
 
-        if working_dict['temp_string'].count(' ') + 1 >= 10:
+        if working_dict['temp_string'].count(' ') >= 9: # Words in a sentence = # of spaces + 1. Checking if there's at least 10 words.
             self.markov_list.append(working_dict['temp_string'])
             self.channel_dict[channel] = {
                 'temp_string': '',
