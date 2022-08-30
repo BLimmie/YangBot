@@ -23,8 +23,9 @@ class command_on_message(BotFunction):
     async def action(self, _):
         raise NotImplementedError(f'{self.__class__.__name__} failed to implement action.')
 
-    def helptxt(self):
-        raise NotImplementedError(f'{self.__class__.__name__} failed to implement helptxt.')
+    @classmethod
+    def helptxt(cls):
+        raise NotImplementedError(f'{cls.__name__} failed to implement helptxt.')
 
 
 class catfact(command_on_message):
@@ -39,7 +40,8 @@ class catfact(command_on_message):
     async def action(self, message, *args, **kwargs):
         return message_data(message.channel, get_catfact())
 
-    def helptxt(self):
+    @classmethod
+    def helptxt(cls):
         return "$catfact \nGets random catfact"
   
 class debug(command_on_message):
@@ -69,7 +71,8 @@ class debug(command_on_message):
             self.bot.debug = False
             await message.channel.send('Debug mode off')
 
-    def helptxt(self):
+    @classmethod
+    def helptxt(cls):
         return None # "$debug \nActivates debug mode"
 
 class sigkill(command_on_message):
@@ -87,7 +90,8 @@ class sigkill(command_on_message):
       await message.channel.send('Killing bot processes...')
       exit()
 
-    def helptxt(self):
+    @classmethod
+    def helptxt(cls):
         return None # "$debug \nKills bot processes when in debug mode"
 
 
@@ -122,7 +126,8 @@ class register(command_on_message):
             return message_data(message.channel, "User already registered")
         return message_data(message.channel, "User registered")
 
-    def helptxt(self):
+    @classmethod
+    def helptxt(cls):
         return "$register \nRegisters a user in the database"
 
 
@@ -149,7 +154,8 @@ class resetregister(command_on_message):
         insert_member(conn, self.bot, user)
         return message_data(message.channel, "User registration reset")
 
-    def helptxt(self):
+    @classmethod
+    def helptxt(cls):
         return "$resetregister \nResets the registration in the database in case of bugs"
 
 
@@ -180,7 +186,8 @@ class kickme(command_on_message):
         await message.author.send("See you later!")
         return
 
-    def helptxt(self):
+    @classmethod
+    def helptxt(cls):
         return "$kickme \nKicks an unregistered user (?)"
 
 
@@ -232,7 +239,8 @@ class nickname(command_on_message):
         await self.nickname_request(message, user, nickname)
         return
 
-    def helptxt(self):
+    @classmethod
+    def helptxt(cls):
         return "$nickname [nickname] \nRequests to change nickname to [nickname]. Requires admin approval."
 
     
@@ -261,7 +269,8 @@ class send(command_on_message):
                 args=[message]
             )
 
-    def helptxt(self):
+    @classmethod
+    def helptxt(cls):
         return None # "$send [channel] [message] \nSends [message] to [channel]. Must be a channel ping."
 
 class choose(command_on_message):
@@ -289,7 +298,8 @@ class choose(command_on_message):
                 "color": 53380}
         )
 
-    def helptxt(self):
+    @classmethod
+    def helptxt(cls):
         return "$choose choice1; choice2[; choice3; ...] \nChooses an option from the provided list."
 
 class help(command_on_message):
@@ -336,7 +346,8 @@ class help(command_on_message):
             "fields": fields
         })
 
-    def helptxt(self):
+    @classmethod
+    def helptxt(cls):
         return "$help [command] \nDisplays description of the provided command. If none is provided, displays description for all commands."
 
 class menu(command_on_message):
@@ -561,5 +572,6 @@ class menu(command_on_message):
         await Machine.create(initial_state, message, initial_message='Typing...', message_to_edit=message_to_replace, timeout=20)
         return None
 
-    def helptxt(self):
+    @classmethod
+    def helptxt(cls):
         return "$menu [dining commons] [mealtime] \nDisplays an interactable Embed showing the menu for the mealtime of the dining commons."
