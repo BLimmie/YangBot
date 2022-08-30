@@ -20,12 +20,12 @@ class command_on_message(BotFunction):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-    async def action(self, message):
-        raise NotImplementedError
+    async def action(self, _):
+        raise NotImplementedError(f'{self.__class__.__name__} failed to implement action.')
 
-    @staticmethod
-    def helptxt():
-        raise NotImplementedError
+    @classmethod
+    def helptxt(cls):
+        raise NotImplementedError(f'{cls.__name__} failed to implement helptxt.')
 
 
 class catfact(command_on_message):
@@ -40,8 +40,8 @@ class catfact(command_on_message):
     async def action(self, message, *args, **kwargs):
         return message_data(message.channel, get_catfact())
 
-    @staticmethod
-    def helptxt():
+    @classmethod
+    def helptxt(cls):
         return "$catfact \nGets random catfact"
   
 class debug(command_on_message):
@@ -71,9 +71,9 @@ class debug(command_on_message):
             self.bot.debug = False
             await message.channel.send('Debug mode off')
 
-    @staticmethod
-    def helptxt():
-        return "$debug \nActivates debug mode"
+    @classmethod
+    def helptxt(cls):
+        return None # "$debug \nActivates debug mode"
 
 class sigkill(command_on_message):
     """
@@ -90,9 +90,9 @@ class sigkill(command_on_message):
       await message.channel.send('Killing bot processes...')
       exit()
 
-    @staticmethod
-    def helptxt():
-        return "$debug \nKills bot processes when in debug mode"
+    @classmethod
+    def helptxt(cls):
+        return None # "$debug \nKills bot processes when in debug mode"
 
 
 class register(command_on_message):
@@ -126,8 +126,8 @@ class register(command_on_message):
             return message_data(message.channel, "User already registered")
         return message_data(message.channel, "User registered")
 
-    @staticmethod
-    def helptxt():
+    @classmethod
+    def helptxt(cls):
         return "$register \nRegisters a user in the database"
 
 
@@ -154,8 +154,8 @@ class resetregister(command_on_message):
         insert_member(conn, self.bot, user)
         return message_data(message.channel, "User registration reset")
 
-    @staticmethod
-    def helptxt():
+    @classmethod
+    def helptxt(cls):
         return "$resetregister \nResets the registration in the database in case of bugs"
 
 
@@ -186,8 +186,8 @@ class kickme(command_on_message):
         await message.author.send("See you later!")
         return
 
-    @staticmethod
-    def helptxt():
+    @classmethod
+    def helptxt(cls):
         return "$kickme \nKicks an unregistered user (?)"
 
 
@@ -239,8 +239,8 @@ class nickname(command_on_message):
         await self.nickname_request(message, user, nickname)
         return
 
-    @staticmethod
-    def helptxt():
+    @classmethod
+    def helptxt(cls):
         return "$nickname [nickname] \nRequests to change nickname to [nickname]. Requires admin approval."
 
     
@@ -269,9 +269,9 @@ class send(command_on_message):
                 args=[message]
             )
 
-    @staticmethod
-    def helptxt():
-        return "$send [channel] [message] \nSends [message] to [channel]. Must be a channel ping."
+    @classmethod
+    def helptxt(cls):
+        return None # "$send [channel] [message] \nSends [message] to [channel]. Must be a channel ping."
 
 class choose(command_on_message):
     """
@@ -298,21 +298,24 @@ class choose(command_on_message):
                 "color": 53380}
         )
 
-    @staticmethod
-    def helptxt():
+    @classmethod
+    def helptxt(cls):
         return "$choose choice1; choice2[; choice3; ...] \nChooses an option from the provided list."
 
 class help(command_on_message):
     """
     $help [command]
 
-    Displays description of provided command. If no command is provided, displays all commands
+    Displays description of provided command. If no command is provided, displays all commands.
+    If a command should not be displayed in the embed, have it return None.
     """
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.commands_list = {}
         for cmd in command_on_message.__subclasses__():
-            self.commands_list[cmd.__name__] = cmd.helptxt()
+            helptxt = cmd.helptxt()
+            if helptxt is not None:
+                self.commands_list[cmd.__name__] = helptxt
 
     async def action(self, message):
         fields = []
@@ -343,8 +346,8 @@ class help(command_on_message):
             "fields": fields
         })
 
-    @staticmethod
-    def helptxt():
+    @classmethod
+    def helptxt(cls):
         return "$help [command] \nDisplays description of the provided command. If none is provided, displays description for all commands."
 
 class menu(command_on_message):
@@ -569,6 +572,6 @@ class menu(command_on_message):
         await Machine.create(initial_state, message, initial_message='Typing...', message_to_edit=message_to_replace, timeout=20)
         return None
 
-    @staticmethod
-    def helptxt():
+    @classmethod
+    def helptxt(cls):
         return "$menu [dining commons] [mealtime] \nDisplays an interactable Embed showing the menu for the mealtime of the dining commons."
