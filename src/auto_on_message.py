@@ -137,8 +137,11 @@ class discord_simulator(auto_on_message):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.BLACKLIST = {1012148524772757605, 372646213096308736, 360265385599303680, 421899094357704704, 498634483910574082, 338237628275097601, 531336865886765057, 839029866128867360, 840809134508474398, 468164570385481729, 991482069265944606, 338238702583021579, 247264977495392258, 495860586244997130, 755204568727420948, 757393586605260921, 676518056872247296, 338237514697408513}
-        self.MIN_WORDS = 3 # The absolute minimum word length every sentence should be. This is only checked when a message is 'interrupted' (i.e. subsequent messages aren't from the same author).
-        self.IDEAL_WORDS = 10 # The ideal minimum word length every sentence should be. This is checked on 'temp_string' everytime action is called. Once 'temp_string' meets (or exceeds) this length, then it is added to the Markov Chain.
+        self.MIN_WORDS = 3 # The absolute minimum word length every sentence should be. 
+        # This is only checked when a message is 'interrupted' (i.e. subsequent messages aren't from the same author).
+        self.IDEAL_WORDS = 10 # The ideal word length every sentence should be. 
+        # This isn't directly enforced and acts as a minimum value; when a string exceeds this length, it will be added to the markov list. 
+        # It is not guaranteed that most sentences will be this length, however in practice it will tend around this due to the fragmented messaging style of the server.
         self.simulator_channel = 1012148524772757605
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -206,6 +209,14 @@ class discord_simulator(auto_on_message):
                 'prev_author': message.author.id
             }
 
+<<<<<<< HEAD
         if len(self.markov_list) >= 100:
             pass
 >>>>>>> 6755f2f (Refactored menu command to pause and update. Discord simulator is in early stages; finished some processing logic, pre-chain generation.)
+=======
+        if len(self.markov_list) >= 20: # change this back to 100 when testing is done
+            massive_string = ". ".join(self.markov_list)
+            self.markov_list = []
+            markov_chain = markovify.Text(massive_string)
+            print(markov_chain.make_sentence())
+>>>>>>> e763d2a (Polished markov processing, in a testable state.)
