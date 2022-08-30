@@ -144,40 +144,15 @@ class discord_simulator(auto_on_message):
         # It is not guaranteed that most sentences will be this length, however in practice it will tend around this due to the fragmented messaging style of the server.
         self.LIST_LENGTH = 100 # The total amount of sentences that should be present when a Markov Chain is being created.
         self.simulator_channel = 1012148524772757605
-<<<<<<< HEAD
-<<<<<<< HEAD
-        self.markov_string = ''
-        self.counter = 0
-=======
->>>>>>> 971471d (Updated requirements, and added sanity checks.)
-=======
         self.markov_list = []
         self.channel_dict = {}
->>>>>>> 6755f2f (Refactored menu command to pause and update. Discord simulator is in early stages; finished some processing logic, pre-chain generation.)
 
     async def action(self, message: discord.Message):
         if isinstance(self.simulator_channel, int):
             self.simulator_channel = message.guild.get_channel(self.simulator_channel)
             assert self.simulator_channel is not None, 'Failed to get discord-simulator channel'
-<<<<<<< HEAD
         if message.channel.id in self.BLACKLIST or not message.content: return None # Terminate early if message is from blacklisted channel, or if it's empty.
 
-<<<<<<< HEAD
-        text = message.content
-        if not text.endswith('.'): text += '.' # Markovify separates sentences based on periods.
-        self.counter += text.count('.')
-        self.markov_string += text
-        if self.counter >= 10:
-            markov_text = markovify.Text(self.markov_string)
-            sentence = markov_text.make_sentence()
-            self.counter = 0
-            self.markov_string = ''
-            return message_data(channel=self.simulator_channel, message=sentence) if sentence is not None else None
-        return None
-=======
-        if message.channel.id in self.BLACKLIST: return None
->>>>>>> 971471d (Updated requirements, and added sanity checks.)
-=======
         # Raw sentences are never added to the Markov chain directly. Instead, the following flowchart happens
         # 1. Strip the message of any leading/trailing whitespace, and periods
         # 2. Check if the previous message came from the same author. If it came from the same author, add it to temp_string
@@ -210,23 +185,9 @@ class discord_simulator(auto_on_message):
                 'prev_author': message.author.id
             }
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-        if len(self.markov_list) >= 100:
-            pass
->>>>>>> 6755f2f (Refactored menu command to pause and update. Discord simulator is in early stages; finished some processing logic, pre-chain generation.)
-=======
-        if len(self.markov_list) >= 20: # change this back to 100 when testing is done
-            massive_string = ". ".join(self.markov_list)
-            self.markov_list = []
-            markov_chain = markovify.Text(massive_string)
-            print(markov_chain.make_sentence())
->>>>>>> e763d2a (Polished markov processing, in a testable state.)
-=======
-        if len(self.markov_list) >= self.LIST_LENGTH: # change this back to 100 when testing is done
+        if len(self.markov_list) >= self.LIST_LENGTH:
             massive_string = ". ".join(self.markov_list)
             self.markov_list = []
             markov_chain = markovify.Text(massive_string)
             sentence = markov_chain.make_sentence()
             return message_data(channel=self.simulator_channel, message=sentence) if sentence is not None else None
->>>>>>> 89f27f9 (Now sends messages in discord-simulator.)
