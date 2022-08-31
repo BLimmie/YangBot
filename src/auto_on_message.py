@@ -1,5 +1,6 @@
 import discord
 import markovify
+import json
 import src.modules.toxicity_helper as toxicity_helper
 from src.modules.catfact_helper import get_catfact
 from src.modules.repeat_helper import message_author, is_repeat, cycle, flush, message_author_debug
@@ -136,21 +137,16 @@ class mission_complete(auto_on_message):
 class discord_simulator(auto_on_message):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.BLACKLIST = {1012148524772757605, 372646213096308736, 360265385599303680, 421899094357704704, 498634483910574082, 338237628275097601, 531336865886765057, 839029866128867360, 840809134508474398, 468164570385481729, 991482069265944606, 338238702583021579, 247264977495392258, 495860586244997130, 755204568727420948, 757393586605260921, 676518056872247296, 338237514697408513}
-        self.MIN_WORDS = 4 # The absolute minimum word length every sentence should be. 
-        # This is only checked when a message is 'interrupted' (i.e. subsequent messages aren't from the same author).
-        self.IDEAL_WORDS = 10 # The ideal word length every sentence should be. 
-        # This isn't directly enforced and acts as a minimum value; when a string exceeds this length, it will be added to the markov list. 
-        # It is not guaranteed that most sentences will be this length, however in practice it will tend around this due to the fragmented messaging style of the server.
-        self.LIST_LENGTH = 100 # The total amount of sentences that should be present when a Markov Chain is being created.
-        self.simulator_channel = 1012148524772757605
+        config = self.bot.config
+        self.BLACKLIST = set(config['ds_blacklist']) # A set is used because it has O(1) lookup, and this will only be used for that purpose.
+        self.MIN_WORDS = config['ds_min_words'] 
+        self.IDEAL_WORDS = config['ds_ideal_words']
+        self.LIST_LENGTH = config['ds_list_length']
+        self.simulator_channel = self.bot.client.get_guild(config['server_id']).get_channel(config['ds_channel'])
         self.markov_list = []
         self.channel_dict = {}
 
     async def action(self, message: discord.Message):
-        if isinstance(self.simulator_channel, int):
-            self.simulator_channel = message.guild.get_channel(self.simulator_channel)
-            assert self.simulator_channel is not None, 'Failed to get discord-simulator channel'
         if message.channel.id in self.BLACKLIST or not message.content: return None # Terminate early if message is from blacklisted channel, or if it's empty.
 
         # Raw sentences are never added to the Markov chain directly. Instead, the following flowchart happens
