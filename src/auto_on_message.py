@@ -1,6 +1,5 @@
 import discord
 import markovify
-import json
 import src.modules.toxicity_helper as toxicity_helper
 from src.modules.catfact_helper import get_catfact
 from src.modules.repeat_helper import message_author, is_repeat, cycle, flush, message_author_debug
