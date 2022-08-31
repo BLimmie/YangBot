@@ -154,10 +154,12 @@ class discord_simulator(auto_on_message):
         if message.channel.id in self.BLACKLIST or not message.content: return None # Terminate early if message is from blacklisted channel, or if it's empty.
 
         # Raw sentences are never added to the Markov chain directly. Instead, the following flowchart happens
-        # 1. Strip the message of any leading/trailing whitespace, and periods
-        # 2. Check if the previous message came from the same author. If it came from the same author, add it to temp_string
-        # 3. If it came from a different author, reset temp_value, and add the string to markov_list if it is at least 3 words.
-        # 4. Check the word count for temp_string. If it exceeds 10, add the string and reset temp_string
+        # 1. Strip the message of any trailing/leading whitespace and all periods, and set the working dictionary.
+        # 2. Check if the previous message in the working dictionary came from the same author. 
+        #       If it came from the same author, add it to temp_string.
+        #       If it came from a different author, then add temp_string to markov_list if it is at least MIN_WORDS. Refresh the working dictionary.
+        # 3. Check the word count for temp_string. If it exceeds IDEAL_WORDS, add the string and reset temp_string
+        # 4. Check the length of markov_list. If it exceeds LIST_LENGTH, create a markov chain, generate a sentence, and empty the list.
         # This is done to ensure that all sentences contain enough words for processing, and that the sentences remain somewhat sensical.
         content = message.content.replace('.', '').strip()
         channel = message.channel.id
@@ -191,3 +193,4 @@ class discord_simulator(auto_on_message):
             markov_chain = markovify.Text(massive_string)
             sentence = markov_chain.make_sentence()
             return message_data(channel=self.simulator_channel, message=sentence) if sentence is not None else None
+        return None
