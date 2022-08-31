@@ -1,5 +1,5 @@
 import discord
-
+import markovify
 import src.modules.toxicity_helper as toxicity_helper
 from src.modules.catfact_helper import get_catfact
 from src.modules.repeat_helper import message_author, is_repeat, cycle, flush, message_author_debug
@@ -132,3 +132,60 @@ class mission_complete(auto_on_message):
     # def test(message):
     #     print(message.author.nick)
     #     return message_data(message.channel,message.author.nick)
+
+class discord_simulator(auto_on_message):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        config = self.bot.config
+        self.BLACKLIST = set(config['ds_blacklist']) # A set is used because it has O(1) lookup, and this will only be used for that purpose.
+        self.MIN_WORDS = config['ds_min_words'] 
+        self.IDEAL_WORDS = config['ds_ideal_words']
+        self.LIST_LENGTH = config['ds_list_length']
+        self.simulator_channel = self.bot.client.get_guild(config['server_id']).get_channel(config['ds_channel'])
+        self.markov_list = []
+        self.channel_dict = {}
+
+    async def action(self, message: discord.Message):
+        if message.channel.id in self.BLACKLIST or not message.content: return None # Terminate early if message is from blacklisted channel, or if it's empty.
+
+        # Raw sentences are never added to the Markov chain directly. Instead, the following flowchart happens
+        # 1. Strip the message of any trailing/leading whitespace and all periods, and set the working dictionary.
+        # 2. Check if the previous message in the working dictionary came from the same author. 
+        #       If it came from the same author, add it to temp_string.
+        #       If it came from a different author, then add temp_string to markov_list if it is at least MIN_WORDS. Refresh the working dictionary.
+        # 3. Check the word count for temp_string. If it exceeds IDEAL_WORDS, add the string and reset temp_string
+        # 4. Check the length of markov_list. If it exceeds LIST_LENGTH, create a markov chain, generate a sentence, and empty the list.
+        # This is done to ensure that all sentences contain enough words for processing, and that the sentences remain somewhat sensical.
+        content = message.content.replace('.', '').strip()
+        channel = message.channel.id
+        if channel not in self.channel_dict:
+            self.channel_dict[channel] = {
+                'temp_string': '',
+                'prev_author': 0
+            }
+        working_dict = self.channel_dict[channel]
+        
+        if message.author.id == working_dict['prev_author']: 
+            working_dict['temp_string'] += ' ' + content
+        else:
+            if working_dict['temp_string'].count(' ') >= self.MIN_WORDS - 1: # total spaces = total words - 1
+                self.markov_list.append(working_dict['temp_string'])
+            self.channel_dict[channel] = working_dict = {
+                'temp_string': content,
+                'prev_author': message.author.id
+            }
+
+        if working_dict['temp_string'].count(' ') >= self.IDEAL_WORDS - 1:
+            self.markov_list.append(working_dict['temp_string'])
+            self.channel_dict[channel] = {
+                'temp_string': '',
+                'prev_author': message.author.id
+            }
+
+        if len(self.markov_list) >= self.LIST_LENGTH:
+            massive_string = ". ".join(self.markov_list)
+            self.markov_list = []
+            markov_chain = markovify.Text(massive_string)
+            sentence = markov_chain.make_sentence()
+            return message_data(channel=self.simulator_channel, message=sentence) if sentence is not None else None
+        return None
