@@ -17,9 +17,10 @@ from typing import List
 import asyncio
 
 class mod_only_command(str):
+    '''
+    A direct subclass of string, used to mark commands as mod-only for processing in the help command.
+    '''
     pass
-
-
 class command_on_message(BotFunction):
 
     def __init__(self, *args, **kwargs):
@@ -78,7 +79,7 @@ class debug(command_on_message):
 
     @classmethod
     def helptxt(cls):
-        return None # "$debug \nActivates debug mode"
+        return mod_only_command("$debug \nActivates debug mode")
 
 class sigkill(command_on_message):
     """
@@ -97,7 +98,7 @@ class sigkill(command_on_message):
 
     @classmethod
     def helptxt(cls):
-        return None # "$debug \nKills bot processes when in debug mode"
+        return mod_only_command("$debug \nKills bot processes when in debug mode")
 
 
 class register(command_on_message):
@@ -276,7 +277,7 @@ class send(command_on_message):
 
     @classmethod
     def helptxt(cls):
-        return None # "$send [channel] [message] \nSends [message] to [channel]. Must be a channel ping."
+        return mod_only_command("$send [channel] [message] \nSends [message] to [channel]. Must be a channel ping.")
 
 class choose(command_on_message):
     """
@@ -306,68 +307,6 @@ class choose(command_on_message):
     @classmethod
     def helptxt(cls):
         return "$choose choice1; choice2[; choice3; ...] \nChooses an option from the provided list."
-
-class help(command_on_message):
-    """
-    $help [command]
-
-    Displays description of provided command. If no command is provided, displays all commands.
-    If a command should not be displayed in the embed, have it return None.
-    """
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.commands_list = {}
-        for cmd in command_on_message.__subclasses__():
-            helptxt = cmd.helptxt()
-            self.commands_list[cmd.__name__] = helptxt
-
-    async def action(self, message):
-        fields = []
-        show_mod=message.channel.id in (498634483910574082, 338237628275097601)
-        try:
-            cmd = message.content[1:].split()[1] # Tries to get the command to search for
-        except (IndexError, AttributeError):
-            # If no command is given. AttributeError is also catched in case message.content[1:] doesn't return a string.
-            for name, desc in self.commands_list.items():
-                if isinstance(desc,mod_only_command) and not show_mod:
-                    continue
-                fields.append({
-                    "name": name,
-                    "value": desc
-                })
-
-        else: # If a command is given
-            if cmd in self.commands_list and show_mod:
-                fields.append({
-                    "name": cmd,
-                    "value": self.commands_list[cmd]
-                })
-            elif cmd in self.commands_list and not show_mod:
-                if isinstance(desc,mod_only_command):
-                    fields.append({
-                        "name": cmd,
-                        "value":"That is a mod only command"
-                    })
-                else:
-                    fields.append({
-                        "name": cmd,
-                        "value": self.commands_list[cmd]
-                    })
-                
-            else: # If no such command exists
-                fields.append({
-                    "name": "No such command found",
-                    "value": "Did you make a typo?"
-                })
-        return message_data(channel=message.channel, embed={
-            "title": "Command List",
-            "color": 15920957,
-            "fields": fields
-        })
-
-    @classmethod
-    def helptxt(cls):
-        return "$help [command] \nDisplays description of the provided command. If none is provided, displays description for all commands."
 
 class menu(command_on_message):
     def __init__(self, *args, **kwargs):
@@ -596,3 +535,55 @@ class menu(command_on_message):
     @classmethod
     def helptxt(cls):
         return "$menu [dining commons] [mealtime] \nDisplays an interactable Embed showing the menu for the mealtime of the dining commons."
+
+class help(command_on_message):
+    """
+    $help [command]
+
+    Displays description of provided command. If no command is provided, displays all commands.
+    If a command is mod-only, have its helptxt return mod_only_command
+    """
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.commands_list = {
+            cmd.__name__: cmd.helptxt()
+            for cmd in command_on_message.__subclasses__()
+        }
+
+    async def action(self, message):
+        fields = []
+        show_mod = message.channel.id in (498634483910574082, 338237628275097601)
+        try:
+            cmd = message.content[1:].split()[1] # Tries to get the command to search for
+        except IndexError:
+            for name, desc in self.commands_list.items():
+                if isinstance(desc, mod_only_command) and not show_mod:
+                    continue
+                fields.append({
+                    "name": name,
+                    "value": desc
+                })
+
+        else: # If a command is given
+            if cmd in self.commands_list:
+                desc = self.commands_list[cmd]
+                if isinstance(desc, mod_only_command) and not show_mod:
+                    desc = "Provided command is unavailable."
+                fields.append({
+                    "name": cmd,
+                    "value": desc
+                })
+            else: # If no such command exists
+                fields.append({
+                    "name": "No such command found",
+                    "value": "Did you make a typo?"
+                })
+        return message_data(channel=message.channel, embed={
+            "title": "Command List",
+            "color": 15920957,
+            "fields": fields
+        })
+
+    @classmethod
+    def helptxt(cls):
+        return "$help [command] \nDisplays description of the provided command. If none is provided, displays description for all commands."
