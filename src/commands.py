@@ -1,5 +1,6 @@
 from cProfile import label
 from email.message import Message
+from operator import mod
 from pydoc import describe
 import random
 from datetime import date
@@ -14,6 +15,9 @@ from src.tools.state_machines import State, Action, Machine
 from discord import ButtonStyle, Interaction
 from typing import List
 import asyncio
+
+class mod_only_command(str):
+    pass
 
 
 class command_on_message(BotFunction):
@@ -315,27 +319,41 @@ class help(command_on_message):
         self.commands_list = {}
         for cmd in command_on_message.__subclasses__():
             helptxt = cmd.helptxt()
-            if helptxt is not None:
-                self.commands_list[cmd.__name__] = helptxt
+            self.commands_list[cmd.__name__] = helptxt
 
     async def action(self, message):
         fields = []
+        show_mod=message.channel.id in (498634483910574082, 338237628275097601)
         try:
             cmd = message.content[1:].split()[1] # Tries to get the command to search for
         except (IndexError, AttributeError):
             # If no command is given. AttributeError is also catched in case message.content[1:] doesn't return a string.
             for name, desc in self.commands_list.items():
+                if isinstance(desc,mod_only_command) and not show_mod:
+                    continue
                 fields.append({
                     "name": name,
                     "value": desc
                 })
 
         else: # If a command is given
-            if cmd in self.commands_list:
+            if cmd in self.commands_list and show_mod:
                 fields.append({
                     "name": cmd,
                     "value": self.commands_list[cmd]
                 })
+            elif cmd in self.commands_list and not show_mod:
+                if isinstance(desc,mod_only_command):
+                    fields.append({
+                        "name": cmd,
+                        "value":"That is a mod only command"
+                    })
+                else:
+                    fields.append({
+                        "name": cmd,
+                        "value": self.commands_list[cmd]
+                    })
+                
             else: # If no such command exists
                 fields.append({
                     "name": "No such command found",
