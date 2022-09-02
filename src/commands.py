@@ -1,6 +1,5 @@
 from cProfile import label
 from email.message import Message
-from operator import mod
 from pydoc import describe
 import random
 from datetime import date
@@ -14,13 +13,26 @@ from src.tools.message_return import message_data
 from src.tools.state_machines import State, Action, Machine
 from discord import ButtonStyle, Interaction
 from typing import List
+from dataclasses import KW_ONLY, dataclass
 import asyncio
 
-class mod_only_command(str):
+@dataclass
+class help_text:
     '''
-    A direct subclass of string, used to mark commands as mod-only for processing in the help command.
+    A container for displaying the help text for a command.\n
+    It is expected that every class will implement a `helptxt` classmethod and have it return a `help_text` object.
     '''
-    pass
+    name: str
+    desc: str
+    _: KW_ONLY
+    mod_only: bool = False
+
+    def correct_desc(self, show_mod_commands: bool) -> str:
+        '''
+        Returns 'This command is unavailable' if this is a mod only command and if show_mod_commands is False. Othewise, returns `self.desc`.
+        '''
+        return "This command is unavailable." if self.mod_only and not show_mod_commands else self.desc
+
 class command_on_message(BotFunction):
 
     def __init__(self, *args, **kwargs):
@@ -30,7 +42,7 @@ class command_on_message(BotFunction):
         raise NotImplementedError(f'{self.__class__.__name__} failed to implement action.')
 
     @classmethod
-    def helptxt(cls):
+    def helptxt(cls) -> help_text:
         raise NotImplementedError(f'{cls.__name__} failed to implement helptxt.')
 
 
@@ -48,13 +60,13 @@ class catfact(command_on_message):
 
     @classmethod
     def helptxt(cls):
-        return "$catfact \nGets random catfact"
+        return help_text("$catfact", "Gets a random catfact.")
   
 class debug(command_on_message):
     """
     $debug
 
-    activates debug mode 
+    toggles debug mode 
     """
     def __init__(self,*args,**kwargs):
         self.roleslist = ["Admins", "Yangbot Devs", "Server Legacy"]
@@ -79,11 +91,11 @@ class debug(command_on_message):
 
     @classmethod
     def helptxt(cls):
-        return mod_only_command("$debug \nActivates debug mode")
+        return help_text("$debug", "Toggles debug mode.", mod_only=True)
 
 class sigkill(command_on_message):
     """
-    $debug
+    $sigkill
 
     kills bot processes when in debug mode
     """
@@ -98,7 +110,7 @@ class sigkill(command_on_message):
 
     @classmethod
     def helptxt(cls):
-        return mod_only_command("$debug \nKills bot processes when in debug mode")
+        return help_text("$sigkill", "Kills bot processes when in debug mode.", mod_only=True)
 
 
 class register(command_on_message):
@@ -134,7 +146,7 @@ class register(command_on_message):
 
     @classmethod
     def helptxt(cls):
-        return "$register \nRegisters a user in the database"
+        return help_text("$register", "Registers a user in the database.")
 
 
 class resetregister(command_on_message):
@@ -162,7 +174,7 @@ class resetregister(command_on_message):
 
     @classmethod
     def helptxt(cls):
-        return "$resetregister \nResets the registration in the database in case of bugs"
+        return help_text("$resetregister", "Resets the registration in the database in case of bugs")
 
 
 class kickme(command_on_message):
@@ -194,7 +206,7 @@ class kickme(command_on_message):
 
     @classmethod
     def helptxt(cls):
-        return "$kickme \nKicks an unregistered user (?)"
+        return help_text("$kickme", "Kicks an unregistered user.")
 
 
 
@@ -247,7 +259,7 @@ class nickname(command_on_message):
 
     @classmethod
     def helptxt(cls):
-        return "$nickname [nickname] \nRequests to change nickname to [nickname]. Requires admin approval."
+        return help_text("$nickname [nickname]", "Requests to change nickname to [nickname]. Requires admin approval.")
 
     
 
@@ -277,7 +289,7 @@ class send(command_on_message):
 
     @classmethod
     def helptxt(cls):
-        return mod_only_command("$send [channel] [message] \nSends [message] to [channel]. Must be a channel ping.")
+        return help_text("$send [channel] [message]",  "Sends [message] to [channel]. Must be a channel ping.", mod_only=True)
 
 class choose(command_on_message):
     """
@@ -306,7 +318,7 @@ class choose(command_on_message):
 
     @classmethod
     def helptxt(cls):
-        return "$choose choice1; choice2[; choice3; ...] \nChooses an option from the provided list."
+        return help_text("$choose choice1; choice2[; choice3; ...]", "Chooses an option from the provided list.")
 
 class menu(command_on_message):
     def __init__(self, *args, **kwargs):
@@ -534,7 +546,7 @@ class menu(command_on_message):
 
     @classmethod
     def helptxt(cls):
-        return "$menu [dining commons] [mealtime] \nDisplays an interactable Embed showing the menu for the mealtime of the dining commons."
+        return help_text("$menu [dining commons] [mealtime]", "Displays an interactable Embed showing the menu for the mealtime of the dining commons.")
 
 class help(command_on_message):
     """
@@ -552,26 +564,24 @@ class help(command_on_message):
 
     async def action(self, message):
         fields = []
-        show_mod = message.channel.id in (498634483910574082, 338237628275097601)
+        show_mod = message.channel.id in self.bot.config['mod_channels']
         try:
             cmd = message.content[1:].split()[1] # Tries to get the command to search for
         except IndexError:
-            for name, desc in self.commands_list.items():
-                if isinstance(desc, mod_only_command) and not show_mod:
+            for helptxt in self.commands_list.values():
+                if helptxt.mod_only and not show_mod:
                     continue
                 fields.append({
-                    "name": name,
-                    "value": desc
+                    "name": helptxt.name,
+                    "value": helptxt.desc
                 })
 
         else: # If a command is given
             if cmd in self.commands_list:
-                desc = self.commands_list[cmd]
-                if isinstance(desc, mod_only_command) and not show_mod:
-                    desc = "Provided command is unavailable."
+                helptxt = self.commands_list[cmd]
                 fields.append({
-                    "name": cmd,
-                    "value": desc
+                    "name": helptxt.name,
+                    "value": helptxt.correct_desc(show_mod)
                 })
             else: # If no such command exists
                 fields.append({
@@ -586,4 +596,4 @@ class help(command_on_message):
 
     @classmethod
     def helptxt(cls):
-        return "$help [command] \nDisplays description of the provided command. If none is provided, displays description for all commands."
+        return help_text("$help [command]", "Displays description of the provided command. If none is provided, displays description for all commands.")
