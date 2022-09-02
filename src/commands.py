@@ -187,7 +187,7 @@ class kickme(command_on_message):
     """
     $kickme
 
-    kicks an unregistered user???
+    kicks a registered user???
     """
 
     def __init__(self,*args,**kwargs):
@@ -212,7 +212,7 @@ class kickme(command_on_message):
 
     @classmethod
     def helptxt(cls):
-        return help_text("$kickme", "Kicks an unregistered user.")
+        return help_text("$kickme", "Kicks you if you are registered in the database.")
 
 
 
@@ -552,7 +552,7 @@ class menu(command_on_message):
 
     @classmethod
     def helptxt(cls):
-        return help_text("$menu [dining commons] [mealtime]", "Displays an interactable Embed showing the menu for the mealtime of the dining commons.")
+        return help_text("$menu", "Displays an interactable Embed showing the menu for the mealtime of the dining commons.")
 
 class help(command_on_message):
     """
