@@ -27,11 +27,17 @@ class help_text:
     _: KW_ONLY
     mod_only: bool = False
 
-    def correct_desc(self, show_mod_commands: bool) -> str:
+    def field_dict(self, show_mod_commands: bool) -> dict | None:
         '''
-        Returns 'This command is unavailable' if this is a mod only command and if show_mod_commands is False. Othewise, returns `self.desc`.
+        Returns a field-dictionary for the help text. If this command is mod_only and mod commands shouldn't be displayed, then the field-dict for INVALID_CMD is returned instead.
         '''
-        return "This command is unavailable." if self.mod_only and not show_mod_commands else self.desc
+        return INVALID_CMD.field_dict(True) if self.mod_only and not show_mod_commands else {
+            "name": self.name,
+            "value": self.desc
+        }
+
+INVALID_CMD = help_text("Command unavailable", "This command is either restricted or doesn't exist.")
+
 
 class command_on_message(BotFunction):
 
@@ -569,25 +575,14 @@ class help(command_on_message):
             cmd = message.content[1:].split()[1] # Tries to get the command to search for
         except IndexError:
             for helptxt in self.commands_list.values():
-                if helptxt.mod_only and not show_mod:
-                    continue
-                fields.append({
-                    "name": helptxt.name,
-                    "value": helptxt.desc
-                })
+                current_field = helptxt.field_dict(show_mod)
+                if helptxt.name == current_field['name']:
+                    fields.append(current_field)
 
         else: # If a command is given
-            if cmd in self.commands_list:
-                helptxt = self.commands_list[cmd]
-                fields.append({
-                    "name": helptxt.name,
-                    "value": helptxt.correct_desc(show_mod)
-                })
-            else: # If no such command exists
-                fields.append({
-                    "name": "No such command found",
-                    "value": "Did you make a typo?"
-                })
+            current_field = self.commands_list.get(cmd, INVALID_CMD)
+            fields.append(current_field.field_dict(show_mod))
+
         return message_data(channel=message.channel, embed={
             "title": "Command List",
             "color": 15920957,
