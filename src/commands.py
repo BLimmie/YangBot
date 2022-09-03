@@ -13,7 +13,30 @@ from src.tools.message_return import message_data
 from src.tools.state_machines import State, Action, Machine
 from discord import ButtonStyle, Interaction
 from typing import List
+from dataclasses import KW_ONLY, dataclass
 import asyncio
+
+@dataclass
+class help_text:
+    '''
+    A container for displaying the help text for a command.\n
+    It is expected that every class will implement a `helptxt` classmethod and have it return a `help_text` object.
+    '''
+    name: str
+    desc: str
+    _: KW_ONLY
+    mod_only: bool = False
+
+    def field_dict(self, show_mod_commands: bool) -> dict | None:
+        '''
+        Returns a field-dictionary for the help text. If this command is mod_only and mod commands shouldn't be displayed, then the field-dict for INVALID_CMD is returned instead.
+        '''
+        return INVALID_CMD.field_dict(True) if self.mod_only and not show_mod_commands else {
+            "name": self.name,
+            "value": self.desc
+        }
+
+INVALID_CMD = help_text("Command unavailable", "This command is either restricted or doesn't exist.")
 
 
 class command_on_message(BotFunction):
@@ -25,7 +48,7 @@ class command_on_message(BotFunction):
         raise NotImplementedError(f'{self.__class__.__name__} failed to implement action.')
 
     @classmethod
-    def helptxt(cls):
+    def helptxt(cls) -> help_text:
         raise NotImplementedError(f'{cls.__name__} failed to implement helptxt.')
 
 
@@ -43,13 +66,13 @@ class catfact(command_on_message):
 
     @classmethod
     def helptxt(cls):
-        return "$catfact \nGets random catfact"
+        return help_text("$catfact", "Gets a random catfact.")
   
 class debug(command_on_message):
     """
     $debug
 
-    activates debug mode 
+    toggles debug mode 
     """
     def __init__(self,*args,**kwargs):
         self.roleslist = ["Admins", "Yangbot Devs", "Server Legacy"]
@@ -74,11 +97,11 @@ class debug(command_on_message):
 
     @classmethod
     def helptxt(cls):
-        return None # "$debug \nActivates debug mode"
+        return help_text("$debug", "Toggles debug mode.", mod_only=True)
 
 class sigkill(command_on_message):
     """
-    $debug
+    $sigkill
 
     kills bot processes when in debug mode
     """
@@ -93,7 +116,7 @@ class sigkill(command_on_message):
 
     @classmethod
     def helptxt(cls):
-        return None # "$debug \nKills bot processes when in debug mode"
+        return help_text("$sigkill", "Kills bot processes when in debug mode.", mod_only=True)
 
 
 class register(command_on_message):
@@ -129,7 +152,7 @@ class register(command_on_message):
 
     @classmethod
     def helptxt(cls):
-        return "$register \nRegisters a user in the database"
+        return help_text("$register", "Registers a user in the database.")
 
 
 class resetregister(command_on_message):
@@ -157,14 +180,14 @@ class resetregister(command_on_message):
 
     @classmethod
     def helptxt(cls):
-        return "$resetregister \nResets the registration in the database in case of bugs"
+        return help_text("$resetregister", "Resets the registration in the database in case of bugs")
 
 
 class kickme(command_on_message):
     """
     $kickme
 
-    kicks an unregistered user???
+    kicks a registered user???
     """
 
     def __init__(self,*args,**kwargs):
@@ -189,7 +212,7 @@ class kickme(command_on_message):
 
     @classmethod
     def helptxt(cls):
-        return "$kickme \nKicks an unregistered user (?)"
+        return help_text("$kickme", "Kicks you if you are registered in the database.")
 
 
 
@@ -242,7 +265,7 @@ class nickname(command_on_message):
 
     @classmethod
     def helptxt(cls):
-        return "$nickname [nickname] \nRequests to change nickname to [nickname]. Requires admin approval."
+        return help_text("$nickname [nickname]", "Requests to change nickname to [nickname]. Requires admin approval.")
 
     
 
@@ -272,7 +295,7 @@ class send(command_on_message):
 
     @classmethod
     def helptxt(cls):
-        return None # "$send [channel] [message] \nSends [message] to [channel]. Must be a channel ping."
+        return help_text("$send [channel] [message]",  "Sends [message] to [channel]. Must be a channel ping.", mod_only=True)
 
 class choose(command_on_message):
     """
@@ -301,55 +324,7 @@ class choose(command_on_message):
 
     @classmethod
     def helptxt(cls):
-        return "$choose choice1; choice2[; choice3; ...] \nChooses an option from the provided list."
-
-class help(command_on_message):
-    """
-    $help [command]
-
-    Displays description of provided command. If no command is provided, displays all commands.
-    If a command should not be displayed in the embed, have it return None.
-    """
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.commands_list = {}
-        for cmd in command_on_message.__subclasses__():
-            helptxt = cmd.helptxt()
-            if helptxt is not None:
-                self.commands_list[cmd.__name__] = helptxt
-
-    async def action(self, message):
-        fields = []
-        try:
-            cmd = message.content[1:].split()[1] # Tries to get the command to search for
-        except (IndexError, AttributeError):
-            # If no command is given. AttributeError is also catched in case message.content[1:] doesn't return a string.
-            for name, desc in self.commands_list.items():
-                fields.append({
-                    "name": name,
-                    "value": desc
-                })
-
-        else: # If a command is given
-            if cmd in self.commands_list:
-                fields.append({
-                    "name": cmd,
-                    "value": self.commands_list[cmd]
-                })
-            else: # If no such command exists
-                fields.append({
-                    "name": "No such command found",
-                    "value": "Did you make a typo?"
-                })
-        return message_data(channel=message.channel, embed={
-            "title": "Command List",
-            "color": 15920957,
-            "fields": fields
-        })
-
-    @classmethod
-    def helptxt(cls):
-        return "$help [command] \nDisplays description of the provided command. If none is provided, displays description for all commands."
+        return help_text("$choose choice1; choice2[; choice3; ...]", "Chooses an option from the provided list.")
 
 class menu(command_on_message):
     def __init__(self, *args, **kwargs):
@@ -577,4 +552,43 @@ class menu(command_on_message):
 
     @classmethod
     def helptxt(cls):
-        return "$menu [dining commons] [mealtime] \nDisplays an interactable Embed showing the menu for the mealtime of the dining commons."
+        return help_text("$menu", "Displays an interactable Embed showing the menu for the mealtime of the dining commons.")
+
+class help(command_on_message):
+    """
+    $help [command]
+
+    Displays description of provided command. If no command is provided, displays all commands.
+    If a command is mod-only, have its helptxt return mod_only_command
+    """
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.commands_list = {
+            cmd.__name__: cmd.helptxt()
+            for cmd in command_on_message.__subclasses__()
+        }
+
+    async def action(self, message):
+        fields = []
+        show_mod = message.channel.id in self.bot.config['mod_channels']
+        try:
+            cmd = message.content[1:].split()[1] # Tries to get the command to search for
+        except IndexError:
+            for helptxt in self.commands_list.values():
+                current_field = helptxt.field_dict(show_mod)
+                if helptxt.name == current_field['name']:
+                    fields.append(current_field)
+
+        else: # If a command is given
+            current_field = self.commands_list.get(cmd, INVALID_CMD)
+            fields.append(current_field.field_dict(show_mod))
+
+        return message_data(channel=message.channel, embed={
+            "title": "Command List",
+            "color": 15920957,
+            "fields": fields
+        })
+
+    @classmethod
+    def helptxt(cls):
+        return help_text("$help [command]", "Displays description of the provided command. If none is provided, displays description for all commands.")

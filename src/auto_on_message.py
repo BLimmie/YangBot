@@ -156,7 +156,7 @@ class discord_simulator(auto_on_message):
         # 3. Check the word count for temp_string. If it exceeds IDEAL_WORDS, add the string and reset temp_string
         # 4. Check the length of markov_list. If it exceeds LIST_LENGTH, create a markov chain, generate a sentence, and empty the list.
         # This is done to ensure that all sentences contain enough words for processing, and that the sentences remain somewhat sensical.
-        content = message.content.replace('.', '').strip()
+        content = message.clean_content.replace('.', '').strip()
         channel = message.channel.id
         if channel not in self.channel_dict:
             self.channel_dict[channel] = {
