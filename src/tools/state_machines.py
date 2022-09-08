@@ -8,6 +8,10 @@ from copy import deepcopy
 from warnings import warn
 from inspect import signature
 
+_EMPTY_LIST = [] 
+_EMPTY_DICT = {}
+# to work around parameters w/ default values without having to default to None
+
 # ------------------------------------------------------------------------------------------------------------------------------------------------
 #                                                              Beginning of Machine
 # ------------------------------------------------------------------------------------------------------------------------------------------------
@@ -24,16 +28,12 @@ class _MachineView(View):
         super().__init__(timeout=timeout)
         self.machine: Machine = machine
         for button in actions:
-            if not isinstance(button, Action): raise TypeError("Invalid object given: expected 'Action', got " + button.__class__.__name__)
+            if not isinstance(button, Action): raise TypeError(f"Invalid object given: expected 'Action', got {button.__class__.__name__}")
             button.machine = machine
             self.add_item(button)
 
     async def on_timeout(self) -> None: 
-        timed_out_state = State.from_dict(
-            embed_dict = self.machine.state.embed_info,
-            data = self.machine.state.data
-        )
-        await self.machine.update_state(timed_out_state, append_history=False)
+        await self.machine.on_timeout()
 
     async def interaction_check(self, interaction: Interaction) -> bool:
         return await self.machine.interaction_check(interaction)
@@ -45,16 +45,36 @@ class Machine:
     ## Methods\n
       `async create`: A coroutine that initializes a new machine. Due to the initializer depending on asynchronous methods, please use `machine.create()` instead of `machine()` to create new instances.
       `async update_state`: A coroutine that updates the machine to match the given state, and closes the given interaction.
-      `async interaction_check`: A coroutine that defines the criteria for valid interactions. Default one simply checks if the interaction user is the same as the user who created the machine.
-      Note that `interaction_check` is passed an `Interaction` object. If this needs to be replaced, subclass machine and override `interaction_check`.\n
+      `async interaction_check`: The coroutine that determines the validity of an interaction. Defaults to checking if the user is in the machine's whitelist.
+      `async on_timeout`: The coroutine that is called whenever the machine times out. Defaults to removing buttons.
+       See the Subclassing category for more information on the two aforementioned methods.\n
     ## Attributes\n
     See the docstring for `Machine.create()` for a list of valid initializer parameters.
       `state`: The current state of the machine. May not be reassigned.
       `data`: Any data related to the machine. Note that `mach[key]` is equivalent to `mach.data[key]`. It is not recommended to modify this, as `update_state` may override any existing values.
       `history`: A history of states the machine was in. If this attribute is set to `None`, then a history will not be tracked.
-      `owner`: The user that initialized the machine. This attribute will not be updated alongside the user object, so some attributes from it may unexpectedly become obsolete. 
-      It is recommended to perform `guild.get_member(machine.owner.id)` if you need an up-to-date user.
+      `whitelist`: A list of User IDs that may interact with this machine. This may also be `None`, which indicates that any user may interact.
       `active`: Whether the machine has Actions (i.e. if the machine can be interacted with). This is true even if every Action is disabled. May not be reassigned.\n
+    ## Subclassing\n
+    The following two methods are designed to be overridden.
+    ### interaction_check
+    This returns `True` if the interacting user is in the list of acceptable users provided at initialization, otherwise `False`.
+    Note that the `whitelist` attribute is only ever accessed here. If you override this method, then also consider the `whitelist` parameter in `Machine.create` as overridden (i.e. it can be anything you want).
+      Override this method like so
+    ```python
+    async def interaction_check(self, interaction: Interaction) -> bool:
+        # check if interaction.user matches self.whitelist
+        return True/False
+    ```
+    ### on_timeout
+    This method is called once the timeout period is elapsed.\n
+    The default one updates the machine's state by removing any existing actions. Override this method like so
+    ```python
+    async def on_timeout(self) -> None:
+        timed_out_state = State()
+        # do stuff
+        await self.update_state(timed_out_state)
+    ```
     ## Raises\n
       `TypeError`: 'Button' object given instead of 'Action'
       `AttributeError`: Attempting to reassign `state` or `active` parameters.
@@ -66,20 +86,34 @@ class Machine:
         pass
     
     @classmethod
-    async def create(cls, initial_state, message_or_interaction: Message | Interaction | Context, * , initial_message: str = 'Initializing...', message_to_edit: Message | None = None, channel: TextChannel | None = None, history: List | None = [], timeout: float = 180, delete_message: bool = False):
+    async def create(cls, 
+        initial_state, 
+        msg_or_interaction: Message | Interaction | Context = None, 
+        *,
+        whitelist: List[int] | None = _EMPTY_LIST, 
+        initial_message: str = 'Initializing...', 
+        message_to_edit: Message | None = None, 
+        channel: TextChannel | None = None, 
+        history: List | None = _EMPTY_LIST, 
+        timeout: float = 180,
+        delete_message: bool = False
+    ):
         '''
         Initializes a machine that may only be modified by and interacted with its creator.\n
         ### Parameters\n
-          `initial_state`: A state object that the machine should put itself into upon creation.
-          `message_or_interaction`: The message/interaction that initialized the machine. Context objects are also supported.
-           If an Interaction is passed to this parameter, then this method will attempt to close it (unless `message_to_edit` is given). Any related exceptions will be catched and ignored.
-          `initial_message` (Optional): The content of the message to send while the machine prepares itself. Defaults to 'Initializing...'. 
-           This parameter is ignored if `message_to_edit` is given.
-          `message_to_edit` (Optional): The message that the machine should attach itself to. Sends a new message by default. Mutually exclusive with `channel`.
-          `channel` (Optional): The channel that the machine should initialize in. Defaults to `message.channel`. Mutually exclusive with `message_to_edit`.
-          `history` (Optional): A history of previous states. Defaults to an empty list. Pass `None` to this parameter if you don't want the machine to track its history.
-          `timeout` (Optional): A float representing how many seconds of inaction the machine should wait before becoming unusable. Defaults to 180 seconds.
-          `delete_message` (Optional): Whether the machine should delete its corresponding message when the machine is deleted (garbage collected). Defaults to `False`.\n
+          `initial_state`: A state object that the machine should put itself into upon creation.\n
+          `msg_or_interaction = None`: The message/interaction that initialized the machine (from a user). Context objects are also supported.
+           This parameter may be omitted if `message_to_edit/channel` and `whitelist` are given.\n
+          **The following parameters are keyword only**.\n
+          `whitelist = msg_or_interaction.user.id`: A list containing all the valid user IDs that may interact with this machine. Passing `None` to this parameter allows interaction from any user. 
+           Note that this parameter is only used in `interaction_check`. If you override `interaction_check`, then this may be assigned to anything.\n
+          `initial_message = 'Initializing...'`: The content of the message to send while the machine prepares itself. 
+           This parameter is ignored if `message_to_edit` is given.\n
+          `message_to_edit = None`: The message that the machine should attach itself to. Sends a new message by default. Mutually exclusive with `channel`.\n
+          `channel = msg_or_interaction.channel`: The channel that the machine should initialize in. Mutually exclusive with `message_to_edit`.\n
+          `history = []`: A history of previous states. Pass `None` to this parameter if you don't want the machine to track its history.\n
+          `timeout = 180`: A float representing how many seconds of inaction the machine should wait before becoming unusable.\n
+          `delete_message = False`: Whether the machine should delete its corresponding message when the machine is deleted (garbage collected).\n
         ### Rasies\n
         `ValueError`: `message_to_edit` is given alongside `channel`.
         '''
@@ -91,22 +125,25 @@ class Machine:
         else:
             if channel is not None:
                 self._message = await channel.send(initial_message) 
-            elif isinstance(message_or_interaction, (Message, Context)):
-                self._message = await message_or_interaction.channel.send(initial_message)
+            elif isinstance(msg_or_interaction, (Message, Context)):
+                self._message = await msg_or_interaction.channel.send(initial_message)
             else:
                 try:
-                    await message_or_interaction.response.send_message(initial_message)
+                    await msg_or_interaction.response.send_message(initial_message)
                 except InteractionResponded:
                     pass
                 finally:
-                    self._message = await message_or_interaction.original_message()
+                    self._message = await msg_or_interaction.original_message()
 
         self._delete = delete_message
         self._timeout = timeout # For now, timeout is only used for the built-in methods in View. Machine doesn't do any handling with it.
         self._recent_view = None
-
-        self.history: List | None = [] if history is not None else None
-        self.owner = message_or_interaction.author if isinstance(message_or_interaction, (Message, Context)) else message_or_interaction.user
+        
+        self.history: List | None = [] if history is _EMPTY_LIST else None
+        if whitelist is _EMPTY_LIST:
+            self.whitelist = [msg_or_interaction.author.id if isinstance(msg_or_interaction, (Message, Context)) else msg_or_interaction.user.id]
+        else:
+            self.whitelist = whitelist
         self.data = {}
 
         return await self.update_state(initial_state, append_history=False)
@@ -115,10 +152,15 @@ class Machine:
         '''
         Edits the machine to match the given state. The current machine is returned to allow for fluent-style chaining.\n
         ### Parameters\n
-          `new_state`: The state to update to. The machine will update its own attributes based on the attributes of `new_state`.
-          `interaction` (Optional): An Interaction object, usually provided by an Action's callback. This method will close the `Interaction` by editing the machine's embed. As such, this should be the last thing called in all `Action` objects. Passing an Interaction object is not required to use this method though.
-          `append_history` (Optional): By default, this method will always add the most recent state to the machine's history (if the history attribute is not `None`). If this needs to be avoided, set this parameter to `False`.
-          `replace_data` (Optional): Data is updated via `dict.update()` and is not outright replaced. If you would like to replace the machine's data dictionary outright (set it to a new dictionary), set this to `True`. 
+          `new_state`: The state to update to. The machine will update its own attributes based on the attributes of `new_state`.\n
+          `interaction = None`: An Interaction object, usually provided by an Action's callback. 
+          This method will close the `Interaction` by editing the machine's embed. As such, this should be the last thing called in all `Action` objects. 
+          Passing an Interaction object is not required to use this method though.\n
+          **The following parameters are keyword only**\n
+          `append_history = True`: By default, this method will always add the most recent state to the machine's history (if the history attribute is not `None`). 
+          If this needs to be avoided, set this parameter to `False`.\n
+          `replace_data = False`: Data is updated via `dict.update()` and is not outright replaced. 
+          If you would like to replace the machine's data dictionary outright (set it to a new dictionary), set this to `True`. 
         '''
         if self._recent_view is not None: self._recent_view.stop()
         view = _MachineView(self, new_state.actions, timeout=self._timeout) if new_state.actions else None # Check if the action list is non-empty.
@@ -144,16 +186,29 @@ class Machine:
         if append_history and self.history is not None:
             self.history.append(self._current_state)
 
-        self._current_state = new_state
+        self._current_state: State = new_state
         self._recent_view = view
         return self
     
     async def interaction_check(self, interaction: Interaction) -> bool:
         '''
         Determines if an Interaction is valid by returning either `True` or `False`.\n
-        By default, this checks if the user who created the interaction is the same as the user who created the machine. If this needs to be changed, subclass machine and override this.
+        By default, this checks if the user who interacted is in the whitelist. If this needs to be changed, subclass Machine and override this.
         '''
-        return interaction.user.id == self.owner.id
+        if self.whitelist is None:
+            return True
+        return interaction.user.id in self.whitelist
+
+    async def on_timeout(self) -> None:
+        '''
+        The coroutine to be executed when the machine times out. This method is not passed any additional parameters.\n
+        By default, this removes the buttons on the machine. If this needs to be changed, subclass Machine and override this.
+        '''
+        timed_out_state = State.from_dict(
+            embed_dict = self.state.embed_info,
+            data = self.state.data
+        )
+        await self.update_state(timed_out_state, append_history=False)
 
     @property
     def state(self):
@@ -193,21 +248,21 @@ class State:
     An object representing a state for a machine. Behaves like a dictionary for its data, like an object for its embed (see Behavior). 
     Most methods also support fluent-style and method chanining, and its use is highly encouraged.\n
     ## Attributes\n
-      `embed_info`: A dictionary describing attributes for a `discord.Embed` object. It includes most attributes for Embed.
-      `embed`: A `discord.Embed` object created with `embed_info`. If you wish to set this to an existing Embed, use `set_embed`.
-      `actions`: A list of `Action` objects.
-      `data`: Any other data relevant for the machine.
-      `VALID_EMBED_KEYS`: A Tuple of all the valid keys for `embed_info`. This is a class attribute so it may be accessed directly from State.
+      `embed_info`: A dictionary describing attributes for a `discord.Embed` object. It includes most attributes for Embed.\n
+      `embed`: A `discord.Embed` object created with `embed_info`. If you wish to set this to an existing Embed, use `set_embed`.\n
+      `actions`: A list of `Action` objects.\n
+      `data`: Any other data relevant for the machine.\n
+      `VALID_EMBED_KEYS`: A set of all the valid keys for `embed_info`. This is a class attribute so it may be accessed directly from State.\n
        This contains: `author, color, title, description, fields, footer, image, thumbnail`\n
     ## Methods\n
     Unless otherwise stated in its docstring, all methods (except class methods) return the current state to allow for fluent-style chaining.
-      `@cls from_dict`: Creates a state based on the given dictionaries. Performs a shallow copy on all passed parameters.
-      `@cls from_state`: Creates a new state object from another state. Performs a deepcopy on `embed_info` and `data`, and performs a shallow copy on each Action object.
-      `@cls make_template`: Generates a template state, one designed to work with `State.format()`. This is useful for making a base state that other states will be derived from.
-      `update_embed_info`: Updates `embed_info` based on the given Embed.
-      `set_embed`: Sets the `embed` attribute to the given embed. The state will use this instead of `embed_info`.
-      `format`: Loops through `embed_info` and `data`, and performs `string.format(**kwargs)` on all string values. Can also reassign types (see docstring).
-      `add_action`: Adds the given Actions to the state.
+      `@cls from_dict`: Creates a state based on the given dictionaries. Performs a shallow copy on all passed parameters.\n
+      `@cls from_state`: Creates a new state object from another state. Performs a deepcopy on `embed_info` and `data`, and performs a shallow copy on each Action object.\n
+      `@cls make_template`: Generates a template state, one designed to work with `State.format()`. This is useful for making a base state that other states will be derived from.\n
+      `update_embed_info`: Updates `embed_info` based on the given Embed.\n
+      `set_embed`: Sets the `embed` attribute to the given embed. The state will use this instead of `embed_info`.\n
+      `format`: Loops through `embed_info` and `data`, and performs `string.format(**kwargs)` on all string values. Can also reassign types (see docstring).\n
+      `add_action`: Adds the given Actions to the state.\n
       `remove_action`: Removes the given Actions from the state\n
     ## Behavior\n
     This class has behavior allowing for convenient setting and retrieval. The following statements are equivalent.
@@ -222,7 +277,7 @@ class State:
       `TypeError`: `update_embed_info, set_embed, add_action, remove_action` given inappropriate types (see their docstrings).
       `ValueError`: Action given for `remove_action` is not present.
     '''
-    VALID_EMBED_KEYS = ('author', 'color', 'title', 'description', 'fields', 'footer', 'image', 'thumbnail') # Add more memebers here as embed_info grows
+    VALID_EMBED_KEYS = {'author', 'color', 'title', 'description', 'fields', 'footer', 'image', 'thumbnail'} # Add more memebers here as embed_info grows
 
     def __init__(self):
         '''
@@ -264,14 +319,14 @@ class State:
         return item in self.data
 
     @classmethod
-    def from_dict(cls, embed_dict: dict, *, actions: List = None, data: dict = None):
+    def from_dict(cls, embed_dict: dict, *, actions: List = _EMPTY_LIST, data: dict = _EMPTY_DICT):
         '''
         Creates a state based on the given dictionaries. Performs a shallow copy on all passed parameters.\n
         If `embed_dict` has an invalid/unsupported key, then a warning will be printed.
         ### Parameters
           `embed_dict`: A dictionary with a list of attributes. All keys are optional; any missing keys will be given default values. See `State.VALID_EMBED_KEYS`.
-          `actions` (Optional): A list of `action` objects. Empty by default.
-          `data` (Optional): A dictionary with all relevant data for the machine. Empty by default.
+          `actions = []`: A list of `action` objects.
+          `data = {}`: A dictionary with all relevant data for the machine.
         '''
         self = cls()
 
@@ -281,8 +336,8 @@ class State:
             else:
                 self.embed_info[key] = item
 
-        self.data = data.copy() if data is not None else {}
-        self.actions = actions.copy() if actions is not None else []
+        self.data = data.copy() if data is not _EMPTY_DICT else {}
+        self.actions = actions.copy() if actions is not _EMPTY_LIST else []
         return self
 
     @classmethod
@@ -302,7 +357,7 @@ class State:
         return self
 
     @classmethod
-    def make_template(cls, *, author: dict = '#author', color: int = '#color', title: str='#title', description: str='#description', fields: List[dict]='#fields', footer: dict = '#footer', image: str = '#image', thumbnail: str = '#thumbnail', actions: List=None, **kwargs):
+    def make_template(cls, *, author: dict = '#author', color: int = '#color', title: str='#title', description: str='#description', fields: List[dict]='#fields', footer: dict = '#footer', image: str = '#image', thumbnail: str = '#thumbnail', actions: List=_EMPTY_LIST, **kwargs):
         '''
         Generates a template state, one designed to work with `State.format()`. This is meant for making a base state that other states will be derived from.\n
         By default, State.format will reassign everything it operates on to a string value. 
@@ -321,7 +376,7 @@ class State:
             'image': image,
             'thumbnail': thumbnail
         }
-        self.actions = actions or []
+        self.actions = actions if actions is not _EMPTY_LIST else []
         for key, value in kwargs.items():
             self[key] = value
         return self
@@ -331,9 +386,11 @@ class State:
         Loops through `embed_info` and `data` and performs `str.format(**kwargs)` on all string values. This method only accepts keyworded arguments.\n
         Any key in `embed_info` or `data` with a string value of '#key' will not be assigned to a string value. Instead, it will be reassigned to the value it is given in kwargs (or `None` if it is not present). To give an example of this:
         ```python
-        >>> base_state=State.make_template(color='#color')
-        ... base_state.format(color=0xFFFFFF) # color is passed as an int, not a str
+        >>> base_state = State.make_template(color='#color')
         ... print(type(base_state.color))
+        <class 'str'>
+        >>> new_state = State.from_state(base_state).format(color=0xFFFFFF) # passed as an int
+        ... print(type(new_state.color))
         <class 'int'>
         ```
         If color wasn't passed into format in the above example, then it would have been assigned to `None` instead.\n
@@ -373,7 +430,7 @@ class State:
         state.actions = [first_action, second_action, ...]
         state.add_action(first_action, second_action, ...)
         ```
-        Raises a TypeError if any argument isn't an Action.\n
+        Raises a TypeError if any argument isn't an Action.
         '''
         for action in args:
             if not isinstance(action, Action): raise TypeError("Invalid object type: Expected 'Action', got " + action.__class__.__name__)
@@ -418,7 +475,7 @@ class State:
 #                                                              Beginning of Action
 # ------------------------------------------------------------------------------------------------------------------------------------------------
 
-async def DefaultCallback(mach: Machine, interaction: Interaction):
+async def _DefaultCallback(mach: Machine, interaction: Interaction):
     await mach.update_state(State(), interaction)
 
 class Action(Button):
@@ -427,14 +484,14 @@ class Action(Button):
     ## Parameters and Attributes\n
     All of the following parameters are keyword-only and optional. Unless otherwise specified, all parameters default to `None`. 
     Every parameter (except callback) is also an equivalently named attribute.
-      `callback`: The coroutine that will be invoked when an Action object is interacted with. Defaults to changing to a generic state. 
-       Please see the callback section for further details on this parameter.
-      `style`: The style for the button. Defaults to `ButtonStyle.blurple`.
-      `label`: The label (text) of the button.
-      `emoji`: A `discord.Emoji` object, representing the emoji of the button.
-      `row`: The row the button should be placed in, must be between 0 and 4 (inclusive). If this isn't specified, then automatic ordering will be applied.
-      `url`: A string representing the url that this button should send to. Note that specifying this changes some functionality (see discord.py docs).
-      `disabled`: Whether the button should invoke `callback` whenever pressed. Defaults to `False`.
+      `callback = DefaultCallback`: The coroutine that will be invoked when an Action object is interacted with. Defaults to changing to a generic state. \n
+       Please see the callback section for further details on this parameter.\n
+      `style = ButtonStyle.blurple`: The style for the button.\n
+      `label`: The label (text) of the button.\n
+      `emoji`: A `discord.Emoji` object, representing the emoji of the button.\n
+      `row`: The row the button should be placed in, must be between 0 and 4 (inclusive). If this isn't specified, then automatic ordering will be applied.\n
+      `url`: A string representing the url that this button should send to. Note that specifying this changes some functionality (see discord.py docs).\n
+      `disabled = False`: Whether the button should invoke `callback` whenever pressed.\n
     There is an additional attribute, `machine`, that refers to the machine that the button was most recently attached to. This is not a parameter and should not be modified.
     ## Methods\n
       `copy`: Returns a shallow copy of the button.
@@ -451,7 +508,7 @@ class Action(Button):
     This may be useful for making a base action that uses metadata (label, style, etc) in its callback. Including this third parameter is completely optional and may be omitted.\n
     As the sample code suggests, it is expected that `callback` will generate a state object and call `update_state` onto its passed machine.
     '''
-    def __init__(self, *, callback: Coroutine=DefaultCallback , style: ButtonStyle=ButtonStyle.blurple, label: str | None=None, emoji: Emoji | None=None, row: int | None=None, url: str | None=None, disabled: bool=False):
+    def __init__(self, *, callback: Coroutine=_DefaultCallback , style: ButtonStyle=ButtonStyle.blurple, label: str | None=None, emoji: Emoji | None=None, row: int | None=None, url: str | None=None, disabled: bool=False):
         super().__init__(style=style, label=label, emoji=emoji, row=row, url=url, disabled=disabled)
         self.machine: Machine | None = None
         self._callback = callback
