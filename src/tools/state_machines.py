@@ -43,24 +43,27 @@ class Machine:
     A state machine, represented by an Embed with buttons.
     Machine may be treated like a dictionary, which will return its respective value from its data attribute (in other words, `mach[key]` is equivalent to `mach.data[key]`). The same holds for setting values.\n
     ## Methods\n
-      `async create`: A coroutine that initializes a new machine. Due to the initializer depending on asynchronous methods, please use `machine.create()` instead of `machine()` to create new instances.
-      `async update_state`: A coroutine that updates the machine to match the given state, and closes the given interaction.
-      `async interaction_check`: The coroutine that determines the validity of an interaction. Defaults to checking if the user is in the machine's whitelist.
-      `async on_timeout`: The coroutine that is called whenever the machine times out. Defaults to removing buttons.
+      `async create`: A coroutine that initializes a new machine. 
+      Due to the initializer depending on asynchronous methods, please use `machine.create()` instead of `machine()` to create new instances.\n
+      `async update_state`: A coroutine that updates the machine to match the given state, and closes the given interaction.\n
+      `async interaction_check`: The coroutine that determines the validity of an interaction. Defaults to checking if the user is in the machine's whitelist.\n
+      `async on_timeout`: The coroutine that is called whenever the machine times out. Defaults to removing buttons.\n
        See the Subclassing category for more information on the two aforementioned methods.\n
     ## Attributes\n
     See the docstring for `Machine.create()` for a list of valid initializer parameters.
-      `state`: The current state of the machine. May not be reassigned.
-      `data`: Any data related to the machine. Note that `mach[key]` is equivalent to `mach.data[key]`. It is not recommended to modify this, as `update_state` may override any existing values.
-      `history`: A history of states the machine was in. If this attribute is set to `None`, then a history will not be tracked.
-      `whitelist`: A list of User IDs that may interact with this machine. This may also be `None`, which indicates that any user may interact.
-      `active`: Whether the machine has Actions (i.e. if the machine can be interacted with). This is true even if every Action is disabled. May not be reassigned.\n
+      `state`: The current state of the machine. May not be reassigned.\n
+      `data`: Any data related to the machine. Note that `mach[key]` is equivalent to `mach.data[key]`. 
+      It is not recommended to modify this, as `update_state` may override any existing values.\n
+      `history`: A history of states the machine was in. If this attribute is set to `None`, then a history will not be tracked.\n
+      `whitelist`: A list of User IDs that may interact with this machine. 
+      This may also be `None`, which indicates that any user may interact. See the subclassing category.\n
+      `active`: Whether the machine has Actions that can be interacted with. If every action is disabled, then this is False. May not be reassigned.\n
     ## Subclassing\n
     The following two methods are designed to be overridden.
     ### interaction_check
-    This returns `True` if the interacting user is in the list of acceptable users provided at initialization, otherwise `False`.
-    Note that the `whitelist` attribute is only ever accessed here. If you override this method, then also consider the `whitelist` parameter in `Machine.create` as overridden (i.e. it can be anything you want).
-      Override this method like so
+    This returns `True` if the interacting user is in the whitelist, otherwise `False`.
+    Note that the `whitelist` attribute is only ever accessed here. If you override this method, then also consider the `whitelist` parameter in `Machine.create` as overridden (i.e. it can be anything you want).\n
+    Override this method like so
     ```python
     async def interaction_check(self, interaction: Interaction) -> bool:
         # check if interaction.user matches self.whitelist
@@ -88,7 +91,7 @@ class Machine:
     @classmethod
     async def create(cls, 
         initial_state, 
-        msg_or_interaction: Message | Interaction | Context = None, 
+        msg_or_interaction: Message | Interaction | Context | None = None, 
         *,
         whitelist: List[int] | None = _EMPTY_LIST, 
         initial_message: str = 'Initializing...', 
@@ -103,9 +106,9 @@ class Machine:
         ### Parameters\n
           `initial_state`: A state object that the machine should put itself into upon creation.\n
           `msg_or_interaction = None`: The message/interaction that initialized the machine (from a user). Context objects are also supported.
-           This parameter may be omitted if `message_to_edit/channel` and `whitelist` are given.\n
+           This parameter will be ignored if `message_to_edit/channel` and `whitelist` are given, and as such may be omitted.\n
           **The following parameters are keyword only**.\n
-          `whitelist = msg_or_interaction.user.id`: A list containing all the valid user IDs that may interact with this machine. Passing `None` to this parameter allows interaction from any user. 
+          `whitelist = [msg_or_interaction.user.id]`: A list containing all the valid user IDs that may interact with this machine. Passing `None` to this parameter allows interaction from any user. 
            Note that this parameter is only used in `interaction_check`. If you override `interaction_check`, then this may be assigned to anything.\n
           `initial_message = 'Initializing...'`: The content of the message to send while the machine prepares itself. 
            This parameter is ignored if `message_to_edit` is given.\n
@@ -141,7 +144,7 @@ class Machine:
         
         self.history: List | None = [] if history is _EMPTY_LIST else None
         if whitelist is _EMPTY_LIST:
-            self.whitelist = [msg_or_interaction.author.id if isinstance(msg_or_interaction, (Message, Context)) else msg_or_interaction.user.id]
+            self.whitelist: List[int] = [msg_or_interaction.author.id if isinstance(msg_or_interaction, (Message, Context)) else msg_or_interaction.user.id]
         else:
             self.whitelist = whitelist
         self.data = {}
@@ -164,7 +167,6 @@ class Machine:
         '''
         if self._recent_view is not None: self._recent_view.stop()
         view = _MachineView(self, new_state.actions, timeout=self._timeout) if new_state.actions else None # Check if the action list is non-empty.
-        self._active = view is not None
 
         if interaction is None:
             self._message = await self._message.edit(
@@ -220,7 +222,16 @@ class Machine:
 
     @property
     def active(self) -> bool:
-        return self._active
+        '''
+        `True` if this machine has any active buttons, `False` if all buttons are disabled, or if there are no buttons to interact with.
+        '''
+        total_buttons = len(self.state.actions)
+        inactive_buttons = 0
+        if total_buttons == 0: return False
+        for action in self.state.actions:
+            if action.disabled:
+                inactive_buttons += 1
+        return total_buttons != inactive_buttons
 
     @active.setter
     def active(self, _):
@@ -433,7 +444,7 @@ class State:
         Raises a TypeError if any argument isn't an Action.
         '''
         for action in args:
-            if not isinstance(action, Action): raise TypeError("Invalid object type: Expected 'Action', got " + action.__class__.__name__)
+            if not isinstance(action, Action): raise TypeError(f"Invalid object type: Expected 'Action', got {action.__class__.__name__}")
             self.actions.append(action)
 
         return self
@@ -444,7 +455,7 @@ class State:
         Raises a TypeError if any given argument isn't an Action. Raises a ValueError if the given Action is not present.\n
         '''
         for action in args:
-            if not isinstance(action, Action): raise TypeError("Invalid object type: Expected 'Action', got " + action.__class__.__name__)
+            if not isinstance(action, Action): raise TypeError(f"Invalid object type: Expected 'Action', got {action.__class__.__name__}")
             self.actions.remove(action)
 
         return self
@@ -454,7 +465,7 @@ class State:
         Updates `embed_info` based on the given Embed object. This will ignore any incompatible keys.\n
         Raises a TypeError if given something other than an Embed.
         '''
-        if not isinstance(new_embed, Embed): raise TypeError("Invalid object type: Expected 'Embed', got " + new_embed.__class__.__name__)
+        if not isinstance(new_embed, Embed): raise TypeError(f"Invalid object type: Expected 'Embed' or 'NoneType', got {new_embed.__class__.__name__}")
         for key, value in new_embed.to_dict().items():
             if key in self.VALID_EMBED_KEYS:
                 self.embed_info[key] = value
