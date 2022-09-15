@@ -5,7 +5,7 @@ import json
 import os
 import psycopg2
 from src.yangbot import YangBot
-from src.slash_commands import slash_command, slash_command_group # Slash commands need to be registered BEFORE on_ready is called. It cannot be done in the YangBot object unfortunately.
+from src.slash_commands import slash_command, slash_command_group
 
 bot=None
 
@@ -20,14 +20,31 @@ client = commands.Bot('$', intents=intents, activity=discord.Activity(name='$hel
 tree = client.tree
 client.synced = False # Per the discord docs, this is recommended in order to prevent multiple calls to 'tree.sync'
 
+
+async def register_slash_commands(bot: YangBot):
+    if client.synced: return
+    class group(app_commands.Group):
+        pass
+    
+    for cmd_group in slash_command_group.__subclasses__():
+        current = group(name=cmd_group.__name__, description=cmd_group.description, guild_ids=[config['server_id']], guild_only=True)
+        for cmd in cmd_group().subcommands:
+            current.command(name=cmd.name(), description=cmd.description())(cmd(bot).action)
+        tree.add_command(current, guild=guild_obj)
+
+    for cmd in slash_command.__subclasses__():
+        if cmd._command_group is not None: continue
+        tree.command(name=cmd.name(), description=cmd.description(), guild=guild_obj)(cmd(bot).action)
+
+    await tree.sync(guild=guild_obj)
+    client.synced = True
+
 @client.event
 async def on_ready():
     await client.wait_until_ready()
-    if not client.synced: # Sync the commands just once.
-        await tree.sync(guild=guild_obj)
-        client.synced = True
     global bot
     bot = YangBot(conn, client, config, repeated_messages=5)
+    await register_slash_commands(bot)
     print("Bot is ready")
 
 @client.event
@@ -57,8 +74,6 @@ async def on_member_update(before, after):
     await bot.run_on_member_update(before, after)
 
 # Slash commands
-for cls in slash_command.__subclasses__():
-    tree.command(name=cls.name(), description=cls.description(), guild=guild_obj)(cls(bot).action)
     
 
     # app_commands.AppCommandGroup(type=discord.AppCommandType)

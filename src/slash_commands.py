@@ -1,5 +1,5 @@
 import discord
-from discord.app_commands import describe
+from discord.app_commands import describe, guild_only, Group
 from src.tools.help_text import help_text
 from typing import List
 
@@ -89,7 +89,7 @@ class slash_command:
 
 class slash_command_group:
     '''
-    Represents a group for slash commands. An example of a bunch of commands bundles under the 'timer' group
+    Represents a group for slash commands. An example of a bunch of commands bundled under the 'timer' group
     ```txt
     /timer create
     /timer stop
@@ -99,23 +99,38 @@ class slash_command_group:
     ```python
     class timer(slash_command_group):
         subcommands = [create, stop, pause]
+        description = "Commands relating to managing timers"
     ```
+    Both subcommands AND description must be set. A TypeError will be raised if either of these are `None`.
     '''
     subcommands: List[slash_command] = None
+    description: str = None
 
     def __init__(self) -> None:
+        if self.subcommands is None or self.description is None: raise TypeError(f"{self.__class__.__name__} failed to implement either 'subcommands' or 'description'")
         for cmd in self.subcommands:
-            print(cmd)
             cmd._command_group = self
 
 class ping(slash_command):
-    async def action(self, interaction: discord.Interaction, msg: str) -> None:
-        await interaction.response.send_message(f'Pong! {msg}', ephemeral=True)
+    async def action(self, interaction: discord.Interaction) -> None:
+        await interaction.response.send_message(f'Pong!', ephemeral=True)
 
     @classmethod
     def helptxt(cls) -> help_text:
         return help_text('/ping', 'Replies with pong!')
 
+class pong(slash_command):
+    async def action(self, interaction: discord.Interaction) -> None:
+        await interaction.response.send_message(f'Ping!', ephemeral=True)
+
+    @classmethod
+    def helptxt(cls) -> help_text:
+        return help_text('/ping', 'Replies with ping!')
+
+class pongest(slash_command_group):
+    subcommands: List[slash_command]=[pong]
+    description='The pongest commands!'
+    
 # class timer(slash_command_group):
 #     subcommands: List[slash_command] = [ping]
 
