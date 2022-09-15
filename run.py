@@ -27,8 +27,8 @@ async def register_slash_commands(bot: YangBot):
         pass
     
     for cmd_group in slash_command_group.__subclasses__():
-        current = group(name=cmd_group.__name__, description=cmd_group.description, guild_ids=[config['server_id']], guild_only=True)
-        for cmd in cmd_group().subcommands:
+        current = group(name=cmd_group.__name__, description=cmd_group.description)
+        for cmd in cmd_group.iterator():
             current.command(name=cmd.name(), description=cmd.description())(cmd(bot).action)
         tree.add_command(current, guild=guild_obj)
 

@@ -1,8 +1,8 @@
 import discord
-from discord.app_commands import describe, guild_only, Group
+from discord.app_commands import describe
 from src.tools.help_text import help_text
+from src.tools.events import EventPrompt
 from typing import List
-
 
 class slash_command:
     '''
@@ -46,7 +46,7 @@ class slash_command:
         self.bot = bot
 
     async def action(self, interaction: discord.Interaction) -> None:
-        raise NotImplementedError(f'{self.__class__.__name__} failed to implement action method.')
+        raise NotImplementedError(f'{self.__class__.__name__!r} failed to implement action method.')
 
     @classmethod
     def name(cls) -> str:
@@ -85,7 +85,7 @@ class slash_command:
 
     @classmethod
     def helptxt(cls) -> help_text:
-        raise NotImplementedError(f'{cls.__name__} failed to implement helptxt method.')
+        raise NotImplementedError(f'{cls.__name__!r} failed to implement helptxt method.')
 
 class slash_command_group:
     '''
@@ -106,33 +106,30 @@ class slash_command_group:
     subcommands: List[slash_command] = None
     description: str = None
 
-    def __init__(self) -> None:
-        if self.subcommands is None or self.description is None: raise TypeError(f"{self.__class__.__name__} failed to implement either 'subcommands' or 'description'")
-        for cmd in self.subcommands:
-            cmd._command_group = self
+    @classmethod
+    def iterator(cls):
+        if cls.subcommands is None or cls.description is None: raise TypeError(f"{cls.__name__!r} failed to implement either 'subcommands' or 'description'")
+        for cmd in cls.subcommands:
+            cmd._command_group = cls
+            yield cmd
 
-class ping(slash_command):
-    async def action(self, interaction: discord.Interaction) -> None:
-        await interaction.response.send_message(f'Pong!', ephemeral=True)
+
+active_events = {} # A dictionary storage for the active events.
+
+class create_event(slash_command):
+    @classmethod
+    def name(cls) -> str:
+        return 'create'
+
+    @describe(banner='The banner image for the event. This is optional and defaults to nothing.')
+    async def action(self, interaction: discord.Interaction, banner: discord.Attachment | None = None) -> None:
+        await interaction.response.send_modal(EventPrompt(banner=banner))
 
     @classmethod
     def helptxt(cls) -> help_text:
-        return help_text('/ping', 'Replies with pong!')
+        return help_text('/event create', 'Create a new event in the server.')
 
-class pong(slash_command):
-    async def action(self, interaction: discord.Interaction) -> None:
-        await interaction.response.send_message(f'Ping!', ephemeral=True)
+class event(slash_command_group):
+    subcommands: List[slash_command] = [create_event]
+    description: str = 'Commands relating to events.'
 
-    @classmethod
-    def helptxt(cls) -> help_text:
-        return help_text('/ping', 'Replies with ping!')
-
-class pongest(slash_command_group):
-    subcommands: List[slash_command]=[pong]
-    description='The pongest commands!'
-    
-# class timer(slash_command_group):
-#     subcommands: List[slash_command] = [ping]
-
-# new_timer = timer()
-# print(ping()._command_group, pong()._command_group)
