@@ -47,6 +47,7 @@ def generate_embed(embed_dict: dict) -> Embed:
     int: color
     dict: author, footer
     List[dict]: fields
+    datetime: timestamp
     ```
     '''
     # safe_keys refers to what you can pass in Embed's initializer directly, unsafe_keys refers to the attributes that may only be modified via methods.

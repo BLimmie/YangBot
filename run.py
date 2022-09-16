@@ -20,9 +20,9 @@ client = commands.Bot('$', intents=intents, activity=discord.Activity(name='$hel
 tree = client.tree
 client.synced = False # Per the discord docs, this is recommended in order to prevent multiple calls to 'tree.sync'
 
-
 async def register_slash_commands(bot: YangBot):
     if client.synced: return
+    @app_commands.guild_only
     class group(app_commands.Group):
         pass
     

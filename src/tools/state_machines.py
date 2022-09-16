@@ -124,23 +124,23 @@ class Machine:
 
         self = cls()
         if message_to_edit is not None:
-            self._message = message_to_edit
+            self.__message = message_to_edit
         else:
             if channel is not None:
-                self._message = await channel.send(initial_message) 
+                self.__message = await channel.send(initial_message) 
             elif isinstance(msg_or_interaction, (Message, Context)):
-                self._message = await msg_or_interaction.channel.send(initial_message)
+                self.__message = await msg_or_interaction.channel.send(initial_message)
             else:
                 try:
                     await msg_or_interaction.response.send_message(initial_message)
                 except InteractionResponded:
                     pass
                 finally:
-                    self._message = await msg_or_interaction.original_message()
+                    self.__message = await msg_or_interaction.original_message()
 
         self._delete = delete_message
         self._timeout = timeout # For now, timeout is only used for the built-in methods in View. Machine doesn't do any handling with it.
-        self._recent_view = None
+        self.__recent_view = None
         
         self.history: List | None = [] if history is _EMPTY_LIST else None
         if whitelist is _EMPTY_LIST:
@@ -165,11 +165,11 @@ class Machine:
           `replace_data = False`: Data is updated via `dict.update()` and is not outright replaced. 
           If you would like to replace the machine's data dictionary outright (set it to a new dictionary), set this to `True`. 
         '''
-        if self._recent_view is not None: self._recent_view.stop()
+        if self.__recent_view is not None: self.__recent_view.stop()
         view = _MachineView(self, new_state.actions, timeout=self._timeout) if new_state.actions else None # Check if the action list is non-empty.
 
         if interaction is None:
-            self._message = await self._message.edit(
+            self.__message = await self.__message.edit(
                 content=None,
                 embed=new_state.embed,
                 view=view 
@@ -180,16 +180,16 @@ class Machine:
                 embed=new_state.embed,
                 view=view
             )
-            self._message = await interaction.original_message()
+            self.__message = await interaction.original_message()
         if replace_data:
             self.data = new_state.data
         else:
             self.data.update(new_state.data)
         if append_history and self.history is not None:
-            self.history.append(self._current_state)
+            self.history.append(self.__current_state)
 
-        self._current_state: State = new_state
-        self._recent_view = view
+        self.__current_state: State = new_state
+        self.__recent_view = view
         return self
     
     async def interaction_check(self, interaction: Interaction) -> bool:
@@ -214,7 +214,7 @@ class Machine:
 
     @property
     def state(self):
-        return self._current_state
+        return self.__current_state
 
     @state.setter # To prevent the changing of this property without using update_state.
     def state(self, _):
@@ -245,10 +245,10 @@ class Machine:
 
     def __del__(self): # To delete the message, if needed.
         if self._delete:
-            self._message.delete()
+            self.__message.delete()
 
     def __hash__(self) -> int: # Maybe we can use the hash as an identifier, in case ever need this? Maybe useful for machines interacting with each other?
-        return hash((self.data, self._current_state, self.owner.id))
+        return hash((self.data, self.__current_state, self.whitelist))
 
 # ------------------------------------------------------------------------------------------------------------------------------------------------
 #                                                              Beginning of State
@@ -264,7 +264,14 @@ class State:
       `actions`: A list of `Action` objects.\n
       `data`: Any other data relevant for the machine.\n
       `VALID_EMBED_KEYS`: A set of all the valid keys for `embed_info`. This is a class attribute so it may be accessed directly from State.\n
-       This contains: `author, color, title, description, fields, footer, image, thumbnail`\n
+       This contains the following (along with type requirements):
+    ```python
+    str: title, description, url, image, thumbnail
+    int: color
+    dict: author, footer
+    List[dict]: fields
+    datetime: timestamp
+    ```
     ## Methods\n
     Unless otherwise stated in its docstring, all methods (except class methods) return the current state to allow for fluent-style chaining.
       `@cls from_dict`: Creates a state based on the given dictionaries. Performs a shallow copy on all passed parameters.\n
@@ -275,6 +282,7 @@ class State:
       `format`: Loops through `embed_info` and `data`, and performs `string.format(**kwargs)` on all string values. Can also reassign types (see docstring).\n
       `add_action`: Adds the given Actions to the state.\n
       `remove_action`: Removes the given Actions from the state\n
+      `removes_all_actions`: Removes every Action from the state.\n
     ## Behavior\n
     This class has behavior allowing for convenient setting and retrieval. The following statements are equivalent.
     ```python
@@ -288,7 +296,7 @@ class State:
       `TypeError`: `update_embed_info, set_embed, add_action, remove_action` given inappropriate types (see their docstrings).
       `ValueError`: Action given for `remove_action` is not present.
     '''
-    VALID_EMBED_KEYS = {'author', 'color', 'title', 'description', 'fields', 'footer', 'image', 'thumbnail'} # Add more memebers here as embed_info grows
+    VALID_EMBED_KEYS = {'author', 'color', 'title', 'description', 'fields', 'footer', 'image', 'thumbnail', 'timestamp'} # Add more memebers here as embed_info grows
 
     def __init__(self):
         '''
@@ -335,7 +343,9 @@ class State:
         Creates a state based on the given dictionaries. Performs a shallow copy on all passed parameters.\n
         If `embed_dict` has an invalid/unsupported key, then a warning will be printed.
         ### Parameters
-          `embed_dict`: A dictionary with a list of attributes. All keys are optional; any missing keys will be given default values. See `State.VALID_EMBED_KEYS`.
+          `embed_dict`: A dictionary describing an Emed. 
+          All keys are optional; any missing keys will be given default values. 
+          See the docstring for `State` (attribute `VALID_EMBED_KEYS`) for a list of acceptable keys and their type requirements.
           `actions = []`: A list of `action` objects.
           `data = {}`: A dictionary with all relevant data for the machine.
         '''
@@ -394,8 +404,8 @@ class State:
 
     def format(self, **kwargs):
         '''
-        Loops through `embed_info` and `data` and performs `str.format(**kwargs)` on all string values. This method only accepts keyworded arguments.\n
-        Any key in `embed_info` or `data` with a string value of '#key' will not be assigned to a string value. Instead, it will be reassigned to the value it is given in kwargs (or `None` if it is not present). To give an example of this:
+        Recursively loops through `embed_info`, `data`, and their `List/dict` elements, and performs `str.format(**kwargs)` on all string values. This method only accepts keyworded arguments.\n
+        Any (dictionary) key with an associated string value of '#key' will not be assigned to a string. Instead, it will be assigned to the parameter it is given in kwargs (or `None` if it is not present). To give an example of this:
         ```python
         >>> base_state = State.make_template(color='#color')
         ... print(type(base_state.color))
@@ -406,19 +416,30 @@ class State:
         ```
         If color wasn't passed into format in the above example, then it would have been assigned to `None` instead.\n
         '''
-        for key, value in self.embed_info.items():
-            if isinstance(value, str):
-                if value == '#' + key:
-                    self.embed_info[key] = kwargs.get(key, None)
-                else:
-                    self.embed_info[key] = value.format(**kwargs)
+        def recursive_list(L: list):
+            for i in range(len(L)):
+                item = L[i]
+                if isinstance(item, str):
+                    L[i] = item.format(**kwargs)
+                elif isinstance(item, list):
+                    recursive_list(item)
+                elif isinstance(item, dict):
+                    recursive_dict(item)
 
-        for key, value in self.data.items():
-            if isinstance(value, str):
-                if value == '#' + key:
-                    self.data[key] = kwargs.get(key, None)
-                else:
-                    self.data[key] = value.format(**kwargs)
+        def recursive_dict(D: dict):
+            for key, value in D.items():
+                if isinstance(value, str):
+                    if value == '#' + key:
+                        D[key] = kwargs.get(key, None)
+                    else:
+                        D[key] = value.format(**kwargs)
+                elif isinstance(value, list):
+                    recursive_list(value)
+                elif isinstance(value, dict):
+                    recursive_dict(value)
+
+        recursive_dict(self.embed_info)
+        recursive_dict(self.data)
 
         return self
 
@@ -460,6 +481,13 @@ class State:
 
         return self
 
+    def remove_all_actions(self):
+        '''
+        Removes every action from the state by setting it to an empty list.
+        '''
+        self.actions = []
+        return self
+
     def update_embed_info(self, new_embed: Embed):
         '''
         Updates `embed_info` based on the given Embed object. This will ignore any incompatible keys.\n
@@ -478,7 +506,7 @@ class State:
         Passing `None` to this method will disregard the previously set Embed and go back to using `embed_info`\n
         Raises a TypeError if given anything other than an Embed object or None.
         '''
-        if not isinstance(new_embed, (Embed, NoneType)): raise TypeError("Invalid object type: Expected 'Embed' or 'NoneType', got " + new_embed.__class__.__name__)
+        if not isinstance(new_embed, (Embed, NoneType)): raise TypeError(f"Invalid object type: Expected 'Embed' or 'NoneType', got {new_embed.__class__.__name__}")
         self._embed = new_embed
         return self
 
@@ -497,9 +525,9 @@ class Action(Button):
     Every parameter (except callback) is also an equivalently named attribute.
       `callback = DefaultCallback`: The coroutine that will be invoked when an Action object is interacted with. Defaults to changing to a generic state. \n
        Please see the callback section for further details on this parameter.\n
-      `style = ButtonStyle.blurple`: The style for the button.\n
       `label`: The label (text) of the button.\n
-      `emoji`: A `discord.Emoji` object, representing the emoji of the button.\n
+      `emoji`: The emoji of the button. This may be a string or `discord.Emoji` object.\n
+      `style = ButtonStyle.blurple`: The style for the button.\n
       `row`: The row the button should be placed in, must be between 0 and 4 (inclusive). If this isn't specified, then automatic ordering will be applied.\n
       `url`: A string representing the url that this button should send to. Note that specifying this changes some functionality (see discord.py docs).\n
       `disabled = False`: Whether the button should invoke `callback` whenever pressed.\n
@@ -522,14 +550,14 @@ class Action(Button):
     def __init__(self, *, callback: Coroutine=_DefaultCallback , style: ButtonStyle=ButtonStyle.blurple, label: str | None=None, emoji: Emoji | None=None, row: int | None=None, url: str | None=None, disabled: bool=False):
         super().__init__(style=style, label=label, emoji=emoji, row=row, url=url, disabled=disabled)
         self.machine: Machine | None = None
-        self._callback = callback
-        self._two_args = len(signature(self._callback).parameters) == 2
+        self.__callback = callback
+        self.__two_args = len(signature(self.__callback).parameters) == 2
 
     async def callback(self, interaction):
-        if self._two_args:
-            await self._callback(self.machine, interaction)
+        if self.__two_args:
+            await self.__callback(self.machine, interaction)
         else:
-            await self._callback(self.machine, interaction, self)
+            await self.__callback(self.machine, interaction, self)
 
     @classmethod
     def new(cls, **kwargs):
@@ -541,6 +569,14 @@ class Action(Button):
             print('I was pressed!')
         ```
         This is equivalent to `do_something = Action(label='Click me!', callback=do_something)`. Note that the variable for the coroutine is reassigned to an Action object.
+        ### Parameters
+        All parameters are keyword-only, and unless otherwise specified, defaults to `None`.
+          `label`: The label (text) of the button.\n
+          `emoji`: The emoji of the button. This may be a string or `discord.Emoji` object.\n
+          `style = ButtonStyle.blurple`: The style for the button.\n
+          `row`: The row the button should be placed in, must be between 0 and 4 (inclusive). If this isn't specified, then automatic ordering will be applied.\n
+          `url`: A string representing the url that this button should send to. Note that specifying this changes some functionality (see discord.py docs).\n
+          `disabled = False`: Whether the button should invoke `callback` whenever pressed.
         '''
         def wrap(callback):
             return cls(callback=callback, **kwargs)
@@ -553,7 +589,7 @@ class Action(Button):
         Specifying any parameters will set the copy's parameter to whatever is given. For example, specifying label cause this method to use the given string instead of the original action's label.
         '''
         return self.__class__( # This is used instead of Action() to allow support for inheritance
-            callback=callback or self._callback,
+            callback=callback or self.__callback,
             style=style or self.style,
             label=label or self.label,
             emoji=emoji or self.emoji,

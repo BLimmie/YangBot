@@ -123,7 +123,7 @@ class create_event(slash_command):
 
     @describe(banner='The banner image for the event. This is optional and defaults to nothing.')
     async def action(self, interaction: discord.Interaction, banner: discord.Attachment | None = None) -> None:
-        await interaction.response.send_modal(EventPrompt(banner=banner))
+        await interaction.response.send_modal(EventPrompt(banner=banner, user_id=interaction.user.id, request_channel=self.bot.client.get_channel(self.bot.config["event_requests_channel"])))
 
     @classmethod
     def helptxt(cls) -> help_text:
