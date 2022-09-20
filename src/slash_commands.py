@@ -69,6 +69,7 @@ class slash_command:
 
         class event(slash_command_group): # and a similar one for timer
             subcommands = [event_create]
+            description = "Commands relating to events."
         ```
         As a result of the code above, the first command will display as `/event create` instead of `/event event_create`
         '''
@@ -108,7 +109,7 @@ class slash_command_group:
 
     @classmethod
     def iterator(cls):
-        if cls.subcommands is None or cls.description is None: raise TypeError(f"{cls.__name__!r} failed to implement either 'subcommands' or 'description'")
+        if cls.subcommands is None or cls.description is None: raise NotImplementedError(f"{cls.__name__!r} failed to implement either 'subcommands' or 'description'")
         for cmd in cls.subcommands:
             cmd._command_group = cls
             yield cmd
@@ -121,9 +122,21 @@ class create_event(slash_command):
     def name(cls) -> str:
         return 'create'
 
-    @describe(banner='The banner image for the event. This is optional and defaults to nothing.')
-    async def action(self, interaction: discord.Interaction, banner: discord.Attachment | None = None) -> None:
-        await interaction.response.send_modal(EventPrompt(banner=banner, user_id=interaction.user.id, request_channel=self.bot.client.get_channel(self.bot.config["event_requests_channel"])))
+    @describe(banner='The banner image for the event. This is optional and defaults to nothing.', color='The 6-digit hex code for the color that will be used for the event. Defaults to ff5500.')
+    async def action(self, interaction: discord.Interaction, banner: discord.Attachment | None = None, color: str = 'ff5500') -> None:
+        if len(color) != 6: return await interaction.response.send_message('Invalid color code provided.')
+        try:
+            color = int(color, base=16)
+        except ValueError:
+            return await interaction.response.send_message('Invalid color code provided.')
+        await interaction.response.send_modal(
+            EventPrompt(
+                banner=banner, user_id=interaction.user.id, 
+                request_channel=self.bot.client.get_channel(self.bot.config["requests_channel"]), 
+                event_channel=self.bot.client.get_channel(self.bot.config['events_channel']),
+                color=color
+            )
+        )
 
     @classmethod
     def helptxt(cls) -> help_text:

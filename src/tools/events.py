@@ -3,6 +3,9 @@ import discord
 from discord import Interaction, ui, TextStyle
 from datetime import datetime, timedelta
 from src.tools.state_machines import Machine, Action, State
+from src.modules.discord_helper import generate_embed
+
+# Some helper functions for processing the datetime formats
 
 def two_digit(input: int) -> str:
     '''
@@ -45,6 +48,8 @@ def convert_to_datetime(date_str: str) -> datetime:
 
     return datetime(month=month, day=day, year=year, hour=hour, minute=minute)
 
+# Some classes and constants
+
 class Event:
     pass
 
@@ -56,9 +61,43 @@ class EventRequest(Machine):
     async def on_timeout(self) -> None:
         timed_out_state = State.from_state(self.state).remove_all_actions()
         timed_out_state.title = 'Expired Event Request'
-        timed_out_state.description
         timed_out_state.color = 0xff5500
         await self.update_state(timed_out_state)
+
+BASE_REQUEST_STATE = State.make_template(
+    author={
+        'name': '{display_name} ({discord_name})',
+        'icon_url': '{avatar}'
+    },
+    title='Event Request',
+    description='<@{user_id}> would like to create the following event.',
+    fields=[
+            {
+                'name': 'Name',
+                'value': '{event_name}'
+            },
+            {
+                'name': 'Description',
+                'value': '{event_desc}'
+            },
+            {
+                'name': 'Start Time',
+                'value': '{event_start}',
+                'inline': True
+            },
+            {
+                'name': 'End Time',
+                'value': '{event_end}',
+                'inline': True
+            },
+            {
+                'name': 'Location',
+                'value': '{event_location}'
+            }
+    ]
+)
+
+# The bulk of the code. The majority of processing is done in the 'on_submit' method.
 
 class EventPrompt(ui.Modal, title='Create Event'):
     name = ui.TextInput(label='Event Name', style=TextStyle.short, placeholder='Cool Event', required=True)
@@ -68,10 +107,12 @@ class EventPrompt(ui.Modal, title='Create Event'):
     description = ui.TextInput(label='Event Description', style=TextStyle.paragraph, placeholder='To have fun!', required=True)
     __input_history: dict[int, dict] = {} # Saves failed inputs and to be used as default. Double underscore is used to prevent Modal's init from touching it.
 
-    def __init__(self, *, banner: discord.Attachment | None, user_id: int, request_channel: discord.TextChannel) -> None:
+    def __init__(self, *, banner: discord.Attachment | None, user_id: int, request_channel: discord.TextChannel, event_channel: discord.TextChannel, color: int) -> None:
         super().__init__()
-        self._banner = banner
+        self._banner = banner.url if banner is not None else None
         self._request = request_channel
+        self._event = event_channel
+        self._color = color
 
         current_time = datetime.now() + timedelta(days=1)
         # There can only be an entry in the dictionary if there's a failed attempt. Successful attempts automatically delete them.
@@ -113,49 +154,56 @@ class EventPrompt(ui.Modal, title='Create Event'):
         
         # create request embed and send it
         del self.__input_history[interaction.user.id] # no need to keep it if everything was fine.
-        initial_state = State.from_dict(embed_dict={
-            'author': {
-                'name': f'{interaction.user.display_name} ({interaction.user.name}#{interaction.user.discriminator})',
-                'icon_url': interaction.user.display_avatar.url
-            },
-            'title': 'Event Request',
-            'description': f'<@{interaction.user.id}> would like to create the following event.',
-            'fields': [
-                {
-                    'name': 'Name',
-                    'value': name
-                },
-                {
-                    'name': 'Description',
-                    'value': desc
-                },
-                {
-                    'name': 'Start Time',
-                    'value': start,
-                    'inline': True
-                },
-                {
-                    'name': 'End Time',
-                    'value': end,
-                    'inline': True
-                },
-                {
-                    'name': 'Location',
-                    'value': location
-                }
-            ],
-            'image': self._banner.url if self._banner is not None else None,
-            'timestamp': end_datetime
-        })
+        initial_state = State.from_state(BASE_REQUEST_STATE).format(
+            display_name=interaction.user.display_name,
+            discord_name=f'{interaction.user.name}#{interaction.user.discriminator}',
+            avatar=interaction.user.display_avatar.url,
+            user_id=interaction.user.id,
+            event_name=name,
+            event_desc=desc,
+            event_start=start,
+            event_end=end,
+            event_location=location,
+            color=0xf1dd00,
+            image=self._banner,
+            timestamp=end_datetime
+        )
         
         @Action.new(label='Approve', style=discord.ButtonStyle.green, emoji='👍')
-        async def approve(machine: Machine, interaction: Interaction):
+        async def approve(machine: Machine, button_inter: Interaction):
             approved_state = State.from_state(initial_state).remove_all_actions()
             approved_state.color = 0x04ff00
             approved_state.title = 'Approved Event Request'
-            approved_state.description = f'This event was approved by <@{interaction.user.id}>'
+            approved_state.description = f'This event was approved by <@{button_inter.user.id}>'
             # publish event here
-            await machine.update_state(approved_state, interaction)
+            embed = generate_embed({
+                'author': machine.state.author,
+                'title': name,
+                'description': desc,
+                'color': self._color,
+                'image': self._banner,
+                'fields': [
+                    {
+                        'name': 'Start Time',
+                        'value': start,
+                        'inline': True
+                    },
+                    {
+                        'name': 'End Time',
+                        'value': end,
+                        'inline': True
+                    },
+                    {
+                        'name': 'Location',
+                        'value': location
+                    }
+                ],
+                'timestamp': end_datetime
+            })
+            msg = await self._event.send(embed=embed)
+            await msg.add_reaction('✔️')
+            # add listener here
+            await machine.update_state(approved_state, button_inter)
 
         @Action.new(label='Reject', style=discord.ButtonStyle.red, emoji='👎')
         async def reject(machine: Machine, interaction: Interaction):

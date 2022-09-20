@@ -1,3 +1,4 @@
+from datetime import datetime
 from discord import Message, TextChannel, ButtonStyle, Emoji, Embed, Interaction, InteractionResponded
 from discord.ui import View, Button
 from discord.ext.commands import Context
@@ -378,12 +379,24 @@ class State:
         return self
 
     @classmethod
-    def make_template(cls, *, author: dict = '#author', color: int = '#color', title: str='#title', description: str='#description', fields: List[dict]='#fields', footer: dict = '#footer', image: str = '#image', thumbnail: str = '#thumbnail', actions: List=_EMPTY_LIST, **kwargs):
+    def make_template(cls, *, 
+        author: dict = '#author', 
+        color: int = '#color', 
+        title: str='#title', 
+        description: str='#description', 
+        fields: List[dict]='#fields', 
+        footer: dict = '#footer', 
+        image: str = '#image', 
+        thumbnail: str = '#thumbnail',
+        timestamp: datetime = '#timestamp', 
+        actions: List=_EMPTY_LIST, 
+        **kwargs
+    ):
         '''
         Generates a template state, one designed to work with `State.format()`. This is meant for making a base state that other states will be derived from.\n
         By default, State.format will reassign everything it operates on to a string value. 
         If this becomes an issue and needs to be assigned to another data type, then pass the argument as `key='#key'`. 
-        For example, to ensure that color is assigned an int, you can pass it as `color='#color'`.\n
+        For example, to ensure that color is assigned an int, pass it as `color='#color'` (this is done by default).\n
         This method only accepts keyword arguments. Every explicitly defined keyword arg (except actions) will be passed to `embed_info`, actions will be passed to `actions`, and everything else will be passed to `data`.
         '''
         self = cls()
@@ -395,7 +408,8 @@ class State:
             'fields': fields,
             'footer': footer,
             'image': image,
-            'thumbnail': thumbnail
+            'thumbnail': thumbnail,
+            'timestamp': timestamp
         }
         self.actions = actions if actions is not _EMPTY_LIST else []
         for key, value in kwargs.items():
@@ -414,13 +428,16 @@ class State:
         ... print(type(new_state.color))
         <class 'int'>
         ```
-        If color wasn't passed into format in the above example, then it would have been assigned to `None` instead.\n
+        Similarly, any string item in a List starting with # will be assigned to its value in `kwargs` (or `None` if it's missing).
         '''
         def recursive_list(L: list):
             for i in range(len(L)):
                 item = L[i]
                 if isinstance(item, str):
-                    L[i] = item.format(**kwargs)
+                    if item[0] == '#':
+                        L[i] = kwargs.get(item[1:], None)
+                    else:
+                        L[i] = item.format(**kwargs)
                 elif isinstance(item, list):
                     recursive_list(item)
                 elif isinstance(item, dict):
