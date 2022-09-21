@@ -130,12 +130,7 @@ class create_event(slash_command):
         except ValueError:
             return await interaction.response.send_message('Invalid color code provided.')
         await interaction.response.send_modal(
-            EventPrompt(
-                banner=banner, user_id=interaction.user.id, 
-                request_channel=self.bot.client.get_channel(self.bot.config["requests_channel"]), 
-                event_channel=self.bot.client.get_channel(self.bot.config['events_channel']),
-                color=color
-            )
+            EventPrompt(banner=banner, user_id=interaction.user.id, color=color, bot=self.bot)
         )
 
     @classmethod

@@ -75,7 +75,17 @@ async def on_member_update(before, after):
 
 # Slash commands
     
+# Reaction listeners 
+# It's probably best to generalize this at a later time. 
+# For now, I implemented a specific solution for events.
+# The whole event module is imported because it allows the sharing of the Event class attributes 
+# (`from x import y` creates a unique instance of y in the namespace. `import x` doesn't)
+import src.tools.events as events_module
 
-    # app_commands.AppCommandGroup(type=discord.AppCommandType)
+@client.event
+async def on_reaction_add(reaction: discord.Reaction, user: discord.Member):
+    message = reaction.message
+    if message.id not in events_module.Event.active_events: return
+    if reaction.emoji != events_module.JOIN_EVENT_EMOJI: return
 
 client.run(os.environ['YB_LOGIN'])

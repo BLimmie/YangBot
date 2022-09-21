@@ -1,4 +1,3 @@
-from tkinter.ttk import Style
 import discord
 from discord import Interaction, ui, TextStyle
 from datetime import datetime, timedelta
@@ -28,7 +27,7 @@ def get_12_hour_time(hour: int, minute: int) -> str:
         hour = 12 if hour == 12 else hour - 12 # make sure 12 corresponds to 12 PM, 13 = 1 PM, ...
         return f'{two_digit(hour)}:{two_digit(minute)} PM'
 
-def convert_to_datetime(date_str: str) -> datetime:
+def str_to_datetime(date_str: str) -> datetime:
     '''
     Converts MM/DD/YYYY @ HH:MM AM/PM into a datetime object. May raise an IndexError or ValueError.
     '''
@@ -48,10 +47,47 @@ def convert_to_datetime(date_str: str) -> datetime:
 
     return datetime(month=month, day=day, year=year, hour=hour, minute=minute)
 
+def datetime_to_str(dt: datetime) -> str:
+    '''
+    Converts a datetime object into MM/DD/YYYY @ HH:MM AM/PM.
+    '''
+    return f'{two_digit(dt.month)}/{two_digit(dt.day)}/{dt.year} @ {get_12_hour_time(dt.hour, dt.minute)}'
+
 # Some classes and constants
 
 class Event:
-    pass
+    active_events = {}
+
+    def __init__(self, *, name: str, desc: str, location: str, start: str, end: str, channel: discord.TextChannel) -> None:
+        self.name, self.desc, self.location, self.start, self.end = name, desc, location, start, end
+        self.channel = channel
+
+    def add_user(self, user: discord.Member):
+        # add individual user perm
+        self.channel
+        pass
+    
+    def remove_user(self, user: discord.Member):
+        pass
+
+    @property
+    def start_datetime(self) -> datetime:
+        '''
+        Converts `start` to a datetime object. May be reassigned, which will also reassign start.
+        '''
+        return str_to_datetime(self.start)
+
+    @start_datetime.setter
+    def start_datetime(self, dt: datetime) -> None:
+        self.start = datetime_to_str(dt)
+
+    @property
+    def end_datetime(self) -> datetime:
+        return str_to_datetime(self.end)
+
+    @end_datetime.setter
+    def end_datetime(self, dt: datetime):
+        self.end = datetime_to_str(dt)
 
 class EventRequest(Machine):
     '''
@@ -97,6 +133,7 @@ BASE_REQUEST_STATE = State.make_template(
     ]
 )
 
+JOIN_EVENT_EMOJI = '✔️'
 # The bulk of the code. The majority of processing is done in the 'on_submit' method.
 
 class EventPrompt(ui.Modal, title='Create Event'):
@@ -107,17 +144,19 @@ class EventPrompt(ui.Modal, title='Create Event'):
     description = ui.TextInput(label='Event Description', style=TextStyle.paragraph, placeholder='To have fun!', required=True)
     __input_history: dict[int, dict] = {} # Saves failed inputs and to be used as default. Double underscore is used to prevent Modal's init from touching it.
 
-    def __init__(self, *, banner: discord.Attachment | None, user_id: int, request_channel: discord.TextChannel, event_channel: discord.TextChannel, color: int) -> None:
+    def __init__(self, *, banner: discord.Attachment | None, user_id: int, color: int, bot) -> None:
         super().__init__()
         self._banner = banner.url if banner is not None else None
-        self._request = request_channel
-        self._event = event_channel
+        
+        self._request: discord.TextChannel = bot.client.get_channel(bot.config['requests_channel'])
+        self._event: discord.TextChannel = bot.client.get_channel(bot.config['events_channel'])
+        self._events_category: discord.CategoryChannel = bot.client.get_channel(bot.config['events_category'])
         self._color = color
 
         current_time = datetime.now() + timedelta(days=1)
         # There can only be an entry in the dictionary if there's a failed attempt. Successful attempts automatically delete them.
         if user_id not in self.__input_history:
-            self.start_time.default = f'{two_digit(current_time.month)}/{two_digit(current_time.day)}/{current_time.year} @ {get_12_hour_time(current_time.hour, current_time.minute)}'
+            self.start_time.default = datetime_to_str(current_time)
         else:
             working_dict = self.__input_history[user_id]
             self.name.default = working_dict['name']
@@ -142,8 +181,8 @@ class EventPrompt(ui.Modal, title='Create Event'):
         # 2. is the event going to occur in the future
         # 3. is start before (or equal to) end
         try:
-            start_datetime = convert_to_datetime(start)
-            end_datetime = convert_to_datetime(end)
+            start_datetime = str_to_datetime(start)
+            end_datetime = str_to_datetime(end)
         except (ValueError, IndexError):
             return await interaction.response.send_message(f"You formatted `{start}` or `{end}` incorrectly, or provided an invalid date-time.\nThe proper format is `MM/DD/YYYY @ HH:MM AM/PM` (e.g `01/01/2000 @ 12:00 AM`)", ephemeral=True)
         now = datetime.now()
@@ -175,6 +214,7 @@ class EventPrompt(ui.Modal, title='Create Event'):
             approved_state.color = 0x04ff00
             approved_state.title = 'Approved Event Request'
             approved_state.description = f'This event was approved by <@{button_inter.user.id}>'
+
             # publish event here
             embed = generate_embed({
                 'author': machine.state.author,
@@ -201,7 +241,11 @@ class EventPrompt(ui.Modal, title='Create Event'):
                 'timestamp': end_datetime
             })
             msg = await self._event.send(embed=embed)
-            await msg.add_reaction('✔️')
+            await msg.add_reaction(JOIN_EVENT_EMOJI)
+            channel = self._events_category.create_text_channel(name=name, overwrites={
+                # add overrides here
+            })
+            Event.active_events[msg.id] = Event(name=name, desc=desc, location=location, start=start, end=end)
             # add listener here
             await machine.update_state(approved_state, button_inter)
 
