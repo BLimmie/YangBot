@@ -34,6 +34,7 @@ class YangBot():
 
         # All Server Role IDs
         guild = client.get_guild(config["server_id"]) # UCSB Server ID
+        self.guild = guild
         roles = {}
         for r in guild.roles:
             roles.update({r.name: r.id})

@@ -87,5 +87,6 @@ async def on_reaction_add(reaction: discord.Reaction, user: discord.Member):
     message = reaction.message
     if message.id not in events_module.Event.active_events: return
     if reaction.emoji != events_module.JOIN_EVENT_EMOJI: return
+    await events_module.Event.active_events[message.id].add_user(user)
 
 client.run(os.environ['YB_LOGIN'])

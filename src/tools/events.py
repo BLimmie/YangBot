@@ -62,13 +62,12 @@ class Event:
         self.name, self.desc, self.location, self.start, self.end = name, desc, location, start, end
         self.channel = channel
 
-    def add_user(self, user: discord.Member):
-        # add individual user perm
-        self.channel
-        pass
+    async def add_user(self, user: discord.Member):
+        await self.channel.set_permissions(user, overwrite=discord.PermissionOverwrite(read_messages=False))
     
-    def remove_user(self, user: discord.Member):
-        pass
+    async def remove_user(self, user: discord.Member):
+        await self.channel.set_permissions(user, overwrite=discord.PermissionOverwrite(read_messages=True))
+
 
     @property
     def start_datetime(self) -> datetime:
@@ -83,6 +82,9 @@ class Event:
 
     @property
     def end_datetime(self) -> datetime:
+        '''
+        Converts `end` to a datetime object. May be reassigned, which will also reassign end.
+        '''
         return str_to_datetime(self.end)
 
     @end_datetime.setter
@@ -151,6 +153,7 @@ class EventPrompt(ui.Modal, title='Create Event'):
         self._request: discord.TextChannel = bot.client.get_channel(bot.config['requests_channel'])
         self._event: discord.TextChannel = bot.client.get_channel(bot.config['events_channel'])
         self._events_category: discord.CategoryChannel = bot.client.get_channel(bot.config['events_category'])
+        self._guild: discord.Guild = bot.guild
         self._color = color
 
         current_time = datetime.now() + timedelta(days=1)
@@ -242,10 +245,12 @@ class EventPrompt(ui.Modal, title='Create Event'):
             })
             msg = await self._event.send(embed=embed)
             await msg.add_reaction(JOIN_EVENT_EMOJI)
-            channel = self._events_category.create_text_channel(name=name, overwrites={
-                # add overrides here
+            channel = await self._events_category.create_text_channel(name=name, overwrites={
+                self._guild.default_role: discord.PermissionOverwrite(read_messages=False),
+                self._guild.me: discord.PermissionOverwrite(read_messages=True)
             })
-            Event.active_events[msg.id] = Event(name=name, desc=desc, location=location, start=start, end=end)
+            print(channel, self._events_category)
+            Event.active_events[msg.id] = Event(name=name, desc=desc, location=location, start=start, end=end, channel=channel)
             # add listener here
             await machine.update_state(approved_state, button_inter)
 
