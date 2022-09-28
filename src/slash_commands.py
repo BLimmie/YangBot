@@ -115,8 +115,6 @@ class slash_command_group:
             yield cmd
 
 
-active_events = {} # A dictionary storage for the active events.
-
 class create_event(slash_command):
     @classmethod
     def name(cls) -> str:
@@ -136,6 +134,28 @@ class create_event(slash_command):
     @classmethod
     def helptxt(cls) -> help_text:
         return help_text('/event create', 'Create a new event in the server.')
+
+class modify_event(slash_command):
+    @classmethod
+    def name(cls) -> str:
+        return 'modify'
+
+    @describe(
+        event='The "Message Link" of the event you are attempting to modify. You can get this by right-clicking the event message and pressing "Copy Message Link"',
+        banner='The banner image for the event. This is optional and defaults to nothing.', 
+        color='The 6-digit hex code for the color that will be used for the event. Defaults to ff5500.'
+    )
+    async def action(self, interaction: discord.Interaction, event: str, banner: discord.Attachment | None, color: str = 'ff5500') -> None:
+        if len(color) != 6: return await interaction.response.send_message('Invalid color code provided.')
+        try:
+            color = int(color, base=16)
+        except ValueError:
+            return await interaction.response.send_message('Invalid color code provided.')
+        
+        try:
+            event_id = int(event.split('/')[-1])
+        except ValueError:
+            return await interaction.response.send_message('Invalid Message Link provided.')
 
 class event(slash_command_group):
     subcommands: List[slash_command] = [create_event]

@@ -80,7 +80,7 @@ async def on_member_update(before, after):
 # For now, I implemented a specific solution for events.
 # The whole event module is imported because it allows the sharing of the Event class attributes 
 # (`from x import y` creates a unique instance of y in the namespace. `import x` doesn't)
-import src.tools.events as events_module
+import src.tools.event_module as events_module
 
 @client.event
 async def on_reaction_add(reaction: discord.Reaction, user: discord.Member):
@@ -88,5 +88,12 @@ async def on_reaction_add(reaction: discord.Reaction, user: discord.Member):
     if message.id not in events_module.Event.active_events: return
     if reaction.emoji != events_module.JOIN_EVENT_EMOJI: return
     await events_module.Event.active_events[message.id].add_user(user)
+
+@client.event
+async def on_reaction_remove(reaction: discord.Reaction, user: discord.Member):
+    message = reaction.message
+    if message.id not in events_module.Event.active_events: return
+    if reaction.emoji != events_module.JOIN_EVENT_EMOJI: return
+    await events_module.Event.active_events[message.id].remove_user(user)
 
 client.run(os.environ['YB_LOGIN'])
